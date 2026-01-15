@@ -130,26 +130,9 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     const briefingIndex = briefingScenes.indexOf(current)
     if (briefingIndex >= 0 && briefingIndex < briefingScenes.length - 1) {
       const nextScene = briefingScenes[briefingIndex + 1]
-      
-      // If transitioning from intro to request_area, make CH walk out
-      if (current === 'intro' && nextScene === 'request_area') {
-        // Trigger walk-out animation first
-        get().setIsWalkingOut(true)
-        // Change scene after a delay to allow walk-out animation to start
-        // The walk-out animation takes 3 seconds, so we change scene after it starts
-        setTimeout(() => {
-          set({ currentScene: nextScene })
-          // Keep isWalkingOut true for the full 3 seconds of animation
-          // After animation completes, it will be reset when needed
-          setTimeout(() => {
-            // Don't reset isWalkingOut here - let it stay true until explicitly reset
-            // This ensures CH stays visible during the entire walk-out animation
-          }, 3000)
-        }, 200)
-      } else {
-        set({ currentScene: nextScene })
-      }
+      set({ currentScene: nextScene })
     }
+  },
   },
   
   reset: () => {
