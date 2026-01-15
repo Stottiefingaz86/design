@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 import { ChatInput } from '../ChatInput'
+import { KanbanBoard } from '../KanbanBoard'
 
 const deadlineOptions = [
   'ASAP',
@@ -18,9 +19,33 @@ export function SceneDeadline() {
   const deadline = useSceneStore((state) => state.deadline)
   const setDeadline = useSceneStore((state) => state.setDeadline)
   const triggerKool = useSceneStore((state) => state.triggerKool)
+  const requestArea = useSceneStore((state) => state.requestArea)
+  const assignedDesigner = useSceneStore((state) => state.assignedDesigner)
   const [showOptions, setShowOptions] = useState(false)
   const [customDeadline, setCustomDeadline] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
+  const [showKanban, setShowKanban] = useState(false)
+  
+  // Show kanban if Lilly is assigned (Casino/Loyalty)
+  // Determine designer based on area immediately (not waiting for deadline selection)
+  useEffect(() => {
+    const area = requestArea.toLowerCase()
+    // Auto-determine designer based on area (same logic as in setDeadline)
+    let designer: string | null = null
+    if (area === 'casino' || area === 'loyalty') {
+      designer = 'Lilly'
+    } else if (area === 'sports') {
+      designer = 'Sam'
+    } else if (area === 'authentication' || area === 'auth') {
+      designer = 'Nek'
+    } else if (area === 'poker') {
+      designer = 'Victor'
+    }
+    
+    // Show kanban for Lilly (Casino/Loyalty)
+    const shouldShowKanban = (designer === 'Lilly' || assignedDesigner === 'Lilly')
+    setShowKanban(shouldShowKanban)
+  }, [requestArea, assignedDesigner])
 
   useEffect(() => {
     const timer = setTimeout(() => setShowOptions(true), 500)
@@ -51,6 +76,24 @@ export function SceneDeadline() {
         <p className="text-white/50 text-sm font-light mb-6">
           Help us prioritize your request
         </p>
+
+        {/* Kanban Board - Show if Lilly is assigned */}
+        {showKanban && showOptions && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            transition={{ duration: 0.3 }}
+            className="mb-6 pb-6 border-b border-white/5"
+          >
+            <KanbanBoard 
+              designer={assignedDesigner || 'Lilly'}
+              onItemClick={(item) => {
+                // Optional: Handle item click (e.g., show details)
+                console.log('Clicked item:', item)
+              }}
+            />
+          </motion.div>
+        )}
 
         {/* Options */}
         {showOptions && (
