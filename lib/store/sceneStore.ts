@@ -133,7 +133,6 @@ export const useSceneStore = create<SceneState>((set, get) => ({
       set({ currentScene: nextScene })
     }
   },
-  },
   
   reset: () => {
     set({
