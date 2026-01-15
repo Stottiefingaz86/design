@@ -22,8 +22,9 @@ export default function StudioPage() {
   const requestArea = useSceneStore((state) => state.requestArea)
   const userRequest = useSceneStore((state) => state.userRequest)
   
-  // Create a reset key that changes when we go back to intro with empty state
-  const resetKey = currentScene === 'intro' && !requestArea && !userRequest.what ? 'reset' : 'normal'
+  // Use a stable key for WalkingSprite so it doesn't remount during normal scene transitions
+  // The component's internal useEffect will handle resetting when needed
+  const spriteKey = 'walking-sprite'
 
   const renderScene = () => {
     switch (currentScene) {
@@ -72,7 +73,7 @@ export default function StudioPage() {
           {/* Priority: if isWalkingOut is true, always show CH */}
           {/* Use resetKey to force remount when going back to intro after reset */}
           {(isWalkingOut || !showLilly) && (
-            <WalkingSprite key={resetKey} />
+            <WalkingSprite key={spriteKey} />
           )}
           {/* Show Lilly when showLilly is true - appears while CH is walking out */}
           {showLilly && (
