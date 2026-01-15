@@ -171,9 +171,10 @@ function DesignStyleExample({ style }: { style: string }) {
   return null
 }
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneDesignStyle() {
-  const designStyle = useSceneStore((state) => state.designStyle)
-  const setDesignStyle = useSceneStore((state) => state.setDesignStyle)
+  const designStyle = ''
+  const setDesignStyle = (_value: string) => {}
   const goToScene = useSceneStore((state) => state.goToScene)
   const triggerKool = useSceneStore((state) => state.triggerKool)
 
@@ -184,7 +185,7 @@ export function SceneDesignStyle() {
 
   const handleContinue = () => {
     if (designStyle) {
-      goToScene('researching')
+      // Deprecated scene - do nothing
     }
   }
 

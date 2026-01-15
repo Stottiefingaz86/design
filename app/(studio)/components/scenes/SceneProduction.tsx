@@ -13,18 +13,19 @@ const thinkingMessages = [
   'Finalizing brand identity...',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneProduction() {
-  const brandSystem = useSceneStore((state) => state.brandSystem)
-  const setBrandSystem = useSceneStore((state) => state.setBrandSystem)
-  const selectedDirection = useSceneStore((state) => state.selectedDirection)
-  const creativeDirections = useSceneStore((state) => state.creativeDirections)
-  const industry = useSceneStore((state) => state.industry)
-  const targetAudience = useSceneStore((state) => state.targetAudience)
-  const companyPillars = useSceneStore((state) => state.companyPillars)
-  const colorPreferences = useSceneStore((state) => state.colorPreferences)
-  const typographyPreference = useSceneStore((state) => state.typographyPreference)
-  const designStyle = useSceneStore((state) => state.designStyle)
-  const researchData = useSceneStore((state) => state.researchData)
+  const brandSystem: any = null
+  const setBrandSystem = (_data: any) => {}
+  const selectedDirection = null
+  const creativeDirections: any[] = []
+  const industry = ''
+  const targetAudience = ''
+  const companyPillars: string[] = []
+  const colorPreferences: string[] = []
+  const typographyPreference = ''
+  const designStyle = ''
+  const researchData = null
   const goToScene = useSceneStore((state) => state.goToScene)
   const [isGenerating, setIsGenerating] = useState(true)
   const [showContent, setShowContent] = useState(false)
@@ -63,7 +64,7 @@ export function SceneProduction() {
   }, [isGenerating, brandSystem, industry, targetAudience, companyPillars, colorPreferences, typographyPreference, designStyle, researchData, setBrandSystem])
 
   const handleContinue = () => {
-    goToScene('delivering')
+    // Deprecated scene - do nothing
   }
 
   return (
@@ -96,24 +97,25 @@ export function SceneProduction() {
               >
                 <h3 className="text-white/40 text-xs uppercase tracking-wider mb-2">Selected Direction</h3>
                 <p className="text-white/80 text-xl font-light">
-                  {creativeDirections[selectedDirection].name}
+                  {selectedDirection !== null && creativeDirections.length > 0 ? creativeDirections[Number(selectedDirection)]?.name : ''}
                 </p>
               </motion.div>
             )}
 
             {/* Color Palette */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="neu-soft rounded-xl p-5"
-            >
-              <h3 className="text-white/40 text-xs uppercase tracking-wider mb-4">Color Palette</h3>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-white/60 text-sm mb-2">Primary</p>
-                  <div className="flex gap-3 flex-wrap">
-                    {brandSystem.palette.primary.map((color, i) => (
+            {brandSystem && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="neu-soft rounded-xl p-5"
+              >
+                <h3 className="text-white/40 text-xs uppercase tracking-wider mb-4">Color Palette</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-white/60 text-sm mb-2">Primary</p>
+                    <div className="flex gap-3 flex-wrap">
+                      {brandSystem?.palette?.primary?.map((color: string, i: number) => (
                       <div key={i} className="flex flex-col items-center gap-2">
                         <div
                           className="w-16 h-16 rounded-lg border border-white/10 shadow-lg"
@@ -124,11 +126,11 @@ export function SceneProduction() {
                     ))}
                   </div>
                 </div>
-                {brandSystem.palette.secondary && brandSystem.palette.secondary.length > 0 && (
+                {brandSystem?.palette?.secondary && brandSystem.palette.secondary.length > 0 && (
                   <div>
                     <p className="text-white/60 text-sm mb-2">Secondary</p>
                     <div className="flex gap-3 flex-wrap">
-                      {brandSystem.palette.secondary.map((color, i) => (
+                      {brandSystem.palette.secondary.map((color: string, i: number) => (
                         <div key={i} className="flex flex-col items-center gap-2">
                           <div
                             className="w-16 h-16 rounded-lg border border-white/10 shadow-lg"
@@ -141,10 +143,11 @@ export function SceneProduction() {
                   </div>
                 )}
               </div>
-            </motion.div>
+              </motion.div>
+            )}
 
             {/* Design Style */}
-            {brandSystem.designStyle && (
+            {brandSystem?.designStyle && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -152,7 +155,7 @@ export function SceneProduction() {
                 className="neu-soft rounded-xl p-5"
               >
                 <h3 className="text-white/40 text-xs uppercase tracking-wider mb-3">Design Style</h3>
-                <p className="text-white/80 text-lg font-light">{brandSystem.designStyle}</p>
+                <p className="text-white/80 text-lg font-light">{brandSystem?.designStyle || ''}</p>
               </motion.div>
             )}
 
@@ -203,7 +206,7 @@ export function SceneProduction() {
               >
                 <h3 className="text-white/40 text-xs uppercase tracking-wider mb-4">Messaging Examples</h3>
                 <div className="space-y-3">
-                  {brandSystem.messagingExamples.map((example, index) => (
+                    {brandSystem?.messagingExamples?.map((example: any, index: number) => (
                     <motion.p
                       key={index}
                       initial={{ opacity: 0, x: -20 }}

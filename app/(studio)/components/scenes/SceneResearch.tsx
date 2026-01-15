@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneResearch() {
-  const researchData = useSceneStore((state) => state.researchData)
+  const researchData: any = null
   const goToScene = useSceneStore((state) => state.goToScene)
   const [showContent, setShowContent] = useState(false)
 
@@ -17,7 +18,7 @@ export function SceneResearch() {
   if (!researchData) return null
 
   const handleContinue = () => {
-    goToScene('strategy')
+    // Deprecated scene - do nothing
   }
 
   return (
@@ -40,7 +41,7 @@ export function SceneResearch() {
               className="neu-soft rounded-xl p-4"
             >
               <h3 className="text-white/40 text-xs uppercase tracking-wider mb-3 font-bold sf-title">Category Definition</h3>
-              <p className="text-white/80 text-sm font-light leading-relaxed">{researchData.categoryDefinition}</p>
+              <p className="text-white/80 text-sm font-light leading-relaxed">{researchData?.categoryDefinition || ''}</p>
             </motion.div>
 
             {/* Competitors */}
@@ -52,7 +53,7 @@ export function SceneResearch() {
             >
               <h3 className="text-white/40 text-xs uppercase tracking-wider font-bold sf-title">Competitive Landscape</h3>
               <div className="space-y-2">
-                {researchData.competitors.slice(0, 6).map((competitor, index) => (
+                {researchData?.competitors?.slice(0, 6).map((competitor: any, index: number) => (
                   <motion.div
                     key={competitor.name}
                     initial={{ opacity: 0, x: 20 }}
@@ -80,7 +81,7 @@ export function SceneResearch() {
             >
               <h3 className="text-white/40 text-xs uppercase tracking-wider mb-3 font-bold sf-title">Whitespace Opportunities</h3>
               <ul className="space-y-2">
-                {researchData.whitespaceOpportunities.map((opp, index) => (
+                {researchData?.whitespaceOpportunities?.map((opp: any, index: number) => (
                   <motion.li
                     key={index}
                     initial={{ opacity: 0, x: -10 }}

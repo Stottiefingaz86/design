@@ -4,10 +4,11 @@ import { motion } from 'framer-motion'
 import { useStudioStore } from '@/lib/store/studioStore'
 import { staggerContainer, staggerItem, scaleIn } from '@/lib/motion/transitions'
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function DirectionCards() {
-  const directions = useStudioStore((state) => state.directions)
+  const directions = useStudioStore((state) => state.creativeDirections)
   const selectDirection = useStudioStore((state) => state.selectDirection)
-  const approveDirections = useStudioStore((state) => state.approveDirections)
+  const approveDirections = () => {}
 
   if (directions.length === 0) return null
 
@@ -37,20 +38,23 @@ export function DirectionCards() {
             whileTap={{ scale: 0.98 }}
           >
             <h3 className="text-xl font-bold mb-2">{direction.name}</h3>
-            <p className="text-sm text-white/70 mb-4">{direction.description}</p>
+            <p className="text-sm text-white/70 mb-4">{direction.strategicIntent}</p>
             
-            {/* Color palette preview */}
-            <div className="flex gap-2 mb-4">
-              {direction.palette.map((color, i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full border border-white/20"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
+            {/* Mood keywords */}
+            {direction.moodKeywords.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {direction.moodKeywords.map((keyword, i) => (
+                  <span
+                    key={i}
+                    className="px-2 py-1 text-xs rounded border border-white/20"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            )}
 
-            <div className="text-xs text-white/50">{direction.mood}</div>
+            <div className="text-xs text-white/50">{direction.visualDirection}</div>
 
             {/* Selection indicator */}
             {direction.selected && (

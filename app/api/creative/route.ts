@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   // Mock strategy data
   const strategy = {
     positioning: `A ${companyPillars[0] || 'innovative'} ${industry} design that empowers ${targetAudience} to achieve more through ${companyPillars[1] || 'excellence'} and ${companyPillars[2] || 'connection'}. We create meaningful experiences that resonate with ${targetAudience} through ${colorPreferences.length > 0 ? `a ${colorPreferences[0]} aesthetic` : 'thoughtful design'}.`,
-    brandPillars: companyPillars.map((pillar, index) => ({
+    brandPillars: companyPillars.map((pillar: string, index: number) => ({
       name: pillar,
       description: `${pillar} is at the heart of everything we do. It guides our decisions, shapes our culture, and defines how we show up in the world.`
     })),

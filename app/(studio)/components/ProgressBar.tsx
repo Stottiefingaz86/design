@@ -3,8 +3,9 @@
 import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function ProgressBar() {
-  const progress = useSceneStore((state) => state.progress)
+  const progress = 0 // Calculate progress based on current scene if needed
 
   return (
     <div className="w-64">

@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useSceneStore } from '@/lib/store/sceneStore'
 import { ChatInput } from '../ChatInput'
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneBrandName() {
-  const setBrandName = useSceneStore((state) => state.setBrandName)
+  const setBrandName = (_value: string) => {}
   const triggerKool = useSceneStore((state) => state.triggerKool)
   const [value, setValue] = useState('')
   const [showInput, setShowInput] = useState(false)

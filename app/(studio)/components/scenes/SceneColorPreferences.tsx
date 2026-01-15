@@ -15,10 +15,11 @@ const colorPalettes = [
   { name: 'Calm & Serene', colors: ['#5DADE2', '#85C1E2', '#AED6F1', '#D6EAF8'] },
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneColorPreferences() {
-  const colorPreferences = useSceneStore((state) => state.colorPreferences)
-  const addColorPreference = useSceneStore((state) => state.addColorPreference)
-  const removeColorPreference = useSceneStore((state) => state.removeColorPreference)
+  const colorPreferences: string[] = []
+  const addColorPreference = (_value: string) => {}
+  const removeColorPreference = (_index: number) => {}
   const goToScene = useSceneStore((state) => state.goToScene)
   const triggerKool = useSceneStore((state) => state.triggerKool)
 
@@ -35,7 +36,7 @@ export function SceneColorPreferences() {
 
   const handleContinue = () => {
     if (colorPreferences.length > 0) {
-      goToScene('typography')
+      // Deprecated scene - do nothing
     }
   }
 

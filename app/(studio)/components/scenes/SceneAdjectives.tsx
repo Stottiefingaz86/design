@@ -5,10 +5,12 @@ import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 import { ChatInput } from '../ChatInput'
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneAdjectives() {
-  const adjectives = useSceneStore((state) => state.adjectives)
-  const addAdjective = useSceneStore((state) => state.addAdjective)
-  const removeAdjective = useSceneStore((state) => state.removeAdjective)
+  // Using empty defaults since these properties no longer exist in the store
+  const adjectives: string[] = []
+  const addAdjective = (_value: string) => {}
+  const removeAdjective = (_index: number) => {}
   const [value, setValue] = useState('')
   const [showInput, setShowInput] = useState(false)
 

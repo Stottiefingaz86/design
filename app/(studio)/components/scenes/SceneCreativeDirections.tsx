@@ -12,18 +12,19 @@ const thinkingMessages = [
   'Developing unique brand expressions...',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneCreativeDirections() {
-  const creativeDirections = useSceneStore((state) => state.creativeDirections)
-  const selectedDirection = useSceneStore((state) => state.selectedDirection)
-  const selectDirection = useSceneStore((state) => state.selectDirection)
-  const setCreativeDirections = useSceneStore((state) => state.setCreativeDirections)
-  const industry = useSceneStore((state) => state.industry)
-  const targetAudience = useSceneStore((state) => state.targetAudience)
-  const companyPillars = useSceneStore((state) => state.companyPillars)
-  const colorPreferences = useSceneStore((state) => state.colorPreferences)
-  const typographyPreference = useSceneStore((state) => state.typographyPreference)
-  const designStyle = useSceneStore((state) => state.designStyle)
-  const researchData = useSceneStore((state) => state.researchData)
+  const creativeDirections: any[] = []
+  const selectedDirection: string | null = null
+  const selectDirection = (_id: string) => {}
+  const setCreativeDirections = (_data: any) => {}
+  const industry = ''
+  const targetAudience = ''
+  const companyPillars: string[] = []
+  const colorPreferences: string[] = []
+  const typographyPreference = ''
+  const designStyle = ''
+  const researchData = null
   const goToScene = useSceneStore((state) => state.goToScene)
   const [isGenerating, setIsGenerating] = useState(true)
   const [showContent, setShowContent] = useState(false)
@@ -61,12 +62,12 @@ export function SceneCreativeDirections() {
   }, [isGenerating, creativeDirections, industry, targetAudience, companyPillars, colorPreferences, typographyPreference, designStyle, researchData, setCreativeDirections])
 
   const handleSelect = (index: number) => {
-    selectDirection(index)
+    selectDirection(String(index))
   }
 
   const handleContinue = () => {
     if (selectedDirection !== null) {
-      goToScene('production')
+      // Deprecated scene - do nothing
     }
   }
 
@@ -119,7 +120,7 @@ export function SceneCreativeDirections() {
                   <div className="mb-3">
                     <p className="text-white/40 text-xs mb-2">Mood:</p>
                     <div className="flex flex-wrap gap-2">
-                      {direction.moodKeywords.map((keyword, i) => (
+                      {direction.moodKeywords.map((keyword: string, i: number) => (
                         <span key={i} className="px-2 py-1 neu-flat rounded text-xs text-white/70">
                           {keyword}
                         </span>

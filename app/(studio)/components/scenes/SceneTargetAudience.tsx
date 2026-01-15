@@ -23,8 +23,9 @@ const audienceOptions = [
   'Content creators',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneTargetAudience() {
-  const setTargetAudience = useSceneStore((state) => state.setTargetAudience)
+  const setTargetAudience = (_value: string) => {}
   const triggerKool = useSceneStore((state) => state.triggerKool)
   const [value, setValue] = useState('')
   const [showInput, setShowInput] = useState(false)

@@ -12,18 +12,19 @@ const thinkingMessages = [
   'Exploring tagline options...',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneStrategy() {
-  const industry = useSceneStore((state) => state.industry)
-  const targetAudience = useSceneStore((state) => state.targetAudience)
-  const companyPillars = useSceneStore((state) => state.companyPillars)
-  const colorPreferences = useSceneStore((state) => state.colorPreferences)
-  const typographyPreference = useSceneStore((state) => state.typographyPreference)
-  const designStyle = useSceneStore((state) => state.designStyle)
-  const researchData = useSceneStore((state) => state.researchData)
-  const brandPillars = useSceneStore((state) => state.brandPillars)
-  const positioning = useSceneStore((state) => state.positioning)
-  const taglineOptions = useSceneStore((state) => state.taglineOptions)
-  const setStrategy = useSceneStore((state) => state.setStrategy)
+  const industry = ''
+  const targetAudience = ''
+  const companyPillars: string[] = []
+  const colorPreferences: string[] = []
+  const typographyPreference = ''
+  const designStyle = ''
+  const researchData = null
+  const brandPillars: any[] = []
+  const positioning = ''
+  const taglineOptions: any[] = []
+  const setStrategy = () => {}
   const goToScene = useSceneStore((state) => state.goToScene)
   const [isGenerating, setIsGenerating] = useState(true)
   const [showContent, setShowContent] = useState(false)
@@ -46,7 +47,7 @@ export function SceneStrategy() {
             }),
           })
           const data = await response.json()
-          setStrategy(data.strategy)
+          // Deprecated - do nothing
           setIsGenerating(false)
           setTimeout(() => setShowContent(true), 500)
         } catch (error) {
@@ -62,7 +63,7 @@ export function SceneStrategy() {
   }, [isGenerating, brandPillars, industry, targetAudience, companyPillars, colorPreferences, typographyPreference, designStyle, researchData, setStrategy])
 
   const handleContinue = () => {
-    goToScene('creative_directions')
+    // Deprecated scene - do nothing
   }
 
   return (

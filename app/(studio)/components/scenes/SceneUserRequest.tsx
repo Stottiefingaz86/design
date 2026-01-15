@@ -81,13 +81,13 @@ export function SceneUserRequest() {
     setCurrentField(field)
   }
 
-  const handleSkip = (field: 'context' | 'goals' | 'useCases') => {
-    // Skip optional fields
-    if (field === 'context') {
+  const handleSkip = () => {
+    // Skip optional fields based on current field
+    if (currentField === 'context') {
       setCurrentField('goals')
-    } else if (field === 'goals') {
+    } else if (currentField === 'goals') {
       setCurrentField('useCases')
-    } else if (field === 'useCases') {
+    } else if (currentField === 'useCases') {
       // Done, move to next scene
       triggerKool()
       setTimeout(() => {
@@ -145,7 +145,7 @@ export function SceneUserRequest() {
     if (currentField === 'what') {
       setWhat(tag)
       // Auto-submit the tag
-      handleFieldSubmit(tag)
+      handleFieldSubmit('what', tag)
     }
   }
 
@@ -239,7 +239,7 @@ export function SceneUserRequest() {
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              onClick={() => handleSkip(field)}
+                onClick={handleSkip}
               className="text-white/40 text-xs font-light hover:text-white/60 transition-colors"
             >
               Skip

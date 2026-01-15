@@ -9,14 +9,12 @@ export function PixelMan() {
   const getPose = () => {
     switch (currentScene) {
       case 'intro':
+      case 'request_area':
+      case 'user_request':
+      case 'deadline':
+      case 'confirmation':
+      case 'delivering':
         return 'idle'
-      case 'brand_name':
-      case 'industry':
-      case 'target_audience':
-      case 'adjectives':
-        return 'talking'
-      case 'complete':
-        return 'celebrate'
       default:
         return 'idle'
     }
@@ -30,8 +28,6 @@ export function PixelMan() {
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ 
         opacity: 1, 
-        scale: 1, 
-        y: 0,
         scale: pose === 'celebrate' ? [1, 1.12, 1] : 1,
         y: pose === 'talking' ? [0, -6, 0] : 0,
       }}

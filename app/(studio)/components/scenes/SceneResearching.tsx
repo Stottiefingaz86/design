@@ -12,15 +12,16 @@ const thinkingMessages = [
   'Researching messaging patterns...',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneResearching() {
   const goToScene = useSceneStore((state) => state.goToScene)
-  const setResearchData = useSceneStore((state) => state.setResearchData)
-  const industry = useSceneStore((state) => state.industry)
-  const targetAudience = useSceneStore((state) => state.targetAudience)
-  const companyPillars = useSceneStore((state) => state.companyPillars)
-  const colorPreferences = useSceneStore((state) => state.colorPreferences)
-  const typographyPreference = useSceneStore((state) => state.typographyPreference)
-  const designStyle = useSceneStore((state) => state.designStyle)
+  const setResearchData = (_data: any) => {}
+  const industry = ''
+  const targetAudience = ''
+  const companyPillars: string[] = []
+  const colorPreferences: string[] = []
+  const typographyPreference = ''
+  const designStyle = ''
 
   useEffect(() => {
     const fetchResearch = async () => {
@@ -39,7 +40,7 @@ export function SceneResearching() {
         })
         const data = await response.json()
         setResearchData(data)
-        goToScene('research')
+        // Deprecated scene - do nothing
       } catch (error) {
         console.error('Research failed:', error)
       }

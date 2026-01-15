@@ -20,10 +20,11 @@ const suggestedPillars = [
   'Impact',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneCompanyPillars() {
-  const companyPillars = useSceneStore((state) => state.companyPillars)
-  const addCompanyPillar = useSceneStore((state) => state.addCompanyPillar)
-  const removeCompanyPillar = useSceneStore((state) => state.removeCompanyPillar)
+  const companyPillars: string[] = []
+  const addCompanyPillar = (_value: string) => {}
+  const removeCompanyPillar = (_index: number) => {}
   const goToScene = useSceneStore((state) => state.goToScene)
   const triggerKool = useSceneStore((state) => state.triggerKool)
   const [value, setValue] = useState('')
@@ -52,7 +53,7 @@ export function SceneCompanyPillars() {
 
   const handleContinue = () => {
     if (companyPillars.length >= 2) {
-      goToScene('color_preferences')
+      // Deprecated scene - do nothing
     }
   }
 

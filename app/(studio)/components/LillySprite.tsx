@@ -113,9 +113,7 @@ export function LillySprite() {
             width: 'auto',
             maxWidth: 'none',
             objectFit: 'contain',
-            imageRendering: 'pixelated',
-            imageRendering: '-moz-crisp-edges',
-            imageRendering: 'crisp-edges',
+            imageRendering: 'pixelated' as const,
             filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5))',
           }}
           key={spriteFile}

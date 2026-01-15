@@ -13,10 +13,11 @@ const designingMessages = [
   'Almost ready...',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneDelivery() {
   const requestArea = useSceneStore((state) => state.requestArea)
   const userRequest = useSceneStore((state) => state.userRequest)
-  const brandSystem = useSceneStore((state) => state.brandSystem)
+  const brandSystem = null
   const isDesigning = useSceneStore((state) => state.isDesigning)
   const setIsDesigning = useSceneStore((state) => state.setIsDesigning)
   const setIsWalkingOut = useSceneStore((state) => state.setIsWalkingOut)

@@ -20,8 +20,9 @@ const industries = [
   'Non-profit',
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneIndustry() {
-  const setIndustry = useSceneStore((state) => state.setIndustry)
+  const setIndustry = (_value: string) => {}
   const triggerKool = useSceneStore((state) => state.triggerKool)
   const [value, setValue] = useState('')
   const [showInput, setShowInput] = useState(false)

@@ -23,9 +23,10 @@ const typographyOptions = [
   { name: 'Handwritten', font: 'Georgia, serif', description: 'Personal, authentic, human', weight: 'normal', style: 'italic' },
 ]
 
+// DEPRECATED: This component is from the old brand book flow and is not currently used
 export function SceneTypography() {
-  const typographyPreference = useSceneStore((state) => state.typographyPreference)
-  const setTypographyPreference = useSceneStore((state) => state.setTypographyPreference)
+  const typographyPreference = ''
+  const setTypographyPreference = (_value: string) => {}
   const goToScene = useSceneStore((state) => state.goToScene)
   const triggerKool = useSceneStore((state) => state.triggerKool)
 
@@ -36,7 +37,7 @@ export function SceneTypography() {
 
   const handleContinue = () => {
     if (typographyPreference) {
-      goToScene('design_style')
+      // Deprecated scene - do nothing
     }
   }
 
