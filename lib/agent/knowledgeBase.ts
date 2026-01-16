@@ -189,6 +189,12 @@ export const knowledgeBase: KnowledgeBase = {
       contains: ['Color tokens', 'Typography', 'Spacing', 'Components', 'Design patterns', 'Brand configurations', 'Logos'],
     },
     {
+      name: 'My Account / Dashboard - MUI ADS',
+      url: 'https://www.figma.com/design/jkFY1lvE3eWzXZJvMVYMFe/1.-My-Account--Dashboard----MUI-ADS',
+      description: 'My Account and Dashboard designs using the MUI Agnostic Design System',
+      contains: ['Dashboard components', 'Account management UI', 'User interface patterns', 'MUI ADS components'],
+    },
+    {
       name: 'BetOnline BrandBook - Toolkit',
       url: 'https://www.figma.com/design/X4KXaJZSN23sQJHYhZlT7N/BetOnline_BrandBook---Toolkit',
       description: 'BetOnline brand book toolkit with comprehensive brand guidelines, colors, typography, spacing, and product-focused design tokens',
