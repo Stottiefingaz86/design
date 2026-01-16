@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 import { ChatInput } from '../ChatInput'
-import { KanbanBoard } from '../KanbanBoard'
+import { WIPOverlay } from '../WIPOverlay'
 
 const deadlineOptions = [
   'ASAP',
@@ -21,31 +21,30 @@ export function SceneDeadline() {
   const triggerKool = useSceneStore((state) => state.triggerKool)
   const requestArea = useSceneStore((state) => state.requestArea)
   const assignedDesigner = useSceneStore((state) => state.assignedDesigner)
+  const userRequest = useSceneStore((state) => state.userRequest)
+  const previousScene = useSceneStore((state) => state.previousScene)
   const [showOptions, setShowOptions] = useState(false)
   const [customDeadline, setCustomDeadline] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
-  const [showKanban, setShowKanban] = useState(false)
+  const [showWIPOverlay, setShowWIPOverlay] = useState(false)
   
-  // Show kanban if Lilly is assigned (Casino/Loyalty)
-  // Determine designer based on area immediately (not waiting for deadline selection)
-  useEffect(() => {
+  // Determine designer based on area
+  const getDesigner = () => {
     const area = requestArea.toLowerCase()
-    // Auto-determine designer based on area (same logic as in setDeadline)
-    let designer: string | null = null
     if (area === 'casino' || area === 'loyalty') {
-      designer = 'Lilly'
+      return 'Lilly'
     } else if (area === 'sports') {
-      designer = 'Sam'
+      return 'Sam'
     } else if (area === 'authentication' || area === 'auth') {
-      designer = 'Nek'
+      return 'Nek'
     } else if (area === 'poker') {
-      designer = 'Victor'
+      return 'Victor'
     }
-    
-    // Show kanban for Lilly (Casino/Loyalty)
-    const shouldShowKanban = (designer === 'Lilly' || assignedDesigner === 'Lilly')
-    setShowKanban(shouldShowKanban)
-  }, [requestArea, assignedDesigner])
+    return assignedDesigner
+  }
+
+  const currentDesigner = getDesigner()
+  const showWIPButton = currentDesigner === 'Lilly' || assignedDesigner === 'Lilly'
 
   useEffect(() => {
     const timer = setTimeout(() => setShowOptions(true), 500)
@@ -69,35 +68,57 @@ export function SceneDeadline() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
+      {/* Back Button */}
+      <div className="p-4 md:p-6 pb-2">
+        <motion.button
+          onClick={() => previousScene()}
+          className="flex items-center gap-2 text-white/60 hover:text-white/90 transition-colors group"
+          whileHover={{ x: -2 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-1 transition-transform">
+            <path d="M12 4l-6 6 6 6" />
+          </svg>
+          <span className="text-sm font-light">Back</span>
+        </motion.button>
+      </div>
+
       {/* Question */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <h2 className="text-white text-2xl font-bold mb-2 sf-title">when do you need this?</h2>
-        <p className="text-white/50 text-sm font-light mb-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-0">
+        <h2 className="text-white text-xl md:text-2xl font-bold mb-2 sf-title">when do you need this?</h2>
+        <p className="text-white/50 text-xs md:text-sm font-light mb-4 md:mb-6">
           Help us prioritize your request
         </p>
 
-        {/* Kanban Board - Show if Lilly is assigned */}
-        {showKanban && showOptions && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            transition={{ duration: 0.3 }}
-            className="mb-6 pb-6 border-b border-white/5"
+        {/* WIP Button - Show if Lilly is assigned */}
+        {showWIPButton && showOptions && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            onClick={() => setShowWIPOverlay(true)}
+            className="w-full neu-soft rounded-xl p-4 text-left mb-4 hover:neu-inset hover:ring-2 hover:ring-white/20 transition-all group"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <KanbanBoard 
-              designer={assignedDesigner || 'Lilly'}
-              onItemClick={(item) => {
-                // Optional: Handle item click (e.g., show details)
-                console.log('Clicked item:', item)
-              }}
-            />
-          </motion.div>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-white text-base font-medium mb-1">see what lilly is currently working on</div>
+                <div className="text-white/40 text-xs">View and reprioritize {currentDesigner}'s work</div>
+              </div>
+              <div className="text-white/30 group-hover:text-white/60 transition-colors">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 4l6 6-6 6" />
+                </svg>
+              </div>
+            </div>
+          </motion.button>
         )}
 
         {/* Options */}
         {showOptions && (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {deadlineOptions.map((option, index) => (
               <motion.button
                 key={option}
@@ -105,15 +126,15 @@ export function SceneDeadline() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => handleSelectDeadline(option)}
-                className={`w-full neu-soft rounded-xl p-4 text-left transition-all ${
+                className={`w-full neu-soft rounded-xl p-3 md:p-4 text-left transition-all ${
                   deadline === option
                     ? 'ring-2 ring-white/50 neu-inset'
-                    : 'hover:neu-inset hover:ring-2 hover:ring-white/20'
+                    : 'hover:neu-inset hover:ring-2 hover:ring-white/20 active:neu-inset'
                 }`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-white text-lg font-light">{option}</span>
+                <span className="text-white text-base md:text-lg font-light">{option}</span>
               </motion.button>
             ))}
             <motion.button
@@ -147,6 +168,24 @@ export function SceneDeadline() {
           />
         </div>
       )}
+
+      {/* WIP Overlay */}
+      <WIPOverlay
+        isOpen={showWIPOverlay}
+        onClose={() => setShowWIPOverlay(false)}
+        designer={currentDesigner}
+        currentRequest={
+          requestArea && userRequest.what
+            ? {
+                area: requestArea,
+                what: userRequest.what,
+                deadline: deadline || 'Not set',
+                priority: deadline === 'ASAP' ? 'high' : deadline === 'This week' ? 'high' : 'medium',
+                status: 'todo', // New requests start as todo
+              }
+            : undefined
+        }
+      />
     </div>
   )
 }

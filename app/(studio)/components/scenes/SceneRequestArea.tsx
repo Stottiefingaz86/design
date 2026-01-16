@@ -44,17 +44,17 @@ export function SceneRequestArea() {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
       {/* Question */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <h2 className="text-white text-2xl font-bold mb-2 sf-title">which area are you requesting?</h2>
-        <p className="text-white/50 text-sm font-light mb-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <h2 className="text-white text-xl md:text-2xl font-bold mb-2 sf-title">which area are you requesting?</h2>
+        <p className="text-white/50 text-xs md:text-sm font-light mb-4 md:mb-6">
           Select the area you need design work for
         </p>
 
         {/* Options */}
         {showOptions && (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {areaOptions.map((area, index) => (
               <motion.button
                 key={area}
@@ -62,15 +62,15 @@ export function SceneRequestArea() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 onClick={() => handleSelectArea(area)}
-                className={`w-full neu-soft rounded-xl p-4 text-left transition-all ${
+                className={`w-full neu-soft rounded-xl p-3 md:p-4 text-left transition-all ${
                   requestArea === area
                     ? 'ring-2 ring-white/50 neu-inset'
-                    : 'hover:neu-inset hover:ring-2 hover:ring-white/20'
+                    : 'hover:neu-inset hover:ring-2 hover:ring-white/20 active:neu-inset'
                 }`}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <span className="text-white text-lg font-light">{area}</span>
+                <span className="text-white text-base md:text-lg font-light">{area}</span>
               </motion.button>
             ))}
           </div>

@@ -15,8 +15,15 @@ export interface WIPItem {
 }
 
 interface KanbanBoardProps {
-  designer: string
+  designer: string | null
   onItemClick?: (item: WIPItem) => void
+  currentRequest?: {
+    area: string
+    what: string
+    deadline: string
+    priority: 'high' | 'medium' | 'low'
+    status: 'todo' | 'in_progress' | 'done'
+  }
 }
 
 const columns = [
@@ -25,27 +32,54 @@ const columns = [
   { id: 'done', label: 'Done', color: 'white/5' },
 ]
 
-export function KanbanBoard({ designer, onItemClick }: KanbanBoardProps) {
+export function KanbanBoard({ designer, onItemClick, currentRequest }: KanbanBoardProps) {
   const [items, setItems] = useState<WIPItem[]>([])
   const [loading, setLoading] = useState(true)
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchWIP()
-  }, [designer])
-
   const fetchWIP = async () => {
+    if (!designer) {
+      setLoading(false)
+      setItems([])
+      return
+    }
+    
     try {
       setLoading(true)
       const response = await fetch(`/api/wip?designer=${designer}`)
       const data = await response.json()
-      setItems(data.items || [])
+      let fetchedItems = data.items || []
+      
+      // Add current request to the items if provided
+      if (currentRequest && currentRequest.what) {
+        const currentItem: WIPItem = {
+          id: 'current-request',
+          title: currentRequest.what,
+          area: currentRequest.area,
+          deadline: currentRequest.deadline,
+          priority: currentRequest.priority,
+          status: currentRequest.status,
+          createdAt: new Date().toISOString().split('T')[0],
+          what: currentRequest.what,
+        }
+        // Add current request to the beginning of the list
+        fetchedItems = [currentItem, ...fetchedItems]
+      }
+      
+      setItems(fetchedItems)
     } catch (error) {
       console.error('Failed to fetch WIP:', error)
+      setItems([])
     } finally {
       setLoading(false)
     }
   }
+  
+  // Fetch WIP when designer or currentRequest changes
+  useEffect(() => {
+    fetchWIP()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [designer, currentRequest])
 
   const handlePriorityChange = async (itemId: string, newPriority: 'high' | 'medium' | 'low') => {
     const item = items.find(i => i.id === itemId)
@@ -172,12 +206,17 @@ export function KanbanBoard({ designer, onItemClick }: KanbanBoardProps) {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    draggable
+                    draggable={item.id !== 'current-request'}
                     onDragStart={() => setDraggedItem(item.id)}
                     onDragEnd={() => setDraggedItem(null)}
                     onClick={() => onItemClick?.(item)}
-                    className={`neu-soft rounded-lg p-3 cursor-move hover:neu-inset transition-all border ${getPriorityColor(item.priority)}`}
+                    className={`neu-soft rounded-lg p-3 ${item.id === 'current-request' ? 'cursor-default ring-2 ring-white/30' : 'cursor-move'} hover:neu-inset transition-all border ${getPriorityColor(item.priority)}`}
                   >
+                    {item.id === 'current-request' && (
+                      <div className="text-[10px] text-white/60 uppercase tracking-wider mb-1 pb-1 border-b border-white/10">
+                        This Request
+                      </div>
+                    )}
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1 min-w-0">
                         <div className="text-white text-xs font-medium truncate mb-1">

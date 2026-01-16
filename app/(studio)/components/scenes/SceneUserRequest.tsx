@@ -253,7 +253,7 @@ export function SceneUserRequest() {
   return (
     <div className="h-full flex flex-col">
       {/* Progress indicator */}
-      <div className="p-6 pb-4">
+      <div className="p-4 md:p-6 pb-4">
         <div className="flex gap-2 mb-4">
           {['what', 'why', 'context', 'goals', 'useCases'].map((field) => {
             const fieldKey = field as 'what' | 'why' | 'context' | 'goals' | 'useCases'
@@ -277,14 +277,14 @@ export function SceneUserRequest() {
       </div>
 
       {/* Questions with individual inputs - show one at a time */}
-      <div className="flex-1 overflow-y-auto px-6">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6">
         {/* Show completed fields as summary cards */}
         {what && currentField !== 'what' && (
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => handleFieldEdit('what')}
-            className="neu-soft rounded-xl p-4 mb-4 cursor-pointer hover:neu-inset transition-all"
+            className="neu-soft rounded-xl p-3 md:p-4 mb-3 md:mb-4 cursor-pointer hover:neu-inset active:neu-inset transition-all"
           >
             <p className="text-white/40 text-xs uppercase tracking-wider mb-1">What</p>
             <p className="text-white/80 text-sm font-light">{what}</p>
@@ -295,7 +295,7 @@ export function SceneUserRequest() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => handleFieldEdit('why')}
-            className="neu-soft rounded-xl p-4 mb-4 cursor-pointer hover:neu-inset transition-all"
+            className="neu-soft rounded-xl p-3 md:p-4 mb-3 md:mb-4 cursor-pointer hover:neu-inset active:neu-inset transition-all"
           >
             <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Why</p>
             <p className="text-white/80 text-sm font-light">{why}</p>
@@ -306,7 +306,7 @@ export function SceneUserRequest() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => handleFieldEdit('context')}
-            className="neu-soft rounded-xl p-4 mb-4 cursor-pointer hover:neu-inset transition-all"
+            className="neu-soft rounded-xl p-3 md:p-4 mb-3 md:mb-4 cursor-pointer hover:neu-inset active:neu-inset transition-all"
           >
             <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Context</p>
             <p className="text-white/80 text-sm font-light">{context}</p>
@@ -317,7 +317,7 @@ export function SceneUserRequest() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => handleFieldEdit('goals')}
-            className="neu-soft rounded-xl p-4 mb-4 cursor-pointer hover:neu-inset transition-all"
+            className="neu-soft rounded-xl p-3 md:p-4 mb-3 md:mb-4 cursor-pointer hover:neu-inset active:neu-inset transition-all"
           >
             <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Goals</p>
             <p className="text-white/80 text-sm font-light">{goals}</p>
@@ -328,7 +328,7 @@ export function SceneUserRequest() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => handleFieldEdit('useCases')}
-            className="neu-soft rounded-xl p-4 mb-4 cursor-pointer hover:neu-inset transition-all"
+            className="neu-soft rounded-xl p-3 md:p-4 mb-3 md:mb-4 cursor-pointer hover:neu-inset active:neu-inset transition-all"
           >
             <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Use Cases</p>
             <p className="text-white/80 text-sm font-light">{useCases}</p>

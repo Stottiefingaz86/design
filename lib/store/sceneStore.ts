@@ -40,6 +40,7 @@ interface SceneState {
   setShowLilly: (show: boolean) => void
   goToScene: (scene: Scene) => void
   nextScene: () => void
+  previousScene: () => void
   reset: () => void
 }
 
@@ -131,6 +132,16 @@ export const useSceneStore = create<SceneState>((set, get) => ({
     if (briefingIndex >= 0 && briefingIndex < briefingScenes.length - 1) {
       const nextScene = briefingScenes[briefingIndex + 1]
       set({ currentScene: nextScene })
+    }
+  },
+  
+  previousScene: () => {
+    const current = get().currentScene
+    const allScenes: Scene[] = ['intro', 'request_area', 'user_request', 'deadline', 'confirmation', 'delivering']
+    const currentIndex = allScenes.indexOf(current)
+    if (currentIndex > 0) {
+      const previousScene = allScenes[currentIndex - 1]
+      set({ currentScene: previousScene })
     }
   },
   
