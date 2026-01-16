@@ -49,9 +49,16 @@ export async function scrapeJurniiReport(
         },
       })
       
-      // Extract cookies from login page response
-      const setCookieHeaders = loginPageResponse.headers.getSetCookie?.() || []
-      cookies = setCookieHeaders.join('; ')
+      // Extract cookies from login page response (compatible with Node.js and Vercel)
+      const setCookieHeader = loginPageResponse.headers.get('set-cookie')
+      if (setCookieHeader) {
+        // Handle both single string and array of strings
+        const cookieArray = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader]
+        // Extract cookie name=value pairs (before semicolon)
+        cookies = cookieArray
+          .map(cookie => cookie.split(';')[0].trim())
+          .join('; ')
+      }
       
       // Step 2: POST to login endpoint
       const loginResponse = await fetch('https://app.jurnii.io/api/auth/login', {
@@ -70,10 +77,22 @@ export async function scrapeJurniiReport(
         redirect: 'follow',
       })
       
-      // Extract cookies from login response
-      const loginCookies = loginResponse.headers.getSetCookie?.() || []
-      if (loginCookies.length > 0) {
-        cookies = loginCookies.join('; ')
+      // Extract cookies from login response (compatible with Node.js and Vercel)
+      const loginCookieHeader = loginResponse.headers.get('set-cookie')
+      if (loginCookieHeader) {
+        // Handle both single string and array of strings
+        const cookieArray = Array.isArray(loginCookieHeader) ? loginCookieHeader : [loginCookieHeader]
+        // Extract cookie name=value pairs (before semicolon)
+        const newCookies = cookieArray
+          .map(cookie => cookie.split(';')[0].trim())
+          .join('; ')
+        
+        // Merge with existing cookies
+        if (cookies) {
+          cookies = `${cookies}; ${newCookies}`
+        } else {
+          cookies = newCookies
+        }
       }
       
       // Check if login was successful

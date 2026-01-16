@@ -83,6 +83,45 @@ If the HTML structure is complex, the system uses OpenAI to:
 
 This requires `OPENAI_API_KEY` to be set (which you already have for the chat feature).
 
+## Production Considerations
+
+### Will This Work in Production (Vercel)?
+
+**Yes, but you need to:**
+
+1. **Set Environment Variables in Vercel** (required)
+   - `JURNII_EMAIL` - Your Jurnii email
+   - `JURNII_PASSWORD` - Your Jurnii password
+   - `OPENAI_API_KEY` - For AI parsing (already set for chat)
+
+2. **Redeploy After Adding Variables**
+   - Environment variables only apply to new deployments
+   - Go to Deployments → Redeploy
+
+3. **Check Vercel Function Logs**
+   - If authentication fails, check the logs for specific errors
+   - The login endpoint might need adjustment based on Jurnii's actual API
+
+### Potential Production Issues
+
+1. **Cookie Handling**
+   - ✅ Fixed: Uses standard `headers.get('set-cookie')` compatible with Vercel
+   - Works in both local and production environments
+
+2. **Serverless Function Timeout**
+   - Vercel functions have a 10s timeout (Hobby) or 60s (Pro)
+   - If Jurnii is slow, the request might timeout
+   - Solution: Consider using a background job or increasing timeout
+
+3. **Authentication Endpoint**
+   - The login endpoint (`/api/auth/login`) might be different
+   - Check Vercel logs if authentication fails
+   - May need to adjust based on Jurnii's actual API structure
+
+4. **Rate Limiting**
+   - Jurnii might rate limit authentication attempts
+   - If you see 429 errors, add retry logic or delays
+
 ## Troubleshooting
 
 ### "Credentials not configured"
@@ -90,25 +129,33 @@ This requires `OPENAI_API_KEY` to be set (which you already have for the chat fe
 - Make sure `JURNII_EMAIL` and `JURNII_PASSWORD` are set in environment variables
 - For local: Check `.env.local` file
 - For Vercel: Check Settings → Environment Variables
-- Redeploy after adding variables
+- **Redeploy after adding variables** (important!)
 
 ### "Authentication failed"
 
 - Verify your Jurnii credentials are correct
+- Check Vercel function logs for the exact error
+- The login endpoint might be different (check logs)
 - Check if Jurnii requires 2FA (may need additional handling)
-- Check Vercel logs for detailed error messages
 
 ### "Failed to extract data"
 
 - The HTML structure may have changed
 - Try using manual input instead
 - Check Vercel logs for parsing errors
+- Verify `OPENAI_API_KEY` is set for AI parsing
 
 ### "AI parsing failed"
 
-- Make sure `OPENAI_API_KEY` is set
+- Make sure `OPENAI_API_KEY` is set in Vercel
 - Check OpenAI API quota/limits
 - Try manual input as fallback
+
+### "Function timeout"
+
+- Jurnii might be slow to respond
+- Check Vercel function execution time in logs
+- Consider upgrading to Pro plan for longer timeouts
 
 ## Security Best Practices
 
