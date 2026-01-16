@@ -19,8 +19,18 @@ export async function POST(request: Request) {
 
     const apiKey = process.env.OPENAI_API_KEY
 
-    // Check if user wants to generate an image
-    const shouldGenerateImage = generateImage || message.toLowerCase().includes('generate') || message.toLowerCase().includes('create image') || message.toLowerCase().includes('make a mockup')
+    // Check if user wants to generate an image/mockup
+    const lowerMessage = message.toLowerCase()
+    const shouldGenerateImage = 
+      generateImage || 
+      lowerMessage.includes('generate') || 
+      lowerMessage.includes('create image') || 
+      lowerMessage.includes('make a mockup') ||
+      lowerMessage.includes('create mockup') ||
+      lowerMessage.includes('show me a mockup') ||
+      lowerMessage.includes('design a mockup') ||
+      lowerMessage.includes('mockup for') ||
+      (lowerMessage.includes('mockup') && (lowerMessage.includes('create') || lowerMessage.includes('make') || lowerMessage.includes('generate')))
 
     // Use OpenAI if available and API key is set
     if (apiKey) {
@@ -33,9 +43,54 @@ export async function POST(request: Request) {
         // Build system prompt with comprehensive knowledge base
         const systemPrompt = buildSystemPrompt()
 
-        // Handle image generation
+        // Handle image generation - improved with design system knowledge
         if (shouldGenerateImage) {
-          const imagePrompt = `Create a design mockup for an online gambling website. ${message}. Use our brand colors: betRed (#ee3536), betGreen (#8ac500), betNavy (#2d6f88). Design should be modern, professional, and follow online gambling industry best practices.`
+          // Build a better prompt using design system knowledge
+          const lowerMessage = message.toLowerCase()
+          
+          // Detect brand from message
+          let brandColors = 'betRed (#ee3536), betGreen (#8ac500), betNavy (#2d6f88)'
+          let brandName = 'BetOnline'
+          
+          if (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino')) {
+            brandColors = 'WildNeonGreen 2 (#6cea75), grey-900, grey-800'
+            brandName = 'Wild Casino'
+          } else if (lowerMessage.includes('tiger') || lowerMessage.includes('tigergaming')) {
+            brandColors = 'TigerOrange (#f48e1b), TigerCharcoal (#2d2e2c)'
+            brandName = 'Tiger Gaming'
+          } else if (lowerMessage.includes('lowvig')) {
+            brandColors = 'LowCyan (#00e4f2), LowBrightBlue (#0075ff), LowDeepBlue (#01153d)'
+            brandName = 'LowVig'
+          } else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) {
+            brandColors = 'betRed (#ee3536), SbBlue/600 (#0087f6), SbYellow/300 (#fcd54c)'
+            brandName = 'Sportsbook'
+          }
+          
+          // Detect area/component type
+          let componentType = 'general interface'
+          if (lowerMessage.includes('casino')) componentType = 'casino gaming interface with game tiles'
+          if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) componentType = 'sportsbook interface with betting odds and event cards'
+          if (lowerMessage.includes('dashboard') || lowerMessage.includes('account')) componentType = 'user dashboard and account management interface'
+          if (lowerMessage.includes('navigation') || lowerMessage.includes('header')) componentType = 'navigation header and menu system'
+          if (lowerMessage.includes('button')) componentType = 'button components and CTAs'
+          if (lowerMessage.includes('card')) componentType = 'card components and layouts'
+          
+          const imagePrompt = `Create a professional, modern design mockup for a ${brandName} online gambling website ${componentType}. 
+
+Design Requirements:
+- Use brand colors: ${brandColors}
+- Follow Material UI design principles (MUI v5.15.0)
+- Modern, clean, professional interface
+- High contrast for accessibility
+- Responsive design patterns
+- Use Inter and Open Sans fonts
+- Follow online gambling industry best practices
+- Include proper spacing (4px base unit, 16px gutters, 24px margins)
+- Use elevation/shadows for depth (elevation/2, elevation/4)
+
+User Request: ${message}
+
+Create a realistic, production-ready UI mockup that showcases the design system components and brand identity.`
           
           const imageResponse = await openai.images.generate({
             model: 'dall-e-3',
@@ -48,9 +103,10 @@ export async function POST(request: Request) {
           const generatedImageUrl = imageResponse.data?.[0]?.url
 
           return NextResponse.json({
-            response: `I've generated a design mockup based on your request. Here's the image:\n\n${message}`,
+            response: `I've generated a design mockup for ${brandName} based on your request. The mockup uses our design system colors (${brandColors}) and follows MUI design principles.\n\n**Design System Elements Used:**\n- Brand: ${brandName}\n- Component Type: ${componentType}\n- Colors: ${brandColors}\n- Framework: Material UI v5.15.0\n\nHere's the generated mockup:`,
             generatedImage: generatedImageUrl || undefined,
             timestamp: new Date().toISOString(),
+            usingAI: true,
           })
         }
 
@@ -179,7 +235,7 @@ YOUR EXPERTISE:
 - Team structure and stakeholder roles
 - Multi-brand design (Casino, Sports, Loyalty, Authentication, Poker)
 - Image analysis: You can analyze screenshots and design images to provide feedback
-- Image generation: You can generate design mockups using DALL-E based on our design system
+- Image generation: You can generate design mockups using DALL-E based on our design system. When users ask for mockups (e.g., "create a mockup", "generate a mockup", "make a mockup", "show me a mockup for [component]"), you will automatically generate visual mockups using our brand colors, typography, and design system components
 
 Your personality: Direct, helpful, slightly casual but professional. You're the design expert who knows everything about the system, team, and processes. You provide actionable advice and creative ideas based on our brand and design system knowledge. You can make reasonable inferences from the design system and brand guidelines to answer questions about communication, tone, and brand approach.
 
@@ -238,7 +294,12 @@ Example response for mockup ideas:
 - Spacing: 24px margin, 16px padding
 - Border radius: 8px (medium)
 - Elevation: elevation/2 for card shadow
-- Grid: 12-column layout with 16px gutters"
+- Grid: 12-column layout with 16px gutters
+
+Would you like me to generate a visual mockup? Just say 'create a mockup' or 'generate a mockup' and I'll create one using DALL-E based on our design system."
+
+Example response when user asks for a mockup:
+"I'll generate a design mockup for you using our design system. The mockup will use our brand colors, typography, spacing, and component patterns. Generating now..."
 
 Example response for design advice:
 "Based on our design system and brand guidelines, here's my recommendation:
