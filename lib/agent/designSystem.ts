@@ -235,7 +235,6 @@ export const colorTokenMap: { [tokenName: string]: { hex: string; description?: 
   'text/tertiary': { hex: '#555e68', description: 'Tertiary text color' },
   'text/icon': { hex: '#636b74', description: 'Icon text color' },
   'text/disabled': { hex: '#00000073', description: 'Disabled text color' },
-  'text/white Primary': { hex: '#ffffffde', description: 'White primary text' },
   
   // Common colors
   'common/white': { hex: '#ffffff', description: 'White' },
@@ -441,10 +440,7 @@ export const colorTokenMap: { [tokenName: string]: { hex: string; description?: 
   'www.betonline.ag/Golden Tainoi': { hex: '#FECD55', description: 'BetOnline golden tainoi' },
   'www.betonline.ag/Tree Poppy': { hex: '#F7941E', description: 'BetOnline tree poppy' },
   'www.betonline.ag/Pomegranate': { hex: '#EE3536', description: 'BetOnline pomegranate' },
-  'TigerCharcoal/800': { hex: '#4f504e', description: 'Tiger Gaming charcoal 800' },
-  'TigerCharcoal/900': { hex: '#2d2e2c', description: 'Tiger Gaming charcoal 900' },
   'TigerOrange/500': { hex: '#f8991d', description: 'Tiger Gaming orange 500' },
-  'TigerOrange/700': { hex: '#ed7e18', description: 'Tiger Gaming orange 700' },
   'Banner color 3': { hex: '#dac96d', description: 'BetOnline banner color 3' },
   'Banner color 4': { hex: '#554906', description: 'BetOnline banner color 4' },
   'Banner Color 2': { hex: '#c4af3e', description: 'BetOnline banner color 2' },
@@ -806,16 +802,6 @@ export const designSystem: DesignSystemInfo = {
         description: 'BetOnline text single, bold weight, 16px',
       },
       // BetOnline Toolkit - Desktop Typography (Product-focused)
-      'Desktop/Heading/Bold/H1 40px': {
-        fontFamily: 'Open Sans',
-        fontWeight: '700',
-        fontSize: '40px',
-        lineHeight: '1.32',
-        letterSpacing: '0',
-        textDecoration: 'none',
-        textCase: 'none',
-        description: 'BetOnline desktop H1, bold, 40px',
-      },
       'Desktop/Heading/Bold/H2 36px': {
         fontFamily: 'Open Sans',
         fontWeight: '700',
@@ -1130,32 +1116,13 @@ export const designSystem: DesignSystemInfo = {
       gutter: 16,
       margin: 24,
     },
-    // BetOnline brand book specific spacing tokens
-    betOnlineTokens: {
-      '1': '8px', // Toolkit token
-      '2': '2px',
-      '3': '24px', // Toolkit token
-      '4': '4px',
-      '5': '40px', // Toolkit token
-      '6': '48px', // Toolkit token
-      '7': '7px',
-      '8': '64px', // Toolkit token
-      '9': '72px', // Toolkit token
-      '10': '80px', // Toolkit token
-      '12': '12px',
-      '16': '16px',
-      '32': '32px',
-      '56': '56px',
-      '96': '96px',
-    },
   },
   
   // Border radius tokens
   borderRadius: {
     none: '0',
     sm: '4px', // borderRadius-1
-    'borderRadius-2': '8px', // BetOnline brand book token
-    md: '8px',
+    md: '8px', // borderRadius-2, BetOnline brand book token
     lg: '12px',
     xl: '16px',
     full: '9999px',

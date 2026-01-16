@@ -44,11 +44,11 @@ export async function POST(request: Request) {
             quality: 'standard',
           })
 
-          const generatedImageUrl = imageResponse.data[0]?.url
+          const generatedImageUrl = imageResponse.data?.[0]?.url
 
           return NextResponse.json({
             response: `I've generated a design mockup based on your request. Here's the image:\n\n${message}`,
-            generatedImage: generatedImageUrl,
+            generatedImage: generatedImageUrl || undefined,
             timestamp: new Date().toISOString(),
           })
         }

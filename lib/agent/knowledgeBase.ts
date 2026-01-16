@@ -41,7 +41,7 @@ export interface LogoVariant {
   brand: string
   type: 'Wordmark' | 'Lettermark' | 'Icon'
   color: 'Primary' | 'Primary Reversed' | 'White' | 'Black' | 'VIP Primary' | 'VIP Secondary' | 'VIP Reversed' | 'Default'
-  mode?: 'Light Mode' | 'Dark Mode'
+  mode?: 'Light Mode' | 'Dark Mode' | 'VIP'
   size?: 'small' | 'large'
   style?: 'Full Color' | 'Monochromatic' | 'VIP'
   description?: string
@@ -56,6 +56,23 @@ export interface LogoSpecs {
   clearSpace?: string
   usage?: string[]
   variants: LogoVariant[]
+}
+
+export interface BrandGuidelines {
+  toneOfVoice: {
+    principles: string[]
+    do: string[]
+    dont: string[]
+    examples: string[]
+  }
+  communicationWithCustomers: {
+    approach: string
+    principles: string[]
+    channels: string[]
+    whenToEscalate: string[]
+  }
+  brandValues: string[]
+  designPrinciples: string[]
 }
 
 export interface KnowledgeBase {
