@@ -57,6 +57,27 @@ After redeploying, check the Vercel function logs:
    - Look for errors in the function logs
    - Check if the API key is being read (should see environment check logs)
 
+## Mattermost Integration
+
+To enable Mattermost notifications when design requests are submitted:
+
+1. **Get your Mattermost webhook URL**
+   - In Mattermost, go to Integrations → Incoming Webhooks
+   - Create a new webhook or use an existing one
+   - Copy the webhook URL
+
+2. **Add to Vercel Environment Variables**
+   - Go to your Vercel project → Settings → Environment Variables
+   - Add:
+     - **Name:** `MATTERMOST_WEBHOOK_URL`
+     - **Value:** Your Mattermost webhook URL (e.g., `https://your-mattermost.com/hooks/xxxxx`)
+     - **Environment:** Production, Preview, Development
+
+3. **Redeploy**
+   - After adding the variable, redeploy your project
+
+When a design request is submitted, it will automatically send a formatted notification to your Mattermost channel with all the request details.
+
 ## Fallback Mode
 
 If the API key is not set, the chat will use a fallback design system knowledge base. This is less comprehensive than the AI responses but should still answer basic questions about:

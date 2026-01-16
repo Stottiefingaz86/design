@@ -5,36 +5,103 @@ export async function POST(request: Request) {
   const { requestArea, userRequest, deadline, assignedDesigner } = body
 
   try {
-    // TODO: Integrate with Mattermost and Craft.io APIs
-    // For now, this is a mock implementation
-    
-    // Mock Mattermost notification
-    const mattermostPayload = {
-      text: `🎨 New Design Request`,
-      attachments: [
-        {
-          color: '#7B68EE',
-          fields: [
-            { title: 'Area', value: requestArea, short: true },
-            { title: 'Deadline', value: deadline, short: true },
-            { title: 'Assigned To', value: assignedDesigner || 'CH (Head of Design)', short: true },
-            { title: 'What', value: userRequest.what, short: false },
-            { title: 'Why', value: userRequest.why, short: false },
-            ...(userRequest.context ? [{ title: 'Context', value: userRequest.context, short: false }] : []),
-            ...(userRequest.goals ? [{ title: 'Goals', value: userRequest.goals, short: false }] : []),
-            ...(userRequest.useCases ? [{ title: 'Use Cases', value: userRequest.useCases, short: false }] : []),
-          ],
-        },
-      ],
+    const results = {
+      mattermost: { sent: false, error: null as string | null },
+      craft: { sent: false, error: null as string | null },
     }
 
-    // Mock Craft.io integration
+    // Mattermost webhook integration
+    const mattermostWebhookUrl = process.env.MATTERMOST_WEBHOOK_URL
+    
+    if (mattermostWebhookUrl) {
+      try {
+        // Format Mattermost message with rich formatting
+        const mattermostPayload = {
+          text: `🎨 **New Design Request**`,
+          attachments: [
+            {
+              color: '#7B68EE',
+              title: `Design Request: ${requestArea}`,
+              fields: [
+                { 
+                  title: 'Area', 
+                  value: requestArea, 
+                  short: true 
+                },
+                { 
+                  title: 'Deadline', 
+                  value: deadline, 
+                  short: true 
+                },
+                { 
+                  title: 'Assigned To', 
+                  value: assignedDesigner || 'CH (Head of Design)', 
+                  short: true 
+                },
+                { 
+                  title: 'What', 
+                  value: userRequest.what || 'N/A', 
+                  short: false 
+                },
+                { 
+                  title: 'Why', 
+                  value: userRequest.why || 'N/A', 
+                  short: false 
+                },
+                ...(userRequest.context ? [{ 
+                  title: 'Context', 
+                  value: userRequest.context.substring(0, 1000), // Limit length
+                  short: false 
+                }] : []),
+                ...(userRequest.goals ? [{ 
+                  title: 'Goals', 
+                  value: userRequest.goals.substring(0, 1000),
+                  short: false 
+                }] : []),
+                ...(userRequest.useCases ? [{ 
+                  title: 'Use Cases', 
+                  value: userRequest.useCases.substring(0, 1000),
+                  short: false 
+                }] : []),
+              ],
+              footer: 'Design Request App',
+              ts: Math.floor(Date.now() / 1000),
+            },
+          ],
+        }
+
+        const mattermostResponse = await fetch(mattermostWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(mattermostPayload),
+        })
+
+        if (mattermostResponse.ok) {
+          results.mattermost.sent = true
+          console.log('Mattermost notification sent successfully')
+        } else {
+          const errorText = await mattermostResponse.text()
+          results.mattermost.error = `HTTP ${mattermostResponse.status}: ${errorText}`
+          console.error('Mattermost webhook failed:', results.mattermost.error)
+        }
+      } catch (error: any) {
+        results.mattermost.error = error.message || 'Unknown error'
+        console.error('Mattermost webhook error:', error)
+      }
+    } else {
+      console.log('MATTERMOST_WEBHOOK_URL not configured, skipping Mattermost notification')
+      results.mattermost.error = 'Webhook URL not configured'
+    }
+
+    // Craft.io integration (mock for now)
     const craftPayload = {
       title: `Design Request: ${requestArea}`,
       description: `
-**What:** ${userRequest.what}
+**What:** ${userRequest.what || 'N/A'}
 
-**Why:** ${userRequest.why}
+**Why:** ${userRequest.why || 'N/A'}
 
 ${userRequest.context ? `**Context:** ${userRequest.context}\n` : ''}
 ${userRequest.goals ? `**Goals:** ${userRequest.goals}\n` : ''}
@@ -47,18 +114,17 @@ ${userRequest.useCases ? `**Use Cases:** ${userRequest.useCases}\n` : ''}
       assignee: assignedDesigner || 'CH',
     }
 
-    // Simulate API calls (replace with actual API calls)
-    // await fetch(MATTERMOST_WEBHOOK_URL, { method: 'POST', body: JSON.stringify(mattermostPayload) })
-    // await fetch(CRAFT_IO_API_URL, { method: 'POST', body: JSON.stringify(craftPayload) })
+    // TODO: Implement actual Craft.io API integration when API details are available
+    // For now, simulate success
+    results.craft.sent = true
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Simulate network delay for Craft.io
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     return NextResponse.json({
       success: true,
       message: 'Request submitted successfully',
-      mattermost: { sent: true },
-      craft: { sent: true },
+      ...results,
     })
   } catch (error) {
     console.error('Delivery failed:', error)
