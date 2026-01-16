@@ -58,6 +58,23 @@ export interface LogoSpecs {
   variants: LogoVariant[]
 }
 
+export interface UXReport {
+  id: string
+  source: string // e.g., "Jurnii", "User Testing", "Analytics"
+  sourceUrl?: string
+  title: string
+  date: string
+  findings: {
+    issue: string
+    severity: 'critical' | 'high' | 'medium' | 'low'
+    description: string
+    recommendation?: string
+    affectedArea?: string // e.g., "Casino", "Sports", "Navigation"
+  }[]
+  summary?: string
+  priority?: 'high' | 'medium' | 'low'
+}
+
 export interface BrandGuidelines {
   toneOfVoice: {
     principles: string[]
@@ -83,6 +100,7 @@ export interface KnowledgeBase {
   figmaFiles: FigmaFile[]
   logos: LogoSpecs[]
   brandGuidelines: BrandGuidelines
+  uxReports: UXReport[]
   additionalNotes?: string[]
 }
 
@@ -461,6 +479,30 @@ export const knowledgeBase: KnowledgeBase = {
     ],
   },
   
+  // UX Reports - User experience insights and recommendations
+  uxReports: [
+    // UX reports from Jurnii, user testing, analytics, etc.
+    // Example structure:
+    // {
+    //   id: 'jurnii-001',
+    //   source: 'Jurnii',
+    //   sourceUrl: 'https://app.jurnii.io/user-reports/competitor/...',
+    //   title: 'UX Report - Site Improvements',
+    //   date: '2024-01-15',
+    //   findings: [
+    //     {
+    //       issue: 'Navigation clarity',
+    //       severity: 'high',
+    //       description: 'Users struggle to find key features',
+    //       recommendation: 'Improve navigation hierarchy',
+    //       affectedArea: 'Navigation'
+    //     }
+    //   ],
+    //   summary: 'Overall UX improvements needed',
+    //   priority: 'high'
+    // }
+  ],
+  
   // Additional notes - Any other important information
   additionalNotes: [
     // Add any additional notes, guidelines, or important information here
@@ -471,7 +513,7 @@ export const knowledgeBase: KnowledgeBase = {
  * Get all knowledge as a formatted string for AI prompts
  */
 export function getKnowledgeBasePrompt(): string {
-  const { designSystem, colorTokens, stakeholders, processes, figmaFiles, logos, brandGuidelines, additionalNotes } = knowledgeBase
+  const { designSystem, colorTokens, stakeholders, processes, figmaFiles, logos, brandGuidelines, uxReports, additionalNotes } = knowledgeBase
   
   // Format color tokens
   const colorTokensList = Object.entries(colorTokens)
@@ -712,6 +754,26 @@ ${logos.length > 0
       }).join('\n\n')
     : '  (No logos added yet)'}
 
+**UX REPORTS & INSIGHTS:**
+${uxReports.length > 0
+    ? uxReports.map(report => {
+        let desc = `  - ${report.title} (${report.source}${report.date ? `, ${report.date}` : ''})`
+        if (report.sourceUrl) desc += `\n    Source: ${report.sourceUrl}`
+        if (report.summary) desc += `\n    Summary: ${report.summary}`
+        if (report.priority) desc += `\n    Priority: ${report.priority}`
+        if (report.findings?.length) {
+          desc += `\n    Findings:`
+          report.findings.forEach((finding, idx) => {
+            desc += `\n      ${idx + 1}. [${finding.severity.toUpperCase()}] ${finding.issue}`
+            desc += `\n         Description: ${finding.description}`
+            if (finding.recommendation) desc += `\n         Recommendation: ${finding.recommendation}`
+            if (finding.affectedArea) desc += `\n         Affected Area: ${finding.affectedArea}`
+          })
+        }
+        return desc
+      }).join('\n\n')
+    : '  (No UX reports added yet)'}
+
 ${additionalNotes && additionalNotes.length > 0 ? `**ADDITIONAL NOTES:**\n${additionalNotes.map(note => `  - ${note}`).join('\n')}` : ''}
 `
 }
@@ -735,6 +797,13 @@ export function addStakeholder(stakeholder: Stakeholder): void {
  */
 export function addProcess(process: Process): void {
   knowledgeBase.processes.push(process)
+}
+
+/**
+ * Add a UX report to the knowledge base
+ */
+export function addUXReport(report: UXReport): void {
+  knowledgeBase.uxReports.push(report)
 }
 
 /**
