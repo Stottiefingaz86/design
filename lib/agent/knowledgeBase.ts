@@ -197,8 +197,8 @@ export const knowledgeBase: KnowledgeBase = {
     {
       name: 'Casino-26 - LightMode | MUI-ADS',
       url: 'https://www.figma.com/design/dsg9EC3QiVp7h80BNy47EA/Casino-26--LightMode-%7C-MUI-ADS',
-      description: 'Casino area designs in light mode using the MUI Agnostic Design System',
-      contains: ['Casino components', 'Light mode designs', 'Game tiles', 'Casino UI patterns', 'MUI ADS components'],
+      description: 'Casino area designs in light mode using the MUI Agnostic Design System, including navigation components',
+      contains: ['Casino components', 'Light mode designs', 'Game tiles', 'Casino UI patterns', 'Navigation components', 'Header navigation', 'Side menu navigation', 'MUI ADS components'],
     },
     {
       name: 'BetOnline BrandBook - Toolkit',

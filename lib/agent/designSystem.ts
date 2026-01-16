@@ -1192,6 +1192,17 @@ export const designSystem: DesignSystemInfo = {
       props: ['columns', 'rows', 'sortable', 'filterable'],
       examples: ['Material UI/table/header'],
     },
+    Navigation: {
+      description: 'Navigation component for site navigation, headers, and side menus',
+      usage: 'Use for main site navigation, header navigation, side menu navigation, and navigation hubs',
+      variants: ['header', 'side menu', 'desktop', 'mobile', 'hub'],
+      props: ['variant', 'items', 'activeItem', 'collapsed', 'theme'],
+      examples: [
+        'Navigation/components-navigation/bkg-header',
+        'Navigation/components-navigation/bkg-sidemenu-desktop',
+        'Navigation/hub/bkg-hub'
+      ],
+    },
     Typography: {
       description: 'Text component with semantic variants',
       usage: 'Display text content with consistent styling',
