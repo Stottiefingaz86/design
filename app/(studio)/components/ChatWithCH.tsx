@@ -40,17 +40,27 @@ function parseColorSwatches(content: string): { text: string; swatches: ColorSwa
   const swatches: ColorSwatch[] = []
   let match
   
+  // Debug: check if content contains COLOR_SWATCH
+  if (content.includes('COLOR_SWATCH')) {
+    console.log('Found COLOR_SWATCH in content:', content.match(/COLOR_SWATCH:[^\n]+/g))
+  }
+  
+  // Reset regex lastIndex
+  swatchRegex.lastIndex = 0
+  
   while ((match = swatchRegex.exec(content)) !== null) {
-    swatches.push({
+    const swatch = {
       token: match[1],
       hex: match[2],
       description: match[3] || '',
       figmaLink: match[4]?.trim() || undefined,
-    })
+    }
+    console.log('Parsed color swatch:', swatch)
+    swatches.push(swatch)
   }
   
   // Remove COLOR_SWATCH markers from text
-  const text = content.replace(swatchRegex, '').trim()
+  const text = content.replace(/COLOR_SWATCH:[^\n]+/g, '').trim()
   
   return { text, swatches }
 }

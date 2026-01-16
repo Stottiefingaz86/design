@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
     // Use OpenAI if available and API key is set
     if (apiKey) {
+      console.log('Using OpenAI API for chat response')
       try {
         // Dynamic import to handle case where package isn't installed
         const { default: OpenAI } = await import('openai')
@@ -106,8 +107,11 @@ export async function POST(request: Request) {
         })
       } catch (openaiError: any) {
         console.error('OpenAI API error:', openaiError)
+        console.log('Falling back to design system knowledge base')
         // Fall through to fallback response
       }
+    } else {
+      console.log('OpenAI API key not found, using fallback design system knowledge base')
     }
 
     // Fallback: Use design system knowledge base
@@ -177,8 +181,8 @@ ${knowledgeBaseContent}
 
 When answering questions:
 1. ONLY use information from the knowledge base above
-2. For color questions, ALWAYS provide: token name, hex code, and description
-3. Use format "COLOR_SWATCH:token:hex:description:figmaLink" for colors so UI can render swatches with Figma links
+2. For ANY color question (including button colors, brand colors, primary/secondary colors, etc.), you MUST ALWAYS include a COLOR_SWATCH directive. NEVER just describe colors in text - always use the COLOR_SWATCH format.
+3. Use format "COLOR_SWATCH:token:hex:description:figmaLink" for colors so UI can render swatches with Figma links. Example: COLOR_SWATCH:betRed/500:#ee3536:BetOnline primary red:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh
 4. For tokens/parameters (typography, spacing, shadows, etc.), use format "TOKEN_COPY:tokenName:value:figmaLink" so users can copy to clipboard
 5. For logo questions, ALWAYS use format "LOGO_IMAGE:brand:type:color:figmaLink:downloadUrl" to show logo images with download links. NEVER just describe logos in text - always include the LOGO_IMAGE directive.
 6. Reference specific tokens/components when suggesting designs
@@ -188,10 +192,12 @@ When answering questions:
 10. Always include Figma deeplinks when mentioning tokens, colors, or components (use the main Figma file URL from knowledge base)
 11. If asked about something not in the knowledge base, say you don't have that information
 
-Example response for "what's the primary color":
-"The primary color is betRed with hex code #ee3536. It's BetOnline's primary red color used across the Casino and Sports brands.
+Example response for "what's the primary color" or "what colour is betonline buttons":
+"The primary color for BetOnline buttons is betRed/500 with hex code #ee3536. It's BetOnline's primary red color used across the Casino and Sports brands.
 
-COLOR_SWATCH:betRed:#ee3536:BetOnline primary red:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh"
+COLOR_SWATCH:betRed/500:#ee3536:BetOnline primary red:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh"
+
+IMPORTANT: For ANY question about colors (including "what colour is X", "button colors", "primary color", etc.), you MUST include a COLOR_SWATCH directive. Do not just describe the color in text.
 
 Example response for "what's the typography token":
 "The typography token 'Display xs/Regular' uses Inter font, 24px size, 400 weight.
@@ -295,20 +301,61 @@ function processAIResponse(aiResponse: string, userMessage: string): string {
   ]
   
   // If user asked about a specific color and response doesn't have COLOR_SWATCH, try to add it
-  if ((lowerMessage.includes('color') || lowerMessage.includes('primary') || lowerMessage.includes('secondary')) && !aiResponse.includes('COLOR_SWATCH')) {
+  // Check for color-related queries (including British spelling "colour", button colors, etc.)
+  const isColorQuery = 
+    lowerMessage.includes('color') || 
+    lowerMessage.includes('colour') || 
+    lowerMessage.includes('primary') || 
+    lowerMessage.includes('secondary') ||
+    lowerMessage.includes('button') ||
+    lowerMessage.includes('what colour') ||
+    lowerMessage.includes('what color') ||
+    responseLower.includes('betred') ||
+    responseLower.includes('betgreen') ||
+    responseLower.includes('betnavy') ||
+    responseLower.includes('tigerorange') ||
+    responseLower.includes('lowcyan') ||
+    responseLower.includes('#')
+  
+  if (isColorQuery && !aiResponse.includes('COLOR_SWATCH')) {
+    console.log('Color query detected but no COLOR_SWATCH found, attempting to add one')
     // Try to find color tokens mentioned in the response
     const mentionedTokens = Object.keys(colorTokenMap).filter(token => {
-      const tokenLower = token.toLowerCase().replace(/\//g, '')
-      return responseLower.includes(tokenLower) || responseLower.includes(token.split('/')[0].toLowerCase())
+      const tokenLower = token.toLowerCase().replace(/\//g, '').replace(/\s+/g, '')
+      const tokenBase = token.split('/')[0].toLowerCase()
+      return responseLower.includes(tokenLower) || 
+             responseLower.includes(tokenBase) ||
+             responseLower.includes(token.replace(/\//g, ' ').toLowerCase())
     })
     
+    // Also check for common button colors if "button" is mentioned
+    if (lowerMessage.includes('button') && mentionedTokens.length === 0) {
+      // Default to betRed for BetOnline buttons
+      if (lowerMessage.includes('betonline') || lowerMessage.includes('bol')) {
+        mentionedTokens.push('betRed/500')
+      } else {
+        // Default to betRed/500 for any button query
+        mentionedTokens.push('betRed/500')
+      }
+    }
+    
     if (mentionedTokens.length > 0) {
-      // Use the first matching token
-      const token = mentionedTokens[0]
+      // Use the first matching token, or betRed/500 for buttons
+      const token = mentionedTokens[0] || 'betRed/500'
       const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
       if (colorInfo) {
         const figmaLink = generateFigmaDeeplink(token)
+        console.log(`Adding COLOR_SWATCH for token: ${token}`)
         return `${aiResponse}\n\nCOLOR_SWATCH:${token}:${colorInfo.hex}:${colorInfo.description || ''}:${figmaLink || ''}`
+      }
+    } else {
+      console.log('No color tokens found in response, defaulting to betRed/500')
+      // Default fallback for any color query
+      const defaultToken = 'betRed/500'
+      const colorInfo = colorTokenMap[defaultToken]
+      if (colorInfo) {
+        const figmaLink = generateFigmaDeeplink(defaultToken)
+        return `${aiResponse}\n\nCOLOR_SWATCH:${defaultToken}:${colorInfo.hex}:${colorInfo.description || ''}:${figmaLink || ''}`
       }
     }
   }
