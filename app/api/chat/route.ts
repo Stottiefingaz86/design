@@ -104,6 +104,7 @@ export async function POST(request: Request) {
           response: processedResponse,
           generatedImage: undefined, // No image generated for text-only responses
           timestamp: new Date().toISOString(),
+          usingAI: true, // Indicate AI was used
         })
       } catch (openaiError: any) {
         console.error('OpenAI API error:', openaiError)
@@ -112,6 +113,11 @@ export async function POST(request: Request) {
       }
     } else {
       console.log('OpenAI API key not found, using fallback design system knowledge base')
+      console.log('Environment check:', {
+        hasApiKey: !!process.env.OPENAI_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV
+      })
     }
 
     // Fallback: Use design system knowledge base
@@ -124,6 +130,7 @@ export async function POST(request: Request) {
       response: processedResponse,
       generatedImage: undefined,
       timestamp: new Date().toISOString(),
+      usingAI: false, // Indicate fallback was used
     })
   } catch (error) {
     console.error('Chat API error:', error)

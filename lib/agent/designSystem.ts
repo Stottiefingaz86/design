@@ -1445,41 +1445,54 @@ export function getDesignSystemResponse(query: string, system: DesignSystemInfo 
   const areaNames = ['sports', 'casino', 'loyalty', 'authentication', 'poker', 'auth']
   const mentionedArea = areaNames.find(area => lowerQuery.includes(area))
   
-  // Color queries
-  if (lowerQuery.includes('color') || lowerQuery.includes('palette') || lowerQuery.includes('primary') || lowerQuery.includes('secondary')) {
+  // Color queries (including British spelling "colour" and "pallete" typo)
+  if (lowerQuery.includes('color') || lowerQuery.includes('colour') || lowerQuery.includes('palette') || lowerQuery.includes('pallete') || lowerQuery.includes('primary') || lowerQuery.includes('secondary')) {
     // Check for specific color token queries (e.g., "what's betRed", "betRed color")
     const colorTokenMatch = Object.keys(colorTokenMap).find(token => 
-      lowerQuery.includes(token.toLowerCase().replace(/\s+/g, ''))
+      lowerQuery.includes(token.toLowerCase().replace(/\s+/g, '').replace(/\//g, ''))
     )
     
     if (colorTokenMatch) {
       const colorInfo = colorTokenMap[colorTokenMatch]
-      return `COLOR_SWATCH:${colorTokenMatch}:${colorInfo.hex}:${colorInfo.description || ''}`
+      const figmaLink = 'https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh'
+      return `The color token \`${colorTokenMatch}\` has hex code ${colorInfo.hex}. ${colorInfo.description || ''}\n\nCOLOR_SWATCH:${colorTokenMatch}:${colorInfo.hex}:${colorInfo.description || ''}:${figmaLink}`
     }
     
-    // Brand-specific color query
-    if (mentionedBrand) {
-      const normalizedBrand = normalizeBrandName(mentionedBrand)
+    // Brand-specific color query - check for brand names in query
+    const brandInQuery = mentionedBrand || 
+      (lowerQuery.includes('wild casino') || lowerQuery.includes('wildcasino') ? 'Wild Casino' : null) ||
+      (lowerQuery.includes('betonline') || lowerQuery.includes('bol') ? 'BetOnline' : null) ||
+      (lowerQuery.includes('tiger') ? 'Tiger Gaming' : null) ||
+      (lowerQuery.includes('lowvig') ? 'LowVig' : null) ||
+      (lowerQuery.includes('high roller') ? 'High Roller' : null) ||
+      (lowerQuery.includes('superslot') ? 'SuperSlot' : null)
+    
+    if (brandInQuery) {
+      const normalizedBrand = normalizeBrandName(brandInQuery)
       if (normalizedBrand && system.brands?.[normalizedBrand]?.colors) {
         const brand = system.brands[normalizedBrand]
         const colors = brand.colors
         let response = `${brand.name} brand colors:\n\n`
         
+        const figmaLink = 'https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh'
+        
         if (colors?.primary?.length) {
           response += `**Primary Colors:**\n`
           colors.primary.forEach(token => {
-            const colorInfo = colorTokenMap[token] || { hex: 'N/A', description: '' }
-            response += `• Token: \`${token}\` | Hex: \`${colorInfo.hex}\` | ${colorInfo.description || 'Primary color'}\n`
-            response += `COLOR_SWATCH:${token}:${colorInfo.hex}:${colorInfo.description || ''}\n`
+            const displayToken = token.includes('/') ? token : `${token}/500`
+            const colorInfo = colorTokenMap[displayToken] || colorTokenMap[token] || colorTokenMap[token.split('/')[0]] || { hex: 'N/A', description: '' }
+            response += `• Token: \`${displayToken}\` | Hex: \`${colorInfo.hex}\` | ${colorInfo.description || 'Primary color'}\n`
+            response += `COLOR_SWATCH:${displayToken}:${colorInfo.hex}:${colorInfo.description || brand.name + ' primary color'}:${figmaLink}\n`
           })
         }
         
         if (colors?.secondary?.length) {
           response += `\n**Secondary Colors:**\n`
           colors.secondary.forEach(token => {
-            const colorInfo = colorTokenMap[token] || { hex: 'N/A', description: '' }
-            response += `• Token: \`${token}\` | Hex: \`${colorInfo.hex}\` | ${colorInfo.description || 'Secondary color'}\n`
-            response += `COLOR_SWATCH:${token}:${colorInfo.hex}:${colorInfo.description || ''}\n`
+            const displayToken = token.includes('/') ? token : `${token}/500`
+            const colorInfo = colorTokenMap[displayToken] || colorTokenMap[token] || colorTokenMap[token.split('/')[0]] || { hex: 'N/A', description: '' }
+            response += `• Token: \`${displayToken}\` | Hex: \`${colorInfo.hex}\` | ${colorInfo.description || 'Secondary color'}\n`
+            response += `COLOR_SWATCH:${displayToken}:${colorInfo.hex}:${colorInfo.description || brand.name + ' secondary color'}:${figmaLink}\n`
           })
         }
         
