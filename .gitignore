@@ -28,6 +28,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# sensitive credentials (never commit)
+JURNII_EMAIL
+JURNII_PASSWORD
+
 # vercel
 .vercel
 
