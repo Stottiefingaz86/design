@@ -1210,6 +1210,41 @@ export const designSystem: DesignSystemInfo = {
       props: ['variant', 'component', 'color', 'align'],
       examples: ['Material UI/typography/h5', 'Material UI/typography/body2', 'Material UI/typography/caption'],
     },
+    'Betting Slip': {
+      description: 'Sportsbook betting slip component for managing bets',
+      usage: 'Display and manage user bets, odds, and bet totals',
+      variants: ['standard', 'quick bet', 'bet builder'],
+      props: ['bets', 'odds', 'total', 'stake', 'potentialWin'],
+      examples: ['Sportsbook betting slip', 'Quick bet slip', 'Bet builder slip'],
+    },
+    'Odds Display': {
+      description: 'Component for displaying betting odds',
+      usage: 'Show odds for sports events, markets, and selections',
+      variants: ['decimal', 'fractional', 'american', 'live'],
+      props: ['odds', 'format', 'isLive', 'change'],
+      examples: ['Decimal odds', 'Fractional odds', 'American odds', 'Live odds'],
+    },
+    'Sports Event Card': {
+      description: 'Card component for displaying sports events',
+      usage: 'Show sports event information, teams, odds, and betting options',
+      variants: ['compact', 'detailed', 'live'],
+      props: ['event', 'teams', 'odds', 'isLive', 'markets'],
+      examples: ['Event card compact', 'Event card detailed', 'Live event card'],
+    },
+    'Bet Builder': {
+      description: 'Component for building custom multi-selection bets',
+      usage: 'Allow users to combine multiple selections into a single bet',
+      variants: ['standard', 'quick'],
+      props: ['selections', 'odds', 'stake', 'potentialWin'],
+      examples: ['Bet builder standard', 'Bet builder quick'],
+    },
+    'Live Betting': {
+      description: 'Component for live/in-play betting features',
+      usage: 'Display live betting options, in-play odds, and live event updates',
+      variants: ['live odds', 'live event', 'cash out'],
+      props: ['isLive', 'odds', 'event', 'cashOutValue'],
+      examples: ['Live odds display', 'Live event view', 'Cash out component'],
+    },
   },
   
   // Design patterns
