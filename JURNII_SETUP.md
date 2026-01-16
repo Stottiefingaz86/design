@@ -63,10 +63,15 @@ The system will:
 
 ## How It Works
 
-1. **Authentication**: Uses your credentials to log into Jurnii
-2. **Scraping**: Fetches the report HTML
+1. **Authentication**: 
+   - Fetches the Jurnii login page to get session cookies
+   - POSTs credentials to `/api/auth/login`
+   - Stores authentication cookies for subsequent requests
+2. **Scraping**: Fetches the report HTML using authenticated session
 3. **AI Parsing**: Uses OpenAI to extract structured data from the HTML
 4. **Storage**: Adds the structured report to the knowledge base
+
+**Note**: The authentication endpoint may need adjustment based on Jurnii's actual API structure. If authentication fails, check the server logs for the exact error.
 
 ## AI-Powered Parsing
 

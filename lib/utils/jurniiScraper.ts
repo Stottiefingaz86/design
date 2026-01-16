@@ -34,43 +34,87 @@ export async function scrapeJurniiReport(
   credentials?: JurniiCredentials
 ): Promise<JurniiReportData | null> {
   try {
+    let cookies = ''
+    
     // If credentials are provided, authenticate first
     if (credentials) {
-      // TODO: Implement authentication flow based on Jurnii's login process
-      // This will likely require:
-      // 1. POST to login endpoint with credentials
-      // 2. Store session cookies/tokens
-      // 3. Use authenticated session to fetch report
-      
       console.log('Authenticating with Jurnii...')
-      // Placeholder for authentication logic
+      
+      // Step 1: Get the login page to get any CSRF tokens or session cookies
+      const loginPageResponse = await fetch('https://app.jurnii.io/login', {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+      })
+      
+      // Extract cookies from login page response
+      const setCookieHeaders = loginPageResponse.headers.getSetCookie?.() || []
+      cookies = setCookieHeaders.join('; ')
+      
+      // Step 2: POST to login endpoint
+      const loginResponse = await fetch('https://app.jurnii.io/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
+          'Accept': 'application/json',
+          ...(cookies ? { 'Cookie': cookies } : {}),
+        },
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password,
+          rememberMe: true,
+        }),
+        redirect: 'follow',
+      })
+      
+      // Extract cookies from login response
+      const loginCookies = loginResponse.headers.getSetCookie?.() || []
+      if (loginCookies.length > 0) {
+        cookies = loginCookies.join('; ')
+      }
+      
+      // Check if login was successful
+      if (!loginResponse.ok) {
+        const errorText = await loginResponse.text()
+        console.error('Jurnii login failed:', loginResponse.status, errorText)
+        throw new Error(`Authentication failed: ${loginResponse.status}`)
+      }
+      
+      console.log('Jurnii authentication successful')
     }
 
-    // Fetch the report page
-    // Note: This may require authentication headers/cookies
+    // Step 3: Fetch the report page with authenticated session
     const response = await fetch(reportUrl, {
       method: 'GET',
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
-        ...(credentials ? {
-          // Add authentication headers if needed
-        } : {}),
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        ...(cookies ? { 'Cookie': cookies } : {}),
       },
-      // credentials: 'include' if cookies are needed
     })
 
     if (!response.ok) {
+      // If we get 401/403, authentication is required
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Authentication required or session expired. Please check Jurnii credentials.')
+      }
       throw new Error(`Failed to fetch report: ${response.status} ${response.statusText}`)
     }
 
     const html = await response.text()
     
-    // Parse HTML to extract report data
-    // This will need to be customized based on Jurnii's HTML structure
-    const reportData = parseJurniiHTML(html, reportUrl)
-    
-    return reportData
-  } catch (error) {
+    // Return raw HTML for AI parsing (more reliable than manual parsing)
+    return {
+      title: 'UX Report from Jurnii',
+      findings: [],
+      summary: 'Report extracted from Jurnii',
+      date: new Date().toISOString().split('T')[0],
+      _rawHtml: html, // Include raw HTML for AI parsing
+    } as any
+  } catch (error: any) {
     console.error('Jurnii scraping error:', error)
     return null
   }

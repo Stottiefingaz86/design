@@ -54,16 +54,25 @@ export async function POST(request: Request) {
           // Always try AI parsing if OpenAI key is available (more reliable)
           if (openaiApiKey) {
             try {
-              // Fetch the HTML and parse with AI
-              const response = await fetch(url, {
-                headers: {
-                  'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
-                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                },
-              })
+              // Use the scraped data's raw HTML if available, otherwise fetch
+              let html = ''
+              if ((scrapedData as any)?._rawHtml) {
+                html = (scrapedData as any)._rawHtml
+              } else {
+                // Fallback: fetch directly (may not work if auth required)
+                const response = await fetch(url, {
+                  headers: {
+                    'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                  },
+                })
+                
+                if (response.ok) {
+                  html = await response.text()
+                }
+              }
               
-              if (response.ok) {
-                const html = await response.text()
+              if (html) {
                 const aiParsed = await parseReportWithAI(html, openaiApiKey)
             
                 if (aiParsed && aiParsed.findings && aiParsed.findings.length > 0) {
