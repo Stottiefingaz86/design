@@ -151,17 +151,18 @@ YOUR ROLE:
 - Help solve design problems and suggest best practices
 - Guide on how to use our design system effectively
 
-CRITICAL RULES:
-1. Use information from the knowledge base as your primary source for all design advice
-2. For design system questions (colors, typography, components, tokens), ONLY use information from the knowledge base - be precise with token names, hex codes, and descriptions
-3. For brand guidelines, communication, and tone of voice questions, use the brand guidelines section and make reasonable inferences based on our design system and brand values
-4. For process questions, reference the actual process steps and stakeholders involved
-5. For stakeholder questions, reference their actual roles, responsibilities, and areas
-6. When you don't have specific information, be helpful: suggest where to find it (Figma files, designers, processes) or explain what you can infer from the design system
-7. For mockup ideas and design suggestions, ONLY use components, colors, and patterns from this knowledge base
-8. Always reference specific tokens, components, patterns, stakeholders, or processes when suggesting designs
-9. Follow the tone of voice principles: be direct, clear, professional yet approachable, and helpful
-10. Be proactive: offer design advice, suggest improvements, and provide actionable recommendations based on our brand and design system
+CRITICAL RULES - YOU MUST FOLLOW THESE STRICTLY:
+1. **ONLY use information from the knowledge base above** - Do NOT make up information, guess, or use general knowledge
+2. For design system questions (colors, typography, components, tokens), **ONLY use information from the knowledge base** - be precise with token names, hex codes, and descriptions. If the information is not in the knowledge base, say "I don't have that specific information in our knowledge base."
+3. For brand color questions, **ALWAYS reference the exact brand information from the BRANDS section** - use the exact color tokens, hex codes, and descriptions provided
+4. For brand guidelines, communication, and tone of voice questions, use the brand guidelines section and make reasonable inferences based on our design system and brand values
+5. For process questions, reference the actual process steps and stakeholders involved
+6. For stakeholder questions, reference their actual roles, responsibilities, and areas
+7. **If you don't have specific information in the knowledge base, say so explicitly** - do NOT guess or make up information
+8. For mockup ideas and design suggestions, **ONLY use components, colors, and patterns from this knowledge base**
+9. Always reference specific tokens, components, patterns, stakeholders, or processes when suggesting designs
+10. Follow the tone of voice principles: be direct, clear, professional yet approachable, and helpful
+11. **When asked about a brand's color palette, list ALL colors from the BRANDS section** - primary, secondary, accent, neutral, and background colors
 
 YOUR EXPERTISE:
 - Online gambling industry design best practices
@@ -197,7 +198,21 @@ Example response for "what's the primary color" or "what colour is betonline but
 
 COLOR_SWATCH:betRed/500:#ee3536:BetOnline primary red:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh"
 
-IMPORTANT: For ANY question about colors (including "what colour is X", "button colors", "primary color", etc.), you MUST include a COLOR_SWATCH directive. Do not just describe the color in text.
+Example response for "wild casino colour pallete" or "what are wild casino colors":
+"Wild Casino brand uses a neon green color palette. Here are the colors:
+
+Primary colors: WildNeonGreen 2 (#6cea75)
+Secondary colors: betGreen (#8ac500)
+Accent colors: WildNeonGreen 2 (#6cea75)
+Background colors: grey-900, grey-800, common/black (#000000)
+
+COLOR_SWATCH:WildNeonGreen 2/500:#6cea75:Wild Casino neon green primary:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh"
+
+IMPORTANT: 
+- For ANY question about colors (including "what colour is X", "button colors", "primary color", "brand palette", etc.), you MUST include COLOR_SWATCH directives for each color mentioned
+- For brand color palette questions, list ALL colors (primary, secondary, accent, neutral, background) from the BRANDS section
+- Do not just describe colors in text - always use COLOR_SWATCH format
+- If a brand or color is not in the knowledge base, say "I don't have that information in our knowledge base"
 
 Example response for "what's the typography token":
 "The typography token 'Display xs/Regular' uses Inter font, 24px size, 400 weight.
@@ -301,10 +316,12 @@ function processAIResponse(aiResponse: string, userMessage: string): string {
   ]
   
   // If user asked about a specific color and response doesn't have COLOR_SWATCH, try to add it
-  // Check for color-related queries (including British spelling "colour", button colors, etc.)
+  // Check for color-related queries (including British spelling "colour", button colors, palette queries, etc.)
   const isColorQuery = 
     lowerMessage.includes('color') || 
     lowerMessage.includes('colour') || 
+    lowerMessage.includes('palette') ||
+    lowerMessage.includes('pallete') ||
     lowerMessage.includes('primary') || 
     lowerMessage.includes('secondary') ||
     lowerMessage.includes('button') ||
@@ -315,7 +332,16 @@ function processAIResponse(aiResponse: string, userMessage: string): string {
     responseLower.includes('betnavy') ||
     responseLower.includes('tigerorange') ||
     responseLower.includes('lowcyan') ||
+    responseLower.includes('wildneongreen') ||
     responseLower.includes('#')
+  
+  // Check if this is a brand palette query
+  const isBrandPaletteQuery = 
+    (lowerMessage.includes('palette') || lowerMessage.includes('pallete') || lowerMessage.includes('colours') || lowerMessage.includes('colors')) &&
+    (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino') || 
+     lowerMessage.includes('betonline') || lowerMessage.includes('bol') ||
+     lowerMessage.includes('tiger') || lowerMessage.includes('lowvig') ||
+     lowerMessage.includes('high roller') || lowerMessage.includes('superslot'))
   
   if (isColorQuery && !aiResponse.includes('COLOR_SWATCH')) {
     console.log('Color query detected but no COLOR_SWATCH found, attempting to add one')
@@ -336,6 +362,71 @@ function processAIResponse(aiResponse: string, userMessage: string): string {
       } else {
         // Default to betRed/500 for any button query
         mentionedTokens.push('betRed/500')
+      }
+    }
+    
+    // If this is a brand palette query, try to get all brand colors
+    if (isBrandPaletteQuery) {
+      let brandName: string | undefined
+      if (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino')) {
+        brandName = 'Wild Casino'
+      } else if (lowerMessage.includes('betonline') || lowerMessage.includes('bol')) {
+        brandName = 'BetOnline'
+      } else if (lowerMessage.includes('tiger')) {
+        brandName = 'Tiger Gaming'
+      } else if (lowerMessage.includes('lowvig')) {
+        brandName = 'LowVig'
+      } else if (lowerMessage.includes('high roller')) {
+        brandName = 'High Roller'
+      } else if (lowerMessage.includes('superslot')) {
+        brandName = 'SuperSlot'
+      }
+      
+      if (brandName && designSystem.brands?.[brandName]) {
+        const brand = designSystem.brands[brandName]
+        const colorSwatches: string[] = []
+        const figmaLink = generateFigmaDeeplink()
+        
+        // Add primary colors
+        if (brand.colors?.primary?.length) {
+          brand.colors.primary.forEach(token => {
+            const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+            if (colorInfo) {
+              const primaryToken = token.includes('/') ? token : `${token}/500`
+              const primaryColorInfo = colorTokenMap[primaryToken] || colorInfo
+              colorSwatches.push(`COLOR_SWATCH:${primaryToken}:${primaryColorInfo.hex}:${brandName} primary color:${figmaLink || ''}`)
+            }
+          })
+        }
+        
+        // Add secondary colors
+        if (brand.colors?.secondary?.length) {
+          brand.colors.secondary.forEach(token => {
+            const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+            if (colorInfo) {
+              const secondaryToken = token.includes('/') ? token : `${token}/500`
+              const secondaryColorInfo = colorTokenMap[secondaryToken] || colorInfo
+              colorSwatches.push(`COLOR_SWATCH:${secondaryToken}:${secondaryColorInfo.hex}:${brandName} secondary color:${figmaLink || ''}`)
+            }
+          })
+        }
+        
+        // Add accent colors
+        if (brand.colors?.accent?.length) {
+          brand.colors.accent.forEach(token => {
+            const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+            if (colorInfo) {
+              const accentToken = token.includes('/') ? token : `${token}/500`
+              const accentColorInfo = colorTokenMap[accentToken] || colorInfo
+              colorSwatches.push(`COLOR_SWATCH:${accentToken}:${accentColorInfo.hex}:${brandName} accent color:${figmaLink || ''}`)
+            }
+          })
+        }
+        
+        if (colorSwatches.length > 0) {
+          console.log(`Adding ${colorSwatches.length} COLOR_SWATCH directives for ${brandName} palette`)
+          return `${aiResponse}\n\n${colorSwatches.join('\n')}`
+        }
       }
     }
     

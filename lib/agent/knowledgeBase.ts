@@ -507,7 +507,7 @@ export function getKnowledgeBasePrompt(): string {
     })
     .join('\n\n')
   
-  // Format brands
+  // Format brands with comprehensive color information
   const brands = designSystem.brands || {}
   const brandList = Object.entries(brands)
     .map(([name, brand]) => {
@@ -519,19 +519,33 @@ export function getKnowledgeBasePrompt(): string {
         }).join(', ')
         desc += `\n    Primary colors: ${primaryColors}`
       }
-      if (brand.colors?.background?.length) {
-        const backgroundColors = brand.colors.background.map(c => {
-          const colorInfo = colorTokens[c] || colorTokens[c.split('/')[0]]
-          return colorInfo ? `${c} (${colorInfo.hex})` : c
-        }).join(', ')
-        desc += `\n    Background colors: ${backgroundColors}`
-      }
       if (brand.colors?.secondary?.length) {
         const secondaryColors = brand.colors.secondary.map(c => {
           const colorInfo = colorTokens[c] || colorTokens[c.split('/')[0]]
           return colorInfo ? `${c} (${colorInfo.hex})` : c
         }).join(', ')
         desc += `\n    Secondary colors: ${secondaryColors}`
+      }
+      if (brand.colors?.accent?.length) {
+        const accentColors = brand.colors.accent.map(c => {
+          const colorInfo = colorTokens[c] || colorTokens[c.split('/')[0]]
+          return colorInfo ? `${c} (${colorInfo.hex})` : c
+        }).join(', ')
+        desc += `\n    Accent colors: ${accentColors}`
+      }
+      if (brand.colors?.neutral?.length) {
+        const neutralColors = brand.colors.neutral.map(c => {
+          const colorInfo = colorTokens[c] || colorTokens[c.split('/')[0]]
+          return colorInfo ? `${c} (${colorInfo.hex})` : c
+        }).join(', ')
+        desc += `\n    Neutral colors: ${neutralColors}`
+      }
+      if (brand.colors?.background?.length) {
+        const backgroundColors = brand.colors.background.map(c => {
+          const colorInfo = colorTokens[c] || colorTokens[c.split('/')[0]]
+          return colorInfo ? `${c} (${colorInfo.hex})` : c
+        }).join(', ')
+        desc += `\n    Background colors: ${backgroundColors}`
       }
       return desc
     })
