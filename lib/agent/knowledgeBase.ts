@@ -92,6 +92,13 @@ export interface BrandGuidelines {
   designPrinciples: string[]
 }
 
+export interface Website {
+  name: string
+  url: string
+  description?: string
+  type?: 'Production' | 'Staging' | 'Development'
+}
+
 export interface KnowledgeBase {
   designSystem: DesignSystemInfo
   colorTokens: typeof colorTokenMap
@@ -102,6 +109,7 @@ export interface KnowledgeBase {
   brandGuidelines: BrandGuidelines
   uxReports: UXReport[]
   additionalNotes?: string[]
+  websites: Website[]
 }
 
 /**
@@ -507,13 +515,23 @@ export const knowledgeBase: KnowledgeBase = {
   additionalNotes: [
     // Add any additional notes, guidelines, or important information here
   ],
+  
+  // Website information
+  websites: [
+    {
+      name: 'BetOnline',
+      url: 'https://betonline.ag',
+      description: 'Main BetOnline website - primary gambling platform',
+      type: 'Production',
+    },
+  ],
 }
 
 /**
  * Get all knowledge as a formatted string for AI prompts
  */
 export function getKnowledgeBasePrompt(): string {
-  const { designSystem, colorTokens, stakeholders, processes, figmaFiles, logos, brandGuidelines, uxReports, additionalNotes } = knowledgeBase
+  const { designSystem, colorTokens, stakeholders, processes, figmaFiles, logos, brandGuidelines, uxReports, additionalNotes, websites } = knowledgeBase
   
   // Format color tokens
   const colorTokensList = Object.entries(colorTokens)
@@ -775,6 +793,17 @@ ${uxReports.length > 0
     : '  (No UX reports added yet)'}
 
 ${additionalNotes && additionalNotes.length > 0 ? `**ADDITIONAL NOTES:**\n${additionalNotes.map(note => `  - ${note}`).join('\n')}` : ''}
+
+**WEBSITES:**
+${websites && websites.length > 0
+    ? websites.map(website => {
+        let desc = `  - ${website.name}`
+        if (website.url) desc += `\n    URL: ${website.url}`
+        if (website.description) desc += `\n    Description: ${website.description}`
+        if (website.type) desc += `\n    Type: ${website.type}`
+        return desc
+      }).join('\n\n')
+    : '  (No websites added yet)'}
 `
 }
 

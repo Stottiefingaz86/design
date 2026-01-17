@@ -61,19 +61,34 @@ export async function scrapeJurniiReport(
       }
       
       // Step 2: POST to login endpoint
-      const loginResponse = await fetch('https://app.jurnii.io/api/auth/login', {
+      // Jurnii uses NextAuth.js, so we need to use the correct endpoint
+      // NextAuth.js credentials provider uses /api/auth/callback/credentials
+      // We need to include CSRF token if present
+      const loginPageHtml = await loginPageResponse.text()
+      const csrfTokenMatch = loginPageHtml.match(/name="csrfToken"\s+value="([^"]+)"/) || 
+                             loginPageHtml.match(/csrfToken["']?\s*[:=]\s*["']([^"']+)/)
+      
+      const loginBody = new URLSearchParams({
+        email: credentials.email,
+        password: credentials.password,
+        redirect: 'false',
+        json: 'true',
+      })
+      
+      if (csrfTokenMatch) {
+        loginBody.append('csrfToken', csrfTokenMatch[1])
+      }
+      
+      const loginResponse = await fetch('https://app.jurnii.io/api/auth/callback/credentials', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
           'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
-          'Accept': 'application/json',
+          'Accept': 'application/json, text/html, */*',
+          'Referer': 'https://app.jurnii.io/login',
           ...(cookies ? { 'Cookie': cookies } : {}),
         },
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password,
-          rememberMe: true,
-        }),
+        body: loginBody.toString(),
         redirect: 'follow',
       })
       
@@ -106,13 +121,20 @@ export async function scrapeJurniiReport(
     }
 
     // Step 3: Fetch the report page with authenticated session
+    // Make sure we use the authenticated cookies
+    const fetchHeaders: HeadersInit = {
+      'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Referer': 'https://app.jurnii.io/',
+    }
+    
+    if (cookies) {
+      fetchHeaders['Cookie'] = cookies
+    }
+    
     const response = await fetch(reportUrl, {
       method: 'GET',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        ...(cookies ? { 'Cookie': cookies } : {}),
-      },
+      headers: fetchHeaders,
     })
 
     if (!response.ok) {
@@ -185,36 +207,40 @@ export async function parseReportWithAI(
     // Limit HTML to avoid token limits (keep first 8000 chars)
     const limitedContent = htmlOrText.substring(0, 8000)
     
-    const prompt = `You are analyzing a UX report from Jurnii. Extract structured data from the following content:
+    const prompt = `You are analyzing a UX report from Jurnii (a competitor analysis tool). Extract ALL structured data from the following HTML content. This may include competitor information, UX findings, recommendations, and insights.
 
 ${limitedContent}
 
-Extract:
-1. Report title
-2. Key findings/issues with:
-   - Issue title
-   - Severity (critical, high, medium, low)
-   - Description
-   - Recommendation (if provided)
-   - Affected area (if mentioned: Casino, Sports, Navigation, etc.)
-3. Overall summary
-4. Date (if available)
+IMPORTANT: Extract ALL findings, even if they seem minor. Look for:
+- Competitor names and comparisons
+- UX issues and pain points
+- Recommendations and suggestions
+- Areas affected (Casino, Sports, Navigation, Authentication, etc.)
+- Any insights, observations, or findings
+
+For each finding, determine severity:
+- critical: Blocks core functionality or causes major user frustration
+- high: Significant UX issue that impacts user experience
+- medium: Moderate issue that could be improved
+- low: Minor issue or enhancement opportunity
 
 Return the data in this JSON format:
 {
-  "title": "Report title",
+  "title": "Report title (e.g., 'Competitor UX Analysis' or 'UX Report')",
   "findings": [
     {
-      "issue": "Issue title",
+      "issue": "Clear, descriptive issue title",
       "severity": "high",
-      "description": "Detailed description",
-      "recommendation": "Recommended solution",
-      "affectedArea": "Navigation"
+      "description": "Detailed description of the finding",
+      "recommendation": "Recommended solution or improvement",
+      "affectedArea": "Navigation, Casino, Sports, etc. (or 'General' if not specific)"
     }
   ],
-  "summary": "Overall summary",
-  "date": "2024-12-13"
-}`
+  "summary": "Overall summary of the report",
+  "date": "2024-12-13 (or today's date if not found)"
+}
+
+Extract as many findings as possible. If you see competitor names, include them in the findings.`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',

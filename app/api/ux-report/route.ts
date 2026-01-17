@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { addUXReport, UXReport } from '@/lib/agent/knowledgeBase'
 import { scrapeJurniiReport, parseReportWithAI } from '@/lib/utils/jurniiScraper'
+import { analyzeWebsite } from '@/lib/utils/websiteAnalyzer'
+import { searchGoogleReviews } from '@/lib/utils/googleReviewsCrawler'
 
 /**
  * API endpoint to add UX reports to the knowledge base
@@ -9,7 +11,7 @@ import { scrapeJurniiReport, parseReportWithAI } from '@/lib/utils/jurniiScraper
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { url, reportData, manual } = body
+    const { url, reportData, manual, analyzeWebsite: shouldAnalyzeWebsite } = body
 
     // If manual report data is provided, add it directly
     if (manual && reportData) {
@@ -40,6 +42,49 @@ export async function POST(request: Request) {
       const jurniiPassword = process.env.JURNII_PASSWORD
       const openaiApiKey = process.env.OPENAI_API_KEY
 
+      // If it's a website URL and user wants analysis, analyze it as a UX expert
+      if (shouldAnalyzeWebsite && openaiApiKey && !url.includes('jurnii.io')) {
+        try {
+          console.log(`Analyzing website: ${url}`)
+          const analysis = await analyzeWebsite(url, openaiApiKey)
+          
+          if (analysis && analysis.findings && analysis.findings.length > 0) {
+            const report: UXReport = {
+              id: `website-${Date.now()}`,
+              source: 'Website Analysis',
+              sourceUrl: url,
+              title: analysis.title,
+              date: analysis.date,
+              findings: analysis.findings.map((f: any) => ({
+                issue: f.issue,
+                severity: f.severity,
+                description: f.description,
+                recommendation: f.recommendation,
+                affectedArea: f.affectedArea || 'General',
+              })),
+              summary: analysis.summary,
+              priority: 'high',
+            }
+
+            addUXReport(report)
+
+            return NextResponse.json({
+              success: true,
+              message: 'Website analyzed and UX findings added to knowledge base',
+              reportId: report.id,
+              findingsCount: report.findings.length,
+              strengths: analysis.strengths || [],
+            })
+          }
+        } catch (websiteError: any) {
+          console.error('Website analysis failed:', websiteError)
+          return NextResponse.json({
+            success: false,
+            error: `Website analysis failed: ${websiteError.message}`,
+          }, { status: 500 })
+        }
+      }
+
       // If it's a Jurnii URL and credentials are available, try to scrape
       if (url.includes('jurnii.io') && jurniiEmail && jurniiPassword) {
         try {
@@ -54,26 +99,22 @@ export async function POST(request: Request) {
           // Always try AI parsing if OpenAI key is available (more reliable)
           if (openaiApiKey) {
             try {
-              // Use the scraped data's raw HTML if available, otherwise fetch
+              // Use the scraped data's raw HTML if available
               let html = ''
               if ((scrapedData as any)?._rawHtml) {
                 html = (scrapedData as any)._rawHtml
+                console.log(`Using raw HTML from scraper: ${html.length} characters`)
               } else {
-                // Fallback: fetch directly (may not work if auth required)
-                const response = await fetch(url, {
-                  headers: {
-                    'User-Agent': 'Mozilla/5.0 (compatible; DesignRequestApp/1.0)',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                  },
-                })
-                
-                if (response.ok) {
-                  html = await response.text()
-                }
+                console.log('No raw HTML available from scraper')
               }
               
-              if (html) {
+              if (html && html.length > 100) {
+                console.log('Starting AI parsing of HTML...')
                 const aiParsed = await parseReportWithAI(html, openaiApiKey)
+                console.log(`AI parsing result: ${aiParsed ? 'success' : 'failed'}`)
+                if (aiParsed) {
+                  console.log(`Found ${aiParsed.findings?.length || 0} findings`)
+                }
             
                 if (aiParsed && aiParsed.findings && aiParsed.findings.length > 0) {
                   const report: UXReport = {

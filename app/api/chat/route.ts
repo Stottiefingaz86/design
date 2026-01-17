@@ -612,6 +612,59 @@ function processAIResponse(aiResponse: string, userMessage: string): string {
     }
   }
   
+  // If user asked about UX findings, reviews, or Jurnii, format findings visually
+  const isUXQuery = 
+    lowerMessage.includes('jurnii') ||
+    lowerMessage.includes('findings') ||
+    lowerMessage.includes('reviews') ||
+    lowerMessage.includes('user feedback') ||
+    lowerMessage.includes('what did') ||
+    lowerMessage.includes('what issues') ||
+    lowerMessage.includes('competitor') ||
+    lowerMessage.includes('ux report') ||
+    lowerMessage.includes('user experience')
+  
+  if (isUXQuery && knowledgeBase.uxReports.length > 0) {
+    // Find relevant reports
+    const relevantReports = knowledgeBase.uxReports.filter(report => {
+      const reportLower = `${report.title} ${report.summary || ''} ${report.source}`.toLowerCase()
+      return lowerMessage.includes('jurnii') ? report.source.toLowerCase().includes('jurnii') :
+             lowerMessage.includes('review') ? report.source.toLowerCase().includes('review') :
+             lowerMessage.includes('website') ? report.source.toLowerCase().includes('website') :
+             true // If no specific source mentioned, include all
+    })
+    
+    if (relevantReports.length > 0) {
+      // Format findings for visual display
+      const findingsDirectives: string[] = []
+      const reviewSummaries: any[] = []
+      
+      relevantReports.forEach(report => {
+        if (report.findings && report.findings.length > 0) {
+          findingsDirectives.push(`UX_FINDINGS:${report.title}:${report.source}:${JSON.stringify(report.findings)}`)
+        }
+        
+        // If it's a review report, also add summary
+        if (report.source.toLowerCase().includes('review') || report.source.toLowerCase().includes('google')) {
+          // Extract rating and themes from summary if available
+          const summaryMatch = report.summary?.match(/(\d+\.?\d*)\s*(star|rating|out of)/i)
+          const rating = summaryMatch ? parseFloat(summaryMatch[1]) : undefined
+          
+          reviewSummaries.push({
+            overallRating: rating,
+            totalReviews: undefined, // Not stored in current structure
+            commonThemes: report.findings?.map(f => f.issue).slice(0, 5) || [],
+            strengths: [], // Not stored in current structure
+          })
+        }
+      })
+      
+      if (findingsDirectives.length > 0) {
+        return `${aiResponse}\n\n${findingsDirectives.join('\n')}`
+      }
+    }
+  }
+  
   return aiResponse
 }
 

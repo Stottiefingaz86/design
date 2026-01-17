@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
+import { UXFindingsCard } from './UXFindingsCard'
+import { ReviewSummaryCard } from './ReviewSummaryCard'
 
 interface ChatMessage {
   id: string
@@ -178,6 +180,73 @@ function parseLogoImages(content: string): { text: string; logos: LogoImage[] } 
   return { text, logos }
 }
 
+// Parse UX findings from message content
+// Format: UX_FINDINGS:title:source:[JSON array of findings]
+function parseUXFindings(content: string): { text: string; findings: any[]; title?: string; source?: string } {
+  const findingsRegex = /UX_FINDINGS:([^:]*):([^:]*):(\[[\s\S]*?\])/g
+  const matches = Array.from(content.matchAll(findingsRegex))
+  
+  if (matches.length === 0) {
+    return { text: content, findings: [] }
+  }
+  
+  const lastMatch = matches[matches.length - 1]
+  let findings: any[] = []
+  let title: string | undefined
+  let source: string | undefined
+  
+  try {
+    title = lastMatch[1] || undefined
+    source = lastMatch[2] || undefined
+    findings = JSON.parse(lastMatch[3])
+  } catch (e) {
+    console.error('Failed to parse UX findings:', e)
+  }
+  
+  // Remove UX_FINDINGS markers from text
+  const text = content.replace(findingsRegex, '').trim()
+  
+  return { text, findings, title, source }
+}
+
+// Parse review summary from message content
+// Format: REVIEW_SUMMARY:rating:totalReviews:themes:strengths
+function parseReviewSummary(content: string): { text: string; summary: any } {
+  const summaryRegex = /REVIEW_SUMMARY:([^:]*):([^:]*):(\[[^\]]*\]):(\[[^\]]*\])/g
+  const match = summaryRegex.exec(content)
+  
+  if (!match) {
+    return { text: content, summary: null }
+  }
+  
+  let overallRating: number | undefined
+  let totalReviews: number | undefined
+  let commonThemes: string[] = []
+  let strengths: string[] = []
+  
+  try {
+    overallRating = match[1] ? parseFloat(match[1]) : undefined
+    totalReviews = match[2] ? parseInt(match[2]) : undefined
+    commonThemes = match[3] ? JSON.parse(match[3]) : []
+    strengths = match[4] ? JSON.parse(match[4]) : []
+  } catch (e) {
+    console.error('Failed to parse review summary:', e)
+  }
+  
+  // Remove REVIEW_SUMMARY marker from text
+  const text = content.replace(summaryRegex, '').trim()
+  
+  return {
+    text,
+    summary: {
+      overallRating,
+      totalReviews,
+      commonThemes,
+      strengths,
+    },
+  }
+}
+
 export function ChatWithCH() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -351,14 +420,19 @@ export function ChatWithCH() {
             >
               <div className="h-[300px] overflow-y-auto p-4 space-y-3 flex flex-col">
                 {messages.map((message) => {
-                  // Parse all special content types
+                  // Parse all special content types in order
                   const { text: textAfterSwatches, swatches } = parseColorSwatches(message.content)
                   const { text: textAfterTokens, tokens } = parseTokenCopies(textAfterSwatches)
-                  const { text: finalText, logos } = parseLogoImages(textAfterTokens)
+                  const { text: textAfterLogos, logos } = parseLogoImages(textAfterTokens)
+                  const { text: textAfterFindings, findings, title: findingsTitle, source: findingsSource } = parseUXFindings(textAfterLogos)
+                  const { text: finalText, summary: reviewSummary } = parseReviewSummary(textAfterFindings)
                   
-                  // Debug: log parsed logos
+                  // Debug: log parsed content
                   if (logos.length > 0) {
                     console.log('Parsed logos from message:', logos)
+                  }
+                  if (findings.length > 0) {
+                    console.log('Parsed UX findings from message:', findings)
                   }
                   
                   return (
@@ -467,6 +541,25 @@ export function ChatWithCH() {
                               <LogoImageBlock key={idx} logo={logo} />
                             ))}
                           </div>
+                        )}
+                        
+                        {/* Render UX findings card */}
+                        {findings.length > 0 && (
+                          <UXFindingsCard
+                            findings={findings}
+                            title={findingsTitle}
+                            source={findingsSource}
+                          />
+                        )}
+                        
+                        {/* Render review summary card */}
+                        {reviewSummary && (
+                          <ReviewSummaryCard
+                            overallRating={reviewSummary.overallRating}
+                            totalReviews={reviewSummary.totalReviews}
+                            commonThemes={reviewSummary.commonThemes}
+                            strengths={reviewSummary.strengths}
+                          />
                         )}
                       </div>
                     </motion.div>
