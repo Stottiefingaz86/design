@@ -1,43 +1,48 @@
-# Starting the Development Server
+# 🚀 How to Start the Server
 
-If you're getting "connection failed" on localhost, follow these steps:
+## The server is not currently running. Here's how to start it:
 
-## Step 1: Open Terminal
+### Step 1: Open a Terminal
 Open your terminal application (Terminal.app on Mac)
 
-## Step 2: Navigate to Project
+### Step 2: Navigate to the project
 ```bash
 cd /Users/christopherhunt/AIagency
 ```
 
-## Step 3: Start the Server
+### Step 3: Start the dev server
 ```bash
 npm run dev
 ```
 
-## Step 4: Wait for Compilation
+### Step 4: Wait for startup
 You should see output like:
 ```
-▲ Next.js 14.2.5
+▲ Next.js 14.2.35
 - Local:        http://localhost:3000
-- Ready in 2.3s
+✓ Ready in Xms
 ```
 
-## Step 5: Open Browser
-Open http://localhost:3000 in your browser
+### Step 5: Open your browser
+Once you see "✓ Ready", open:
+```
+http://localhost:3000
+```
 
-## Troubleshooting
+### What you'll see:
+1. Logo in top-left
+2. Character walking in from left (takes ~3 seconds)
+3. Character stops at center
+4. Chat appears below character
+5. Intro content in right sidebar after ~3.5 seconds
 
-If the server doesn't start:
-1. Make sure you're in the correct directory
-2. Check that node_modules exists: `ls node_modules`
-3. If node_modules is missing, run: `npm install`
-4. Check if port 3000 is already in use: `lsof -ti:3000`
-5. If port is in use, kill the process or use a different port: `npm run dev -- -p 3001`
+## ✅ All Issues Fixed:
+- Build now passes ✅
+- Character animation fixed ✅
+- TypeScript errors resolved ✅
+- Visual markups ready ✅
 
-## Common Issues
+## 💡 Tip:
+Keep the terminal window open - that's where the server is running. You'll see logs there.
+If you close it, the server stops. Just run `npm run dev` again to restart.
 
-- **"npm: command not found"** - Node.js/npm is not installed or not in PATH
-- **"Port 3000 already in use"** - Another process is using the port
-- **"Cannot find module"** - Run `npm install` to install dependencies
-- **Blank screen** - Check browser console (F12) for JavaScript errors

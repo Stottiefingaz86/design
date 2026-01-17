@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { addUXReport, UXReport } from '@/lib/agent/knowledgeBase'
 import { scrapeJurniiReport, parseReportWithAI } from '@/lib/utils/jurniiScraper'
 import { analyzeWebsite } from '@/lib/utils/websiteAnalyzer'
-import { searchGoogleReviews } from '@/lib/utils/googleReviewsCrawler'
+import { crawlGoogleReviews } from '@/lib/utils/googleReviewsCrawler'
+import { processAllReports } from '@/lib/utils/reportExtractor'
 
 /**
  * API endpoint to add UX reports to the knowledge base
@@ -11,7 +12,25 @@ import { searchGoogleReviews } from '@/lib/utils/googleReviewsCrawler'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { url, reportData, manual, analyzeWebsite: shouldAnalyzeWebsite } = body
+    const { url, reportData, manual, analyzeWebsite: shouldAnalyzeWebsite, crawlGoogleReviews: shouldCrawlGoogleReviews, processPDFs } = body
+
+    // If user wants to process all PDFs from public/reports/
+    if (processPDFs) {
+      const openaiApiKey = process.env.OPENAI_API_KEY
+      if (!openaiApiKey) {
+        return NextResponse.json({
+          success: false,
+          error: 'OPENAI_API_KEY not configured',
+        }, { status: 400 })
+      }
+
+      const results = await processAllReports(openaiApiKey)
+      return NextResponse.json({
+        success: true,
+        message: `Processed ${results.processed} reports, ${results.failed} failed`,
+        results,
+      })
+    }
 
     // If manual report data is provided, add it directly
     if (manual && reportData) {
@@ -26,7 +45,7 @@ export async function POST(request: Request) {
         priority: reportData.priority,
       }
 
-      addUXReport(report)
+      await addUXReport(report)
 
       return NextResponse.json({
         success: true,
@@ -37,10 +56,12 @@ export async function POST(request: Request) {
 
     // If URL is provided, attempt to extract data
     if (url) {
-      // Check if Jurnii credentials are available
+      // Check if credentials are available
       const jurniiEmail = process.env.JURNII_EMAIL
       const jurniiPassword = process.env.JURNII_PASSWORD
       const openaiApiKey = process.env.OPENAI_API_KEY
+      const googleApiKey = process.env.GOOGLE_API_KEY
+      const googleCseId = process.env.GOOGLE_CSE_ID
 
       // If it's a website URL and user wants analysis, analyze it as a UX expert
       if (shouldAnalyzeWebsite && openaiApiKey && !url.includes('jurnii.io')) {
@@ -66,7 +87,7 @@ export async function POST(request: Request) {
               priority: 'high',
             }
 
-            addUXReport(report)
+            await addUXReport(report)
 
             return NextResponse.json({
               success: true,
@@ -123,18 +144,26 @@ export async function POST(request: Request) {
                     sourceUrl: url,
                     title: aiParsed.title || 'UX Report from Jurnii',
                     date: aiParsed.date || new Date().toISOString().split('T')[0],
+                    executiveSummary: aiParsed.executiveSummary,
+                    perception: aiParsed.perception,
+                    journey: aiParsed.journey,
+                    trends: aiParsed.trends,
+                    performance: aiParsed.performance,
+                    checking: aiParsed.checking,
+                    competitorScores: aiParsed.competitorScores || [],
                     findings: aiParsed.findings.map(f => ({
                       issue: f.issue,
                       severity: f.severity,
                       description: f.description,
                       recommendation: f.recommendation,
                       affectedArea: f.affectedArea,
+                      section: f.section,
                     })),
-                    summary: aiParsed.summary,
+                    summary: aiParsed.summary || aiParsed.executiveSummary,
                     priority: 'high', // Default, can be adjusted
                   }
 
-                  addUXReport(report)
+                  await addUXReport(report)
 
                   return NextResponse.json({
                     success: true,
@@ -163,7 +192,7 @@ export async function POST(request: Request) {
               priority: 'high',
             }
 
-            addUXReport(report)
+            await addUXReport(report)
 
             return NextResponse.json({
               success: true,
@@ -175,6 +204,53 @@ export async function POST(request: Request) {
         } catch (error: any) {
           console.error('Jurnii scraping failed:', error)
           // Fall through to manual instructions
+        }
+      }
+
+      // --- 3. Google Web Search (articles, reviews, news, etc.) (if requested) ---
+      if (shouldCrawlGoogleReviews && openaiApiKey && googleApiKey && googleCseId) {
+        try {
+          console.log(`Searching Google for articles, reviews, and content about: ${url}`)
+          const searchSummary = await crawlGoogleReviews(url, googleApiKey, googleCseId, openaiApiKey)
+
+          if (searchSummary) {
+            const report: UXReport = {
+              id: `google-search-${Date.now()}`,
+              source: searchSummary.source || 'Google Web Search',
+              sourceUrl: url,
+              title: `Web Content Analysis for ${new URL(url).hostname}`,
+              date: new Date().toISOString().split('T')[0],
+              findings: searchSummary.findings.map(f => ({
+                issue: f.issue,
+                severity: f.severity,
+                description: f.description,
+                recommendation: f.recommendation,
+                affectedArea: f.affectedArea,
+              })),
+              summary: searchSummary.summary,
+              priority: 'medium', // Default priority for web content
+              overallRating: searchSummary.overallRating,
+              totalReviews: searchSummary.totalReviews,
+              themes: searchSummary.themes,
+            }
+            await addUXReport(report)
+            return NextResponse.json({
+              success: true,
+              message: 'Google web search completed and insights added to knowledge base',
+              reportId: report.id,
+              findingsCount: report.findings.length,
+              overallRating: report.overallRating,
+              totalReviews: report.totalReviews,
+              articleCount: searchSummary.articleCount,
+              contentTypes: searchSummary.contentTypes,
+            })
+          }
+        } catch (reviewError: any) {
+          console.error('Google web search failed:', reviewError)
+          return NextResponse.json({
+            success: false,
+            error: `Google web search failed: ${reviewError.message}`,
+          }, { status: 500 })
         }
       }
 
@@ -228,11 +304,18 @@ export async function POST(request: Request) {
  */
 export async function GET() {
   try {
+    // Try Supabase first, then fallback to in-memory
+    let reports: UXReport[] = []
+    
+    // Fallback to in-memory knowledge base
+    // Supabase integration can be added later if needed
     const { knowledgeBase } = await import('@/lib/agent/knowledgeBase')
+    reports = knowledgeBase.uxReports
+    
     return NextResponse.json({
       success: true,
-      reports: knowledgeBase.uxReports,
-      count: knowledgeBase.uxReports.length,
+      reports,
+      count: reports.length,
     })
   } catch (error) {
     console.error('UX Report GET error:', error)

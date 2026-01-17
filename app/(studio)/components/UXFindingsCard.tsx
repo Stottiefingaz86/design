@@ -14,9 +14,10 @@ interface UXFindingsCardProps {
   findings: Finding[]
   title?: string
   source?: string
+  sourceUrl?: string
 }
 
-export function UXFindingsCard({ findings, title, source }: UXFindingsCardProps) {
+export function UXFindingsCard({ findings, title, source, sourceUrl }: UXFindingsCardProps) {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -55,8 +56,25 @@ export function UXFindingsCard({ findings, title, source }: UXFindingsCardProps)
     >
       {(title || source) && (
         <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
-          {title && <h4 className="text-white font-semibold text-sm">{title}</h4>}
-          {source && <span className="text-white/50 text-xs">{source}</span>}
+          <div className="flex-1">
+            {title && <h4 className="text-white font-semibold text-sm mb-1">{title}</h4>}
+            {source && (
+              <div className="flex items-center gap-2">
+                <span className="text-white/60 text-xs">📊 Source:</span>
+                <span className="text-white/70 text-xs font-medium">{source}</span>
+                {sourceUrl && (
+                  <a 
+                    href={sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-white/50 text-xs hover:text-white/70 underline"
+                  >
+                    View source →
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
       

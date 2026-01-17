@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useSceneStore } from '@/lib/store/sceneStore'
 import { UXFindingsCard } from './UXFindingsCard'
 import { ReviewSummaryCard } from './ReviewSummaryCard'
+import { formatTextWithMarkups } from './TextWithMarkups'
 
 interface ChatMessage {
   id: string
@@ -181,32 +182,110 @@ function parseLogoImages(content: string): { text: string; logos: LogoImage[] } 
 }
 
 // Parse UX findings from message content
-// Format: UX_FINDINGS:title:source:[JSON array of findings]
-function parseUXFindings(content: string): { text: string; findings: any[]; title?: string; source?: string } {
-  const findingsRegex = /UX_FINDINGS:([^:]*):([^:]*):(\[[\s\S]*?\])/g
-  const matches = Array.from(content.matchAll(findingsRegex))
+// Format: UX_FINDINGS:title:source (date):sourceUrl:[JSON array of findings]
+// Handles multiple UX_FINDINGS directives by combining all findings
+function parseUXFindings(content: string): { text: string; findings: any[]; title?: string; source?: string; sourceUrl?: string } {
+  // More robust regex that handles:
+  // - Source with dates in parentheses: "Jurnii (2024-12-13)"
+  // - Source URLs with colons: "https://..."
+  // - Multiline JSON arrays
+  // Strategy: Match UX_FINDINGS: then find the JSON array (starts with [ and ends with ])
+  // Everything between UX_FINDINGS: and the [ is the metadata (title:source:sourceUrl)
   
+  // First, find all UX_FINDINGS directives by looking for the pattern and finding the matching JSON array
+  const findingsRegex = /UX_FINDINGS:([^\n]*?):(\[[\s\S]*?\])/g
+  const matches: Array<{ fullMatch: string; metadata: string; jsonArray: string; index: number }> = []
+  let match
+  
+  // Reset regex lastIndex
+  findingsRegex.lastIndex = 0
+  
+  while ((match = findingsRegex.exec(content)) !== null) {
+    const fullMatch = match[0]
+    const metadata = match[1] // Everything between UX_FINDINGS: and the [
+    const jsonArray = match[2] // The JSON array
+    
+    // Parse metadata (title:source:sourceUrl)
+    // Split by : but be careful with URLs
+    const metadataParts = metadata.split(':')
+    let title = metadataParts[0] || ''
+    let source = metadataParts[1] || ''
+    let sourceUrl = metadataParts.slice(2).join(':') || '' // Rejoin in case sourceUrl contains colons
+    
+    matches.push({
+      fullMatch,
+      metadata,
+      jsonArray,
+      index: match.index || 0
+    })
+  }
+  
+  // If no matches found, return original content
   if (matches.length === 0) {
     return { text: content, findings: [] }
   }
   
-  const lastMatch = matches[matches.length - 1]
-  let findings: any[] = []
+  // Combine all findings from all matches
+  let allFindings: any[] = []
   let title: string | undefined
   let source: string | undefined
-  
-  try {
-    title = lastMatch[1] || undefined
-    source = lastMatch[2] || undefined
-    findings = JSON.parse(lastMatch[3])
-  } catch (e) {
-    console.error('Failed to parse UX findings:', e)
+  let sourceUrl: string | undefined
+
+  // Process each match
+  matches.forEach((matchObj, index) => {
+    try {
+      const matchFindings = JSON.parse(matchObj.jsonArray)
+      if (Array.isArray(matchFindings)) {
+        allFindings = allFindings.concat(matchFindings)
+      }
+
+      // Parse metadata (title:source:sourceUrl)
+      const metadataParts = matchObj.metadata.split(':')
+      const matchTitle = metadataParts[0] || ''
+      const matchSource = metadataParts[1] || ''
+      const matchSourceUrl = metadataParts.slice(2).join(':') || ''
+
+      // Use first match for metadata, or combine if multiple reports
+      if (index === 0) {
+        title = matchTitle || undefined
+        source = matchSource || undefined
+        sourceUrl = matchSourceUrl || undefined
+      } else {
+        // If multiple reports, combine titles/sources
+        if (matchTitle && matchTitle !== title) {
+          title = title ? `${title}; ${matchTitle}` : matchTitle
+        }
+        if (matchSource && matchSource !== source) {
+          source = source ? `${source}; ${matchSource}` : matchSource
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse UX findings from match:', e, matchObj)
+    }
+  })
+
+  // Remove ALL UX_FINDINGS directives from text
+  // Iterate in reverse to avoid issues with changing string indices
+  let text = content
+  for (let i = matches.length - 1; i >= 0; i--) {
+    const matchObj = matches[i]
+    const startIndex = matchObj.index
+    const endIndex = startIndex + matchObj.fullMatch.length
+    text = text.substring(0, startIndex) + text.substring(endIndex)
   }
   
-  // Remove UX_FINDINGS markers from text
-  const text = content.replace(findingsRegex, '').trim()
+  // Also remove any remaining UX_FINDINGS patterns that might have been missed
+  // This handles edge cases where the regex might not have caught everything
+  text = text.replace(/UX_FINDINGS:[^\n]*/g, '') // Remove any single-line directives
+  text = text.replace(/UX_FINDINGS:[\s\S]*?\]/g, '') // Remove multiline directives with JSON
+  text = text.replace(/UX_FINDINGS:[\s\S]*$/g, '') // Remove any remaining at end of string
   
-  return { text, findings, title, source }
+  // Clean up any double newlines or extra whitespace
+  text = text.replace(/\n\n+/g, '\n\n').trim()
+  // Remove any leading/trailing newlines
+  text = text.replace(/\n+$/g, '').replace(/^\n+/g, '').trim()
+  
+  return { text, findings: allFindings, title, source, sourceUrl }
 }
 
 // Parse review summary from message content
@@ -248,6 +327,7 @@ function parseReviewSummary(content: string): { text: string; summary: any } {
 }
 
 export function ChatWithCH() {
+  const [mounted, setMounted] = useState(true) // Start as true since this is a client component
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -257,24 +337,302 @@ export function ChatWithCH() {
     },
   ])
   const [inputValue, setInputValue] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null)
+  const [streamingContent, setStreamingContent] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const showLilly = useSceneStore((state) => state.showLilly)
-  const isWalkingOut = useSceneStore((state) => state.isWalkingOut)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const [isUserScrolledUp, setIsUserScrolledUp] = useState(false)
+  const [isScrolling, setIsScrolling] = useState(false) // Track if user is actively scrolling
+  const [userHasScrolled, setUserHasScrolled] = useState(false) // Track if user has manually scrolled
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastScrollTopRef = useRef<number>(0)
+  const lastAutoScrollTimeRef = useRef<number>(0) // Throttle auto-scroll calls
+  const triggerKool = useSceneStore((state) => state.triggerKool)
+  
+  // Design request flow state
+  const [isDesignRequestFlow, setIsDesignRequestFlow] = useState(false)
+  const [requestStep, setRequestStep] = useState<'area' | 'what' | 'why' | 'context' | 'goals' | 'useCases' | 'deadline' | 'complete'>('area')
+  const [editingField, setEditingField] = useState<'area' | 'what' | 'why' | 'context' | 'goals' | 'useCases' | null>(null)
+  const requestArea = useSceneStore((state) => state.requestArea)
+  const setRequestArea = useSceneStore((state) => state.setRequestArea)
+  const userRequest = useSceneStore((state) => state.userRequest)
+  const setUserRequest = useSceneStore((state) => state.setUserRequest)
+  const setDeadline = useSceneStore((state) => state.setDeadline)
+  const goToScene = useSceneStore((state) => state.goToScene)
+  
+  // Helper to skip optional field
+  const handleSkip = () => {
+    if (requestStep === 'context') {
+      const updatedRequest = { ...userRequest, context: '' }
+      setUserRequest(updatedRequest)
+      triggerKool()
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'user',
+          content: '(skipped)',
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'What are your goals? (optional)',
+          timestamp: new Date(),
+        },
+      ])
+      setRequestStep('goals')
+      setInputValue('')
+    } else if (requestStep === 'goals') {
+      const updatedRequest = { ...userRequest, goals: '' }
+      setUserRequest(updatedRequest)
+      triggerKool()
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'user',
+          content: '(skipped)',
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Any use cases? (optional)',
+          timestamp: new Date(),
+        },
+      ])
+      setRequestStep('useCases')
+      setInputValue('')
+    } else if (requestStep === 'useCases') {
+      const updatedRequest = { ...userRequest, useCases: '' }
+      setUserRequest(updatedRequest)
+      triggerKool()
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'user',
+          content: '(skipped)',
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'When do you need this?',
+          timestamp: new Date(),
+        },
+      ])
+      setRequestStep('deadline')
+      setInputValue('')
+    }
+  }
+  
+  // Helper to edit a field
+  const handleEditField = (field: 'area' | 'what' | 'why' | 'context' | 'goals' | 'useCases') => {
+    setEditingField(field)
+    if (field === 'area') {
+      setRequestStep('area')
+      setInputValue('')
+    } else {
+      setRequestStep(field)
+      setInputValue(field === 'what' ? userRequest.what : field === 'why' ? userRequest.why : field === 'context' ? userRequest.context : field === 'goals' ? userRequest.goals : userRequest.useCases)
+    }
+  }
+  
+  const areaOptions = ['Sports', 'Casino', 'Loyalty', 'Authentication', 'Poker', 'Other area']
+  
+  // Dynamic suggestions based on knowledge base
+  const [suggestions, setSuggestions] = useState<string[]>([
+    'Make a design request',
+    'Tell me about our tone of voice',
+    'What are our brand guidelines?',
+    'Do you need retention data?',
+    'Tell me about our design system tokens',
+    'What are BetOnline\'s primary colors?',
+  ])
+  
+  // Load suggestions from API
+  useEffect(() => {
+    fetch('/api/suggestions')
+      .then(res => res.json())
+      .then(data => {
+        if (data.suggestions && data.suggestions.length > 0) {
+          setSuggestions(data.suggestions)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to load suggestions:', err)
+        // Keep default suggestions on error
+      })
+  }, [])
 
-  // Only show chat when CH is visible (not when Lilly is showing)
-  const shouldShow = !showLilly && !isWalkingOut
+  // Ensure component is mounted before showing animations
+  useEffect(() => {
+    // Use a small delay to ensure client-side hydration is complete
+    const timer = setTimeout(() => {
+      setMounted(true)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  // Listen for reset event to bring CH back and reset chat
+  useEffect(() => {
+    const handleResetChatAndCH = () => {
+      // Reset design request flow state
+      setIsDesignRequestFlow(false)
+      setRequestStep('area')
+      setEditingField(null)
+      
+      // Reset chat messages to initial state
+      setMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          content: 'Hey, what do you need help with?',
+          timestamp: new Date(),
+        },
+      ])
+      setInputValue('')
+    }
+    
+    window.addEventListener('resetChatAndCH', handleResetChatAndCH)
+    return () => window.removeEventListener('resetChatAndCH', handleResetChatAndCH)
+  }, [])
+  
+  // Listen for clickable suggestion clicks from numbered lists
+  useEffect(() => {
+    const handleClickSuggestion = (e: Event) => {
+      const customEvent = e as CustomEvent
+      const suggestionText = customEvent.detail
+      // Use a timeout to ensure handleSend is available
+      setTimeout(() => {
+        handleSend(undefined, suggestionText)
+      }, 0)
+    }
+    
+    window.addEventListener('clickSuggestion', handleClickSuggestion)
+    return () => window.removeEventListener('clickSuggestion', handleClickSuggestion)
+  }, []) // handleSend is stable, so empty deps is fine
+
+  // Check if user is at/near the bottom of the chat
+  const isAtBottom = () => {
+    const container = messagesContainerRef.current
+    if (!container) return true
+    
+    const threshold = 150 // pixels from bottom (increased for better detection)
+    const isNearBottom = 
+      container.scrollHeight - container.scrollTop - container.clientHeight < threshold
+    return isNearBottom
   }
 
+  const scrollToBottom = (force = false) => {
+    // Don't auto-scroll if user is actively scrolling, has scrolled up, or has manually scrolled
+    if (isScrolling || userHasScrolled || (!force && isUserScrolledUp)) {
+      return
+    }
+    
+    // Only auto-scroll if user is already at bottom, or if forced (new messages)
+    if (force || isAtBottom()) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      setIsUserScrolledUp(false)
+      setUserHasScrolled(false) // Reset when we force scroll (new message)
+    }
+  }
+
+  // Track user scroll to detect when they scroll up
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    const container = messagesContainerRef.current
+    if (!container) return
+
+    const handleScroll = () => {
+      const currentScrollTop = container.scrollTop
+      const scrollDelta = currentScrollTop - lastScrollTopRef.current
+      
+      // If user scrolled up (negative delta or scrollTop decreased), mark as manual scroll
+      if (scrollDelta < -5 || (scrollDelta === 0 && currentScrollTop < lastScrollTopRef.current)) {
+        setUserHasScrolled(true)
+        setIsUserScrolledUp(true)
+      }
+      
+      // Update last scroll position
+      lastScrollTopRef.current = currentScrollTop
+      
+      // Mark that user is actively scrolling
+      setIsScrolling(true)
+      
+      // Clear any existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+      
+      // After user stops scrolling for 200ms, check position
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsScrolling(false)
+        const atBottom = isAtBottom()
+        setIsUserScrolledUp(!atBottom)
+        
+        // If user is at bottom, reset manual scroll flag
+        if (atBottom) {
+          setUserHasScrolled(false)
+        }
+      }, 200)
+
+      // Immediately check if user scrolled up significantly
+      const atBottom = isAtBottom()
+      if (!atBottom) {
+        setIsUserScrolledUp(true)
+        setUserHasScrolled(true)
+        // Reset auto-scroll throttle when user scrolls up
+        lastAutoScrollTimeRef.current = 0
+      } else if (atBottom && scrollDelta > 5) {
+        // User scrolled down to bottom - reset manual scroll flag
+        setUserHasScrolled(false)
+        setIsUserScrolledUp(false)
+      }
+    }
+
+    // Initialize last scroll position
+    lastScrollTopRef.current = container.scrollTop
+
+    container.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Only auto-scroll on new messages if user is at bottom and not actively scrolling
+  useEffect(() => {
+    if (messages.length > 0 && !isUserScrolledUp && !isScrolling && !userHasScrolled) {
+      // Small delay to ensure DOM is updated
+      requestAnimationFrame(() => {
+        if (!isScrolling && !isUserScrolledUp && !userHasScrolled) {
+          scrollToBottom(false) // Don't force - respect user's scroll position
+        }
+      })
+    }
+  }, [messages, isUserScrolledUp, isScrolling, userHasScrolled]) // Only when messages change, not streamingContent
+
+  // DISABLED: Auto-scroll during streaming - let the streaming interval handle it
+  // This prevents conflicts with manual scrolling
+  // useEffect(() => {
+  //   if (streamingContent && !isUserScrolledUp && !isScrolling) {
+  //     requestAnimationFrame(() => {
+  //       if (!isScrolling && !isUserScrolledUp && isAtBottom()) {
+  //         scrollToBottom(false)
+  //       }
+  //     })
+  //   }
+  // }, [streamingContent, isUserScrolledUp, isScrolling])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -296,20 +654,226 @@ export function ChatWithCH() {
     setUploadedImages((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputValue.trim() && uploadedImages.length === 0) return
+  // Check if current step is optional field (for Skip button and empty input handling)
+  const isOptionalField = isDesignRequestFlow && (requestStep === 'context' || requestStep === 'goals' || requestStep === 'useCases')
+  
+  const handleSend = async (e?: React.FormEvent, messageText?: string) => {
+    e?.preventDefault()
+    const textToSend = messageText || inputValue.trim()
+    
+    // Only block empty input if not in optional field
+    if (!textToSend && uploadedImages.length === 0 && !isOptionalField) return
+
+    // Check if user wants to start design request flow
+    if (!isDesignRequestFlow && textToSend.toLowerCase().includes('make a design request')) {
+      setIsDesignRequestFlow(true)
+      setRequestStep('area')
+      triggerKool()
+      
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: 'user',
+          content: textToSend,
+          timestamp: new Date(),
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Which area are you requesting?',
+          timestamp: new Date(),
+        },
+      ])
+      setInputValue('')
+      return
+    }
+
+    // Handle design request flow
+    if (isDesignRequestFlow) {
+      if (requestStep === 'area') {
+        // User selected an area
+        const selectedArea = textToSend
+        setRequestArea(selectedArea)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: selectedArea,
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'What do you need?',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('what')
+        setInputValue('')
+        return
+      } else if (requestStep === 'what') {
+        const updatedRequest = { ...userRequest, what: textToSend }
+        setUserRequest(updatedRequest)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend,
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'Why do you need this?',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('why')
+        setInputValue('')
+        return
+      } else if (requestStep === 'why') {
+        const updatedRequest = { ...userRequest, why: textToSend }
+        setUserRequest(updatedRequest)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend,
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'Any additional context? (optional - press Enter to skip)',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('context')
+        setInputValue('')
+        return
+      } else if (requestStep === 'context') {
+        const updatedRequest = { ...userRequest, context: textToSend || '' }
+        setUserRequest(updatedRequest)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend || '(skipped)',
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'What are your goals? (optional - press Enter to skip)',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('goals')
+        setInputValue('')
+        return
+      } else if (requestStep === 'goals') {
+        const updatedRequest = { ...userRequest, goals: textToSend || '' }
+        setUserRequest(updatedRequest)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend || '(skipped)',
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'Any use cases? (optional - press Enter to skip)',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('useCases')
+        setInputValue('')
+        return
+      } else if (requestStep === 'useCases') {
+        const updatedRequest = { ...userRequest, useCases: textToSend || '' }
+        setUserRequest(updatedRequest)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend || '(skipped)',
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'When do you need this?',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('deadline')
+        setInputValue('')
+        return
+      } else if (requestStep === 'deadline') {
+        setDeadline(textToSend)
+        triggerKool()
+        
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Date.now().toString(),
+            role: 'user',
+            content: textToSend,
+            timestamp: new Date(),
+          },
+          {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: 'Request submitted! I\'ll get started on this right away.',
+            timestamp: new Date(),
+          },
+        ])
+        setRequestStep('complete')
+        setIsDesignRequestFlow(false)
+        setInputValue('')
+        setEditingField(null)
+        
+        // Submit to API and show delivering scene
+        goToScene('delivering')
+        return
+      }
+    }
+
+    // Normal chat flow
+    // Trigger kool animation when user sends a message
+    triggerKool()
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim() || 'Analyze this image',
+      content: textToSend || 'Analyze this image',
       timestamp: new Date(),
       images: uploadedImages.length > 0 ? [...uploadedImages] : undefined,
     }
 
     setMessages((prev) => [...prev, userMessage])
-    const currentInput = inputValue.trim()
+    const currentInput = textToSend
     const currentImages = [...uploadedImages]
     setInputValue('')
     setUploadedImages([])
@@ -342,15 +906,92 @@ export function ChatWithCH() {
       }
 
       const data = await response.json()
+      const messageId = (Date.now() + 1).toString()
+      const fullResponse = data.response
+      
+      // Create message with empty content initially
       const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: messageId,
         role: 'assistant',
-        content: data.response,
+        content: '',
         timestamp: new Date(),
         generatedImage: data.generatedImage, // AI-generated image URL
       }
 
+      // Add message to chat immediately with empty content
       setMessages((prev) => [...prev, assistantMessage])
+      
+      // Stream the response character by character (ChatGPT-style)
+      setStreamingMessageId(messageId)
+      setStreamingContent('')
+      
+      let currentIndex = 0
+      const typeSpeed = 10 // milliseconds per character (faster than speech bubbles)
+      
+      const streamInterval = setInterval(() => {
+        if (currentIndex < fullResponse.length) {
+          currentIndex++
+          const partialContent = fullResponse.slice(0, currentIndex)
+          setStreamingContent(partialContent)
+          
+          // Update the message content in real-time
+          setMessages((prev) => 
+            prev.map((msg) => 
+              msg.id === messageId 
+                ? { ...msg, content: partialContent }
+                : msg
+            )
+          )
+          
+          // Auto-scroll during streaming - HEAVILY THROTTLED to prevent shaking
+          // Only scroll every 200ms max, and only if user is at bottom
+          const now = Date.now()
+          const timeSinceLastScroll = now - lastAutoScrollTimeRef.current
+          
+          // Only attempt scroll every 200ms (much less frequent)
+          if (timeSinceLastScroll > 200) {
+            const container = messagesContainerRef.current
+            if (container) {
+              const scrollTop = container.scrollTop
+              const scrollHeight = container.scrollHeight
+              const clientHeight = container.clientHeight
+              const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+              
+              // Only auto-scroll if user is VERY close to bottom (within 30px)
+              // This prevents interference when user has scrolled up even slightly
+              if (distanceFromBottom < 30) {
+                lastAutoScrollTimeRef.current = now
+                // Use requestAnimationFrame for smoother scrolling
+                requestAnimationFrame(() => {
+                  // Double-check position hasn't changed (user might have scrolled)
+                  const container = messagesContainerRef.current
+                  if (container && messagesEndRef.current) {
+                    const currentDistance = container.scrollHeight - container.scrollTop - container.clientHeight
+                    // Only scroll if still very close to bottom AND user hasn't manually scrolled
+                    if (currentDistance < 30 && !userHasScrolled) {
+                      // Use scrollTop directly instead of scrollIntoView to avoid jitter
+                      // Only update if it actually needs to change
+                      const targetScroll = container.scrollHeight - container.clientHeight
+                      if (Math.abs(container.scrollTop - targetScroll) > 5) {
+                        container.scrollTop = targetScroll
+                      }
+                    }
+                  }
+                })
+              }
+            }
+          }
+        } else {
+          // Streaming complete - scroll to bottom if user was already at bottom
+          clearInterval(streamInterval)
+          setStreamingMessageId(null)
+          setStreamingContent('')
+          if (isAtBottom()) {
+            scrollToBottom(false)
+          }
+        }
+      }, typeSpeed)
+      
     } catch (error) {
       console.error('Chat error:', error)
       // Fallback response
@@ -366,65 +1007,198 @@ export function ChatWithCH() {
     }
   }
 
-  if (!shouldShow) return null
+  // Chat is always open - no conditional rendering
+  if (!mounted) {
+    return (
+      <div className="w-full h-full flex flex-col neu-soft border border-white/10">
+        <div className="w-full p-4 border-b border-white/5 flex items-center gap-2 flex-shrink-0">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 16 16" 
+            fill="none" 
+            className="text-white/60 flex-shrink-0"
+          >
+            <path 
+              d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V10C14 10.5523 13.5523 11 13 11H6L3 14V3Z" 
+              stroke="currentColor" 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-white/80 text-sm font-light">Talk with CH</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-white/40 text-xs">Loading...</div>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-md px-4" style={{ zIndex: 101 }}>
+    <div className="w-full h-full flex flex-col">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="neu-soft rounded-xl overflow-hidden border border-white/10"
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col h-full neu-soft border border-white/10"
       >
-        {/* Chat Header */}
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full p-3 flex items-center justify-between hover:neu-inset transition-all"
-        >
-          <div className="flex items-center gap-2">
-            <svg 
-              width="16" 
-              height="16" 
-              viewBox="0 0 16 16" 
-              fill="none" 
-              className="text-white/60 flex-shrink-0"
-            >
-              <path 
-                d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V10C14 10.5523 13.5523 11 13 11H6L3 14V3Z" 
-                stroke="currentColor" 
-                strokeWidth="1.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-white/80 text-sm font-light">Chat with CH</span>
-          </div>
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
+        {/* Chat Header - Fixed at top */}
+        <div className="w-full p-4 border-b border-white/5 flex items-center gap-2 flex-shrink-0">
+          <svg 
+            width="16" 
+            height="16" 
+            viewBox="0 0 16 16" 
+            fill="none" 
+            className="text-white/60 flex-shrink-0"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/60">
-              <path d="M4 6l4 4 4-4" />
-            </svg>
-          </motion.div>
-        </button>
+            <path 
+              d="M2 3C2 2.44772 2.44772 2 3 2H13C13.5523 2 14 2.44772 14 3V10C14 10.5523 13.5523 11 13 11H6L3 14V3Z" 
+              stroke="currentColor" 
+              strokeWidth="1.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-white/80 text-sm font-light">Talk with CH</span>
+        </div>
 
-        {/* Chat Messages */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="h-[300px] overflow-y-auto p-4 space-y-3 flex flex-col">
-                {messages.map((message) => {
+        {/* Chat Messages - Scrollable area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 flex flex-col min-h-0">
+                {/* Suggestion Prompts - Show when chat is open and only has initial message */}
+                {messages.length === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="space-y-2 mb-2"
+                  >
+                    <div className="text-white/50 text-xs font-light mb-3">
+                      Try asking about:
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {suggestions.map((suggestion, idx) => (
+                        <motion.button
+                          key={idx}
+                          onClick={() => {
+                            // Send suggestion directly without updating input value first
+                            handleSend(undefined, suggestion)
+                          }}
+                          className="text-left p-2.5 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all text-white/70 text-xs font-light"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          {suggestion}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+                
+                {/* Show editable summary cards for completed design request fields */}
+                {isDesignRequestFlow && (requestStep !== 'area' || requestArea) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2 mb-4"
+                  >
+                    {requestArea && (
+                      <motion.button
+                        onClick={() => handleEditField('area')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">Area</div>
+                        <div className="text-white text-sm font-light">{requestArea}</div>
+                      </motion.button>
+                    )}
+                    {userRequest.what && (
+                      <motion.button
+                        onClick={() => handleEditField('what')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">What</div>
+                        <div className="text-white text-sm font-light">{userRequest.what}</div>
+                      </motion.button>
+                    )}
+                    {userRequest.why && (
+                      <motion.button
+                        onClick={() => handleEditField('why')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">Why</div>
+                        <div className="text-white text-sm font-light">{userRequest.why}</div>
+                      </motion.button>
+                    )}
+                    {userRequest.context && (
+                      <motion.button
+                        onClick={() => handleEditField('context')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">Context</div>
+                        <div className="text-white text-sm font-light">{userRequest.context}</div>
+                      </motion.button>
+                    )}
+                    {userRequest.goals && (
+                      <motion.button
+                        onClick={() => handleEditField('goals')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">Goals</div>
+                        <div className="text-white text-sm font-light">{userRequest.goals}</div>
+                      </motion.button>
+                    )}
+                    {userRequest.useCases && (
+                      <motion.button
+                        onClick={() => handleEditField('useCases')}
+                        className="w-full text-left p-3 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="text-white/50 text-xs font-light mb-1">Use Cases</div>
+                        <div className="text-white text-sm font-light">{userRequest.useCases}</div>
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )}
+                
+                {messages.map((message, msgIndex) => {
+                  // Check if this is the area selection message - show buttons if assistant message and we're in design flow on area step
+                  const isAreaSelectionMessage = 
+                    message.role === 'assistant' && 
+                    message.content === 'Which area are you requesting?' && 
+                    isDesignRequestFlow && 
+                    requestStep === 'area'
+                  
+                  // Use streaming content if this message is currently streaming
+                  const messageContent = streamingMessageId === message.id && streamingContent 
+                    ? streamingContent 
+                    : message.content
+                  
                   // Parse all special content types in order
-                  const { text: textAfterSwatches, swatches } = parseColorSwatches(message.content)
+                  // Always parse to remove directives from text, but only show cards when streaming is complete
+                  const { text: textAfterSwatches, swatches } = parseColorSwatches(messageContent)
                   const { text: textAfterTokens, tokens } = parseTokenCopies(textAfterSwatches)
                   const { text: textAfterLogos, logos } = parseLogoImages(textAfterTokens)
-                  const { text: textAfterFindings, findings, title: findingsTitle, source: findingsSource } = parseUXFindings(textAfterLogos)
+                  
+                  // Parse findings to remove UX_FINDINGS directives from text (prevents CSS code from showing)
+                  // But only show actual findings cards when streaming is complete
+                  const { text: textAfterFindings, findings, title: findingsTitle, source: findingsSource, sourceUrl: findingsSourceUrl } = parseUXFindings(textAfterLogos)
+                  
+                  // During streaming, don't show findings yet (they'll show as skeleton)
+                  // After streaming, show the actual findings cards
+                  const shouldShowFindings = findings.length > 0 && streamingMessageId !== message.id
+                  
                   const { text: finalText, summary: reviewSummary } = parseReviewSummary(textAfterFindings)
                   
                   // Debug: log parsed content
@@ -449,6 +1223,23 @@ export function ChatWithCH() {
                             : 'neu-soft bg-white/5 text-white/90 text-sm'
                         }`}
                       >
+                        {/* Area selection buttons */}
+                        {isAreaSelectionMessage && (
+                          <div className="space-y-2 mt-2">
+                            {areaOptions.map((area) => (
+                              <motion.button
+                                key={area}
+                                onClick={() => handleSend(undefined, area)}
+                                className="w-full text-left p-2.5 neu-flat rounded-lg border border-white/10 hover:neu-inset transition-all text-white/80 text-sm font-light"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                              >
+                                {area}
+                              </motion.button>
+                            ))}
+                          </div>
+                        )}
+                        
                         {/* Display uploaded images */}
                         {message.images && message.images.length > 0 && (
                           <div className="mb-2 space-y-2">
@@ -474,45 +1265,27 @@ export function ChatWithCH() {
                           </div>
                         )}
                         
-                        {/* Render text with markdown-style formatting */}
+                        {/* Render logo images inline (before text) */}
+                        {logos.length > 0 && (
+                          <div className="mb-3 space-y-3">
+                            {logos.map((logo, idx) => (
+                              <LogoImageBlock key={idx} logo={logo} />
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Render text with markdown-style formatting and visual markups */}
                         {finalText && (
-                        <div className="whitespace-pre-wrap">
-                          {finalText.split('\n').map((line, idx) => {
-                            // Handle bold text (**text**)
-                            const parts = line.split(/(\*\*[^*]+\*\*)/g)
-                            return (
-                              <div key={idx} className={idx > 0 ? 'mt-2' : ''}>
-                                {parts.map((part, partIdx) => {
-                                  if (part.startsWith('**') && part.endsWith('**')) {
-                                    return (
-                                      <strong key={partIdx} className="font-semibold">
-                                        {part.slice(2, -2)}
-                                      </strong>
-                                    )
-                                  }
-                                  // Handle inline code (`code`)
-                                  const codeParts = part.split(/(`[^`]+`)/g)
-                                  return (
-                                    <span key={partIdx}>
-                                      {codeParts.map((codePart, codeIdx) => {
-                                        if (codePart.startsWith('`') && codePart.endsWith('`')) {
-                                          return (
-                                            <code
-                                              key={codeIdx}
-                                              className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono"
-                                            >
-                                              {codePart.slice(1, -1)}
-                                            </code>
-                                          )
-                                        }
-                                        return <span key={codeIdx}>{codePart}</span>
-                                      })}
-                                    </span>
-                                  )
-                                })}
-                              </div>
-                            )
-                          })}
+                        <div className="space-y-2 inline-block">
+                          {formatTextWithMarkups(finalText)}
+                          {/* Show typing cursor during streaming */}
+                          {streamingMessageId === message.id && (
+                            <motion.span
+                              animate={{ opacity: [1, 0] }}
+                              transition={{ duration: 0.8, repeat: Infinity, repeatType: 'reverse' }}
+                              className="inline-block w-0.5 h-4 bg-white/80 ml-1 align-middle"
+                            />
+                          )}
                         </div>
                         )}
                         
@@ -534,22 +1307,42 @@ export function ChatWithCH() {
                           </div>
                         )}
                         
-                        {/* Render logo images */}
-                        {logos.length > 0 && (
-                          <div className="mt-3 space-y-3">
-                            {logos.map((logo, idx) => (
-                              <LogoImageBlock key={idx} logo={logo} />
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Render UX findings card */}
+                        {/* Render UX findings card - only show when streaming is complete */}
                         {findings.length > 0 && (
-                          <UXFindingsCard
-                            findings={findings}
-                            title={findingsTitle}
-                            source={findingsSource}
-                          />
+                          <>
+                            {streamingMessageId === message.id ? (
+                              // Show skeleton loader while streaming (don't show actual findings yet)
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="mt-3 rounded-lg border border-white/10 bg-white/5 p-4 space-y-3"
+                              >
+                                <div className="h-4 bg-white/10 rounded w-1/3 mb-3 animate-pulse"></div>
+                                <div className="space-y-3">
+                                  {[1, 2].map((idx) => (
+                                    <div key={idx} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-5 w-5 bg-white/10 rounded animate-pulse"></div>
+                                        <div className="h-5 bg-white/10 rounded w-20 animate-pulse"></div>
+                                        <div className="h-5 bg-white/10 rounded w-16 animate-pulse"></div>
+                                      </div>
+                                      <div className="h-4 bg-white/10 rounded w-3/4 animate-pulse"></div>
+                                      <div className="h-3 bg-white/10 rounded w-full animate-pulse"></div>
+                                      <div className="h-3 bg-white/10 rounded w-5/6 animate-pulse"></div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            ) : shouldShowFindings ? (
+                              // Show actual card when streaming is complete
+                              <UXFindingsCard
+                                findings={findings}
+                                title={findingsTitle}
+                                source={findingsSource}
+                                sourceUrl={findingsSourceUrl}
+                              />
+                            ) : null}
+                          </>
                         )}
                         
                         {/* Render review summary card */}
@@ -594,10 +1387,10 @@ export function ChatWithCH() {
                   </motion.div>
                 )}
                 <div ref={messagesEndRef} />
-              </div>
+        </div>
 
-              {/* Input */}
-              <form onSubmit={handleSend} className="p-4 border-t border-white/5 space-y-2">
+        {/* Input - Fixed at bottom */}
+        <form onSubmit={handleSend} className="p-4 border-t border-white/5 space-y-2 flex-shrink-0">
                 {/* Preview uploaded images */}
                 {uploadedImages.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
@@ -631,25 +1424,74 @@ export function ChatWithCH() {
                   />
                   <motion.button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      // Trigger design request flow
+                      setIsDesignRequestFlow(true)
+                      setRequestStep('area')
+                      triggerKool()
+                      
+                      // Add area selection message with buttons
+                      setMessages((prev) => [
+                        ...prev,
+                        {
+                          id: Date.now().toString(),
+                          role: 'assistant',
+                          content: 'Which area are you requesting?',
+                          timestamp: new Date(),
+                        },
+                      ])
+                    }}
                     className="px-2 py-1.5 neu-flat rounded-lg hover:neu-inset transition-all text-white/80 text-sm"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    title="Upload image"
+                    title="Make design request"
                   >
-                    📷
+                    <svg 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 16 16" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="1.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11.5 2.5L13.5 4.5L6 12H4V10L11.5 2.5Z" />
+                      <path d="M9.5 4.5L11.5 6.5" />
+                    </svg>
                   </motion.button>
                   <input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    placeholder="Ask CH anything or upload an image..."
+                    placeholder={
+                      isDesignRequestFlow && requestStep === 'area' ? 'Select an area...' :
+                      isDesignRequestFlow && requestStep === 'what' ? 'What do you need?' :
+                      isDesignRequestFlow && requestStep === 'why' ? 'Why do you need this?' :
+                      isDesignRequestFlow && requestStep === 'context' ? 'Any additional context? (optional)' :
+                      isDesignRequestFlow && requestStep === 'goals' ? 'What are your goals? (optional)' :
+                      isDesignRequestFlow && requestStep === 'useCases' ? 'Any use cases? (optional)' :
+                      isDesignRequestFlow && requestStep === 'deadline' ? 'When do you need this?' :
+                      'Ask CH anything...'
+                    }
                     className="flex-1 bg-transparent border-none outline-none text-white placeholder:text-white/30 text-sm font-light focus:outline-none"
-                    autoFocus={isOpen}
+                    autoFocus={true}
                   />
+                  {/* Skip button for optional fields */}
+                  {isDesignRequestFlow && (requestStep === 'context' || requestStep === 'goals' || requestStep === 'useCases') && (
+                    <motion.button
+                      type="button"
+                      onClick={handleSkip}
+                      className="px-3 py-1.5 neu-flat rounded-lg hover:neu-inset transition-all text-white/60 text-xs font-light"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Skip
+                    </motion.button>
+                  )}
                   <motion.button
                     type="submit"
-                    disabled={(!inputValue.trim() && uploadedImages.length === 0) || isTyping}
+                    disabled={(!inputValue.trim() && uploadedImages.length === 0 && !isOptionalField) || isTyping}
                     className="px-3 py-1.5 neu-flat rounded-lg hover:neu-inset transition-all disabled:opacity-30 disabled:cursor-not-allowed text-white/80 text-sm"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -658,9 +1500,6 @@ export function ChatWithCH() {
                   </motion.button>
                 </div>
               </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     </div>
   )

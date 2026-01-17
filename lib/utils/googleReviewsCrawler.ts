@@ -1,142 +1,163 @@
 /**
- * Google Reviews & Feedback Crawler
+ * Google Web Search Crawler
  * 
- * Crawls Google for user reviews and feedback about websites
- * Analyzes reviews as UX insights
+ * Searches Google for articles, reviews, news, blog posts, and any content related to a website
+ * Uses Google Custom Search API and OpenAI to analyze and extract insights
  */
 
-interface GoogleReview {
-  author: string
-  rating: number
-  date?: string
-  text: string
-  helpful?: number
-}
+import OpenAI from 'openai'
+import { UXReport } from '@/lib/agent/knowledgeBase'
 
-interface ReviewAnalysis {
-  url: string
-  title: string
-  findings: Array<{
-    issue: string
-    severity: 'critical' | 'high' | 'medium' | 'low'
-    description: string
-    recommendation?: string
-    affectedArea?: string
-    reviewCount?: number // How many reviews mentioned this
-    sentiment?: 'positive' | 'negative' | 'mixed'
-  }>
-  summary: string
+interface GoogleSearchSummary {
+  source: string
   overallRating?: number
   totalReviews?: number
-  commonThemes: string[]
-  date: string
+  themes: string[]
+  findings: UXReport['findings']
+  summary: string
+  articleCount?: number
+  contentTypes?: string[] // e.g., "reviews", "articles", "news", "blog posts"
 }
 
 /**
- * Search Google for reviews about a website
- * Uses Google search to find review sites, Trustpilot, etc.
+ * Search Google for articles, reviews, news, and any content about a website
+ * Analyzes the content to extract UX insights, user feedback, brand mentions, etc.
  */
-export async function searchGoogleReviews(
+export async function crawlGoogleReviews(
   websiteUrl: string,
-  openaiApiKey?: string
-): Promise<ReviewAnalysis | null> {
-  if (!openaiApiKey) {
-    console.log('OpenAI API key not provided, cannot analyze reviews')
-    return null
-  }
-
+  googleApiKey: string,
+  googleCseId: string,
+  openaiApiKey: string
+): Promise<GoogleSearchSummary | null> {
   try {
-    // Extract domain from URL
+    const openai = new OpenAI({ apiKey: openaiApiKey })
+
+    // Extract domain and site name
     const domain = new URL(websiteUrl).hostname.replace('www.', '')
     const siteName = domain.split('.')[0] // e.g., "betonline" from "betonline.ag"
     
-    // Search Google for reviews
-    const searchQuery = `${siteName} reviews OR ${domain} reviews OR ${siteName} user feedback`
-    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`
+    // Multiple search queries to get comprehensive coverage
+    const searchQueries = [
+      `"${domain}" OR "${siteName}" reviews`,
+      `"${domain}" OR "${siteName}" articles`,
+      `"${domain}" OR "${siteName}" news`,
+      `"${domain}" OR "${siteName}" blog`,
+      `"${domain}" OR "${siteName}" user feedback`,
+      `"${domain}" OR "${siteName}" experience`,
+    ]
     
-    console.log(`Searching Google for reviews: ${searchQuery}`)
+    const allSnippets: Array<{ snippet: string; title: string; link: string; type: string }> = []
     
-    // Fetch Google search results
-    const response = await fetch(googleSearchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; GoogleReviewsCrawler/1.0)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Google search: ${response.status}`)
+    // Search with multiple queries (limit to first 4 to avoid rate limits)
+    for (let i = 0; i < Math.min(4, searchQueries.length); i++) {
+      const searchQuery = searchQueries[i]
+      console.log(`Searching Google (${i + 1}/${Math.min(4, searchQueries.length)}): ${searchQuery}`)
+      
+      try {
+        const googleSearchUrl = `https://www.googleapis.com/customsearch/v1?key=${googleApiKey}&cx=${googleCseId}&q=${encodeURIComponent(searchQuery)}&num=10`
+        const searchResponse = await fetch(googleSearchUrl)
+        
+        if (!searchResponse.ok) {
+          console.error(`Google Search API error: ${searchResponse.status} ${searchResponse.statusText}`)
+          continue
+        }
+        
+        const searchData = await searchResponse.json()
+        
+        searchData.items?.forEach((item: any) => {
+          if (item.snippet || item.title) {
+            allSnippets.push({
+              snippet: item.snippet || item.title || '',
+              title: item.title || '',
+              link: item.link || '',
+              type: i === 0 ? 'reviews' : i === 1 ? 'articles' : i === 2 ? 'news' : 'blog',
+            })
+          }
+        })
+        
+        // Small delay to avoid rate limiting
+        if (i < Math.min(4, searchQueries.length) - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      } catch (queryError: any) {
+        console.error(`Error searching for "${searchQuery}":`, queryError.message)
+        // Continue with next query
+        continue
+      }
     }
 
-    const html = await response.text()
-    console.log(`Fetched ${html.length} characters from Google search`)
+    if (allSnippets.length === 0) {
+      console.log('No content found on Google for this website.')
+      return null
+    }
+    
+    console.log(`Found ${allSnippets.length} search results from Google`)
 
-    // Extract text content
-    const textContent = extractTextContent(html)
-    const limitedContent = textContent.substring(0, 15000) // More content for reviews
+    // Step 2: Use OpenAI to analyze and extract insights from all content
+    const contentText = allSnippets.map((item, idx) => 
+      `[${item.type.toUpperCase()}] ${item.title}\n${item.snippet}\nSource: ${item.link}`
+    ).join('\n\n---\n\n').substring(0, 12000) // Increased limit for more content
+    
+    const prompt = `You are a UX expert and brand analyst analyzing web content about ${websiteUrl}.
+You have gathered articles, reviews, news, blog posts, and user feedback from Google search results.
 
-    // Use AI to analyze reviews and extract UX insights
-    const { default: OpenAI } = await import('openai')
-    const openai = new OpenAI({ apiKey: openaiApiKey })
+Analyze this content to extract:
+1. UX findings (issues, severity, recommendations, affected areas)
+2. User sentiment and feedback themes
+3. Brand mentions and reputation insights
+4. Common complaints or praises
+5. Overall summary of what people are saying about this website
 
-    const prompt = `You are analyzing Google search results for user reviews and feedback about a gambling/casino website.
+Content from Google Search:
+${contentText}
 
-Website: ${websiteUrl}
-Domain: ${domain}
-
-Search Results Content:
-${limitedContent}
-
-Analyze the reviews and feedback to identify:
-1. **Common Complaints**: What do users complain about most? (Navigation, payments, support, etc.)
-2. **Common Praises**: What do users like?
-3. **Recurring Issues**: Issues mentioned by multiple reviewers
-4. **UX Problems**: User experience issues mentioned in reviews
-5. **Overall Sentiment**: Is feedback generally positive, negative, or mixed?
-
-For each finding, provide:
-- Issue title (clear and specific)
-- Severity: critical (blocks core functionality), high (major UX issue), medium (moderate issue), low (minor)
-- Description (what users are saying)
-- Recommendation (how to address it)
-- Affected Area: Navigation, Casino, Sports, Payment, Support, Authentication, General, etc.
-- Review Count: How many reviews mentioned this (estimate)
-- Sentiment: positive, negative, or mixed
-
-Also provide:
-- Overall rating estimate (if mentioned)
-- Total reviews mentioned (if available)
-- Common themes (list of 5-10 key themes)
+Extract:
+1.  **Overall Summary**: A comprehensive summary of what people are saying about the website (reviews, articles, news, etc.).
+2.  **Overall Rating**: An estimated average rating (e.g., 3.5/5) if discernible from reviews.
+3.  **Total Reviews**: An estimated total number of reviews if discernible.
+4.  **Content Types Found**: List the types of content found (e.g., ["reviews", "articles", "news", "blog posts"]).
+5.  **Article/Content Count**: Approximate number of articles/pieces of content analyzed.
+6.  **Key Themes**: A list of recurring themes from all content (e.g., "slow payouts", "great customer service", "confusing navigation", "security concerns", "bonus offers").
+7.  **UX Findings**: A list of specific UX problems and insights. For each finding:
+    -   **Issue**: A concise title for the problem or insight.
+    -   **Severity**: (critical, high, medium, low) based on user impact and frequency.
+    -   **Description**: Detailed explanation from the content analyzed.
+    -   **Recommendation**: Suggested improvement based on UX best practices.
+    -   **Affected Area**: (e.g., Navigation, Payment, Support, Performance, Security, General)
 
 Return the data in this JSON format:
 {
-  "title": "User Reviews Analysis: [Website Name]",
+  "source": "Google Web Search",
+  "overallRating": 3.8,
+  "totalReviews": 150,
+  "articleCount": 25,
+  "contentTypes": ["reviews", "articles", "news", "blog posts"],
+  "themes": ["slow payouts", "good game selection", "customer support issues", "security features", "bonus offers"],
   "findings": [
     {
-      "issue": "Clear issue title",
+      "issue": "Slow withdrawal process",
       "severity": "high",
-      "description": "What users are saying about this issue",
-      "recommendation": "How to address it",
-      "affectedArea": "Payment",
-      "reviewCount": 15,
-      "sentiment": "negative"
+      "description": "Multiple users and articles mention delays in receiving winnings, causing frustration and trust issues.",
+      "recommendation": "Streamline the withdrawal verification process and provide clearer communication on timelines.",
+      "affectedArea": "Payment"
+    },
+    {
+      "issue": "Positive brand reputation for game variety",
+      "severity": "low",
+      "description": "Articles and reviews consistently praise the wide selection of games and betting options.",
+      "recommendation": "Continue to highlight game variety in marketing materials.",
+      "affectedArea": "General"
     }
   ],
-  "summary": "Overall summary of user feedback",
-  "overallRating": 3.5,
-  "totalReviews": 150,
-  "commonThemes": ["Theme 1", "Theme 2"],
-  "date": "2024-12-13"
-}
-
-Be thorough and extract at least 8-12 findings from the reviews. Focus on actionable UX insights.`
+  "summary": "Overall sentiment is mixed. Users appreciate the game selection and variety, but express frustration with slow payouts and occasional customer support issues. Security features are generally well-regarded."
+}`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are an expert UX analyst specializing in analyzing user reviews and feedback. You extract actionable UX insights from review data. Always return valid JSON.',
+          content: 'You are a UX expert and brand analyst analyzing web content (articles, reviews, news, blog posts) about websites. Extract structured insights, UX findings, and user sentiment. Always return valid JSON.',
         },
         {
           role: 'user',
@@ -151,44 +172,13 @@ Be thorough and extract at least 8-12 findings from the reviews. Focus on action
     const parsed = JSON.parse(responseText)
     
     return {
-      url: websiteUrl,
-      title: parsed.title || `User Reviews Analysis: ${domain}`,
-      findings: parsed.findings || [],
-      summary: parsed.summary || 'Review analysis completed',
-      overallRating: parsed.overallRating,
-      totalReviews: parsed.totalReviews,
-      commonThemes: parsed.commonThemes || [],
-      date: parsed.date || new Date().toISOString().split('T')[0],
-    }
-  } catch (error: any) {
-    console.error('Google reviews analysis error:', error)
+      ...parsed,
+      source: parsed.source || 'Google Web Search',
+      articleCount: parsed.articleCount || allSnippets.length,
+      contentTypes: parsed.contentTypes || ['reviews', 'articles', 'news'],
+    } as GoogleSearchSummary
+  } catch (error) {
+    console.error('Google web search crawling error:', error)
     return null
   }
-}
-
-/**
- * Extract readable text content from HTML
- */
-function extractTextContent(html: string): string {
-  // Remove scripts and styles
-  let text = html
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '')
-  
-  // Extract text from common elements
-  const textMatches = text.match(/<[^>]+>([^<]+)<\/[^>]+>/g) || []
-  const extractedText = textMatches
-    .map(match => {
-      const textMatch = match.match(/<[^>]+>([^<]+)<\/[^>]+>/)
-      return textMatch ? textMatch[1].trim() : ''
-    })
-    .filter(t => t.length > 10)
-    .join(' ')
-  
-  // Get meta descriptions, titles, etc.
-  const metaDescription = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)?.[1] || ''
-  const title = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || ''
-  
-  return `${title}\n${metaDescription}\n${extractedText}`.trim()
 }

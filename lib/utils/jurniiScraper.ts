@@ -12,12 +12,44 @@ interface JurniiCredentials {
 
 interface JurniiReportData {
   title?: string
+  executiveSummary?: string
+  perception?: string | string[]
+  journey?: string | Array<{
+    step?: string
+    finding?: string
+    issue?: string
+    insight?: string
+  }>
+  trends?: string | Array<{
+    trend?: string
+    description?: string
+    impact?: string
+  }>
+  performance?: string | Array<{
+    metric?: string
+    value?: string
+    insight?: string
+    issue?: string
+  }>
+  checking?: string | Array<{
+    check?: string
+    finding?: string
+    issue?: string
+  }>
+  competitorScores?: Array<{
+    competitor: string
+    category: string
+    score: number
+    ourScore?: number
+    comparison?: string
+  }>
   findings: Array<{
     issue: string
     severity: 'critical' | 'high' | 'medium' | 'low'
     description: string
     recommendation?: string
     affectedArea?: string
+    section?: string // Which section this finding came from (executiveSummary, perception, journey, trends, performance, checking)
   }>
   summary?: string
   date?: string
@@ -204,50 +236,91 @@ export async function parseReportWithAI(
     const { default: OpenAI } = await import('openai')
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
-    // Limit HTML to avoid token limits (keep first 8000 chars)
-    const limitedContent = htmlOrText.substring(0, 8000)
+    // Increase HTML limit to capture full report - use up to 50000 chars (allows for comprehensive extraction)
+    // Split into chunks if needed, but prioritize the beginning and key sections
+    const fullContent = htmlOrText.length > 50000 
+      ? htmlOrText.substring(0, 30000) + '\n\n[... middle content truncated ...]\n\n' + htmlOrText.substring(htmlOrText.length - 20000)
+      : htmlOrText
     
-    const prompt = `You are analyzing a UX report from Jurnii (a competitor analysis tool). Extract ALL structured data from the following HTML content. This may include competitor information, UX findings, recommendations, and insights.
+    const prompt = `You are analyzing a comprehensive UX report from Jurnii (a competitor analysis tool). Extract ALL structured data from the following HTML content.
 
-${limitedContent}
+IMPORTANT: You must extract ALL sections of the report, including:
 
-IMPORTANT: Extract ALL findings, even if they seem minor. Look for:
-- Competitor names and comparisons
-- UX issues and pain points
-- Recommendations and suggestions
-- Areas affected (Casino, Sports, Navigation, Authentication, etc.)
-- Any insights, observations, or findings
+1. **Executive Summary** - Overall report summary, key insights, main findings
+2. **Perception** - User perceptions, brand perception, customer sentiment
+3. **Journey** - User journey analysis, journey stages, journey insights
+4. **Trends** - Market trends, design trends, user behavior trends
+5. **Performance** - Performance metrics, KPIs, performance issues
+6. **Checking** - Quality checks, validation findings, compliance checks
 
-For each finding, determine severity:
+Extract EVERY finding, insight, issue, and recommendation from ALL sections.
+
+For each finding extracted, assign a severity:
 - critical: Blocks core functionality or causes major user frustration
 - high: Significant UX issue that impacts user experience
 - medium: Moderate issue that could be improved
 - low: Minor issue or enhancement opportunity
 
+Also extract:
+- Competitor names and comparisons
+- **Competitor comparison scores** - Extract any scores, ratings, or rankings for competitors in different categories (Navigation, Mobile, Payment Options, User Experience, Performance, etc.). Format these as structured data when possible (e.g., "Stake: Navigation 8.5/10, Mobile 9/10, Payment 10/10")
+- **Category-by-category comparisons** - Extract how each competitor performs in specific categories (Navigation, Mobile UX, Payment Options, User Experience, Performance, etc.)
+- UX issues and pain points
+- Recommendations and suggestions
+- Areas affected (Casino, Sports, Navigation, Authentication, Cashier, etc.)
+- Metrics, KPIs, and performance data
+- User sentiment and perceptions
+- Journey insights and stages
+- Trends and patterns
+
 Return the data in this JSON format:
 {
-  "title": "Report title (e.g., 'Competitor UX Analysis' or 'UX Report')",
+  "title": "Report title from the page",
+  "executiveSummary": "Full executive summary text - all key points and insights, competitor names, main findings, strategic recommendations",
+  "perception": ["Perception point 1", "Perception point 2", ...] OR "Full perception text",
+  "journey": ["Journey insight 1", "Journey insight 2", ...] OR "Full journey analysis text",
+  "trends": ["Trend 1 with description", "Trend 2 with description", ...] OR "Full trends text",
+  "performance": ["Performance metric 1: value and insight", "Performance metric 2: value and insight", ...] OR "Full performance text",
+  "checking": ["Check finding 1", "Check finding 2", ...] OR "Full checking text",
+  "competitorScores": [
+    {
+      "competitor": "Competitor Name (e.g., Stake, DraftKings)",
+      "category": "Category Name (e.g., Mobile UX, Navigation, Payment Options)",
+      "score": 9, // Score out of 10 (or as provided)
+      "ourScore": 7, // Our score for comparison (if available)
+      "comparison": "Qualitative comparison text (e.g., 'Stake excels here' or 'We need improvement')"
+    }
+  ],
   "findings": [
     {
       "issue": "Clear, descriptive issue title",
       "severity": "high",
       "description": "Detailed description of the finding",
       "recommendation": "Recommended solution or improvement",
-      "affectedArea": "Navigation, Casino, Sports, etc. (or 'General' if not specific)"
+      "affectedArea": "Navigation, Casino, Sports, etc. (or 'General' if not specific)",
+      "section": "executiveSummary" OR "perception" OR "journey" OR "trends" OR "performance" OR "checking"
     }
   ],
-  "summary": "Overall summary of the report",
+  "summary": "Overall summary combining all sections",
   "date": "2024-12-13 (or today's date if not found)"
 }
 
-Extract as many findings as possible. If you see competitor names, include them in the findings.`
+CRITICAL REQUIREMENTS:
+1. Extract ALL content from ALL sections - especially the Executive Summary which contains key strategic insights, competitor names, and main findings
+2. Convert every insight, finding, issue, trend, and metric into the findings array with appropriate severity
+3. Include the section name in each finding so we know where it came from
+4. Extract competitor scores and comparisons from the Executive Summary, Perception, Journey, and Performance sections - look for numerical scores (e.g., "9/10", "8.5/10") and category-by-category comparisons
+5. The Executive Summary is critical - it should contain the full text with all key points, competitor names, strategic recommendations, and main findings
+
+HTML Content:
+${fullContent}`
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: 'You are a UX analyst extracting structured data from UX reports. Always return valid JSON.',
+          content: 'You are a UX analyst extracting structured data from UX reports. Extract EVERY finding, insight, issue, metric, trend, and recommendation from ALL sections. Be thorough and comprehensive. Always return valid JSON.',
         },
         {
           role: 'user',
@@ -255,6 +328,7 @@ Extract as many findings as possible. If you see competitor names, include them 
         },
       ],
       temperature: 0.3,
+      max_tokens: 4000, // Increased to allow for more findings
       response_format: { type: 'json_object' },
     })
 

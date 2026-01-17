@@ -134,31 +134,29 @@ export default function StudioPage() {
         <CharacterAura />
         
         {/* Walking Sprite - centered - highest z-index, always on top */}
-        <div className="relative pointer-events-none" style={{ zIndex: 100 }}>
-          {/* Show CH if not showing Lilly, or if CH is walking out (so we see both) */}
-          {/* Priority: if isWalkingOut is true, always show CH */}
-          {/* Use resetKey to force remount when going back to intro after reset */}
-          {(isWalkingOut || !showLilly) && (
-            <WalkingSprite key={spriteKey} />
-          )}
-          {/* Show Lilly when showLilly is true - appears while CH is walking out */}
-          {showLilly && (
-            <div className="relative">
-              <LillySprite />
-              <LillySpeechBubble />
-            </div>
-          )}
+        <div className="relative flex flex-col items-center gap-6" style={{ zIndex: 100 }}>
+          <div className="relative pointer-events-none">
+            {/* Show CH if not showing Lilly, or if CH is walking out (so we see both) */}
+            {/* Priority: if isWalkingOut is true, always show CH */}
+            {/* Use resetKey to force remount when going back to intro after reset */}
+            {(isWalkingOut || !showLilly) && (
+              <WalkingSprite key={spriteKey} />
+            )}
+            {/* Show Lilly when showLilly is true - appears while CH is walking out */}
+            {showLilly && (
+              <div className="relative">
+                <LillySprite />
+                <LillySpeechBubble />
+              </div>
+            )}
+          </div>
         </div>
         
-        {/* Chat with CH - positioned below character, above sprite */}
-        <ChatWithCH />
       </div>
       
-      {/* Desktop: Right sidebar - Questions, options, and chat */}
-      <div className="hidden md:flex w-96 border-l border-white/5 bg-[#0a0a0a] h-full overflow-hidden flex-col" style={{ zIndex: 40 }}>
-        <AnimatePresence mode="wait">
-          {renderScene()}
-        </AnimatePresence>
+      {/* Desktop: Right sidebar - Chat replaces the sidebar */}
+      <div className="hidden md:flex w-96 border-l border-white/5 bg-[#0a0a0a] h-full overflow-hidden relative" style={{ zIndex: 40 }}>
+        <ChatWithCH />
       </div>
 
       {/* Mobile: Toast overlay for sidebar content - taller to show more content */}

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   const body = await request.json()
-  const { requestArea, userRequest, deadline, assignedDesigner } = body
+  const { requestArea, userRequest, deadline, assignedDesigner, createCraftTicket } = body
 
   try {
     const results = {
@@ -95,10 +95,12 @@ export async function POST(request: Request) {
       results.mattermost.error = 'Webhook URL not configured'
     }
 
-    // Craft.io integration (mock for now)
-    const craftPayload = {
-      title: `Design Request: ${requestArea}`,
-      description: `
+    // Craft.io integration
+    // Only create ticket if explicitly requested via createCraftTicket flag
+    if (createCraftTicket) {
+      const craftPayload = {
+        title: `Design Request: ${requestArea}`,
+        description: `
 **What:** ${userRequest.what || 'N/A'}
 
 **Why:** ${userRequest.why || 'N/A'}
@@ -109,17 +111,22 @@ ${userRequest.useCases ? `**Use Cases:** ${userRequest.useCases}\n` : ''}
 
 **Deadline:** ${deadline}
 **Assigned Designer:** ${assignedDesigner || 'CH (Head of Design)'}
-      `.trim(),
-      priority: deadline === 'ASAP' ? 'high' : 'normal',
-      assignee: assignedDesigner || 'CH',
+        `.trim(),
+        priority: deadline === 'ASAP' ? 'high' : 'normal',
+        assignee: assignedDesigner || 'CH',
+      }
+
+      // TODO: Implement actual Craft.io API integration when API details are available
+      // For now, simulate success
+      results.craft.sent = true
+
+      // Simulate network delay for Craft.io
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } else {
+      // If not creating ticket initially, mark as not sent (user can create it later)
+      results.craft.sent = false
+      results.craft.error = null
     }
-
-    // TODO: Implement actual Craft.io API integration when API details are available
-    // For now, simulate success
-    results.craft.sent = true
-
-    // Simulate network delay for Craft.io
-    await new Promise(resolve => setTimeout(resolve, 500))
 
     return NextResponse.json({
       success: true,
