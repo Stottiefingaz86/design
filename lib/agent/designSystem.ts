@@ -553,6 +553,7 @@ export interface DesignSystemInfo {
     md?: string
     lg?: string
     xl?: string
+    '2xl'?: string
     full?: string
   }
   
@@ -1123,8 +1124,9 @@ export const designSystem: DesignSystemInfo = {
     none: '0',
     sm: '4px', // borderRadius-1
     md: '8px', // borderRadius-2, BetOnline brand book token
-    lg: '12px',
-    xl: '16px',
+    lg: '12px', // borderRadius-3, Sportsbook-26
+    xl: '16px', // borderRadius-4, Sportsbook-26
+    '2xl': '40px', // borderRadius-9, Sportsbook-26
     full: '9999px',
   },
   
@@ -1136,6 +1138,11 @@ export const designSystem: DesignSystemInfo = {
     xl: 'elevation/24, --joy-shadow-xl',
     // Shadow tokens extracted from Figma variables
     tokens: {
+      'elevation/3': {
+        value: 'DROP_SHADOW: #00000033 (0,3) r3 s-2; DROP_SHADOW: #00000024 (0,3) r4; DROP_SHADOW: #0000001F (0,1) r8',
+        type: 'multi-layer',
+        description: 'Sportsbook-26 elevation token with three shadow layers',
+      },
       '--joy-shadow-xs': {
         value: '0px 1px 2px 0px rgba(21, 21, 21, 0.08)',
         type: 'dropShadow',

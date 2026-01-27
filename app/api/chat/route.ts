@@ -23,14 +23,20 @@ export async function POST(request: Request) {
     const lowerMessage = message.toLowerCase()
     const shouldGenerateImage = 
       generateImage || 
-      lowerMessage.includes('generate') || 
+      (lowerMessage.includes('generate') && (lowerMessage.includes('mockup') || lowerMessage.includes('image') || lowerMessage.includes('design'))) ||
       lowerMessage.includes('create image') || 
+      lowerMessage.includes('create a mockup') ||
       lowerMessage.includes('make a mockup') ||
       lowerMessage.includes('create mockup') ||
       lowerMessage.includes('show me a mockup') ||
       lowerMessage.includes('design a mockup') ||
       lowerMessage.includes('mockup for') ||
-      (lowerMessage.includes('mockup') && (lowerMessage.includes('create') || lowerMessage.includes('make') || lowerMessage.includes('generate')))
+      lowerMessage.includes('visual mockup') ||
+      lowerMessage.includes('design mockup') ||
+      (lowerMessage.includes('mockup') && (lowerMessage.includes('create') || lowerMessage.includes('make') || lowerMessage.includes('generate') || lowerMessage.includes('show'))) ||
+      (lowerMessage.includes('design') && (lowerMessage.includes('visual') || lowerMessage.includes('mockup'))) ||
+      lowerMessage.includes('show me a design') ||
+      lowerMessage.includes('visual example')
 
     // Use OpenAI if available and API key is set
     if (apiKey) {
@@ -47,68 +53,40 @@ export async function POST(request: Request) {
         console.log(`🤖 System Prompt Length: ${systemPrompt.length} characters`)
         console.log(`🤖 System Prompt Preview: ${systemPrompt.substring(0, 300)}...`)
 
-        // Handle image generation - improved with design system knowledge
+        // Handle mockup requests - provide detailed specs instead of DALL-E generation
+        // DALL-E cannot accurately replicate our design system, components, or logos
         if (shouldGenerateImage) {
-          // Build a better prompt using design system knowledge
+          // Instead of generating images, provide detailed design specifications
+          // that can be used to create mockups in Figma using actual components
           const lowerMessage = message.toLowerCase()
-          
-          // Detect brand from message
-          let brandColors = 'betRed (#ee3536), betGreen (#8ac500), betNavy (#2d6f88)'
           let brandName = 'BetOnline'
-          
-          if (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino')) {
-            brandColors = 'WildNeonGreen 2 (#6cea75), grey-900, grey-800'
-            brandName = 'Wild Casino'
-          } else if (lowerMessage.includes('tiger') || lowerMessage.includes('tigergaming')) {
-            brandColors = 'TigerOrange (#f48e1b), TigerCharcoal (#2d2e2c)'
-            brandName = 'Tiger Gaming'
-          } else if (lowerMessage.includes('lowvig')) {
-            brandColors = 'LowCyan (#00e4f2), LowBrightBlue (#0075ff), LowDeepBlue (#01153d)'
-            brandName = 'LowVig'
-          } else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) {
-            brandColors = 'betRed (#ee3536), SbBlue/600 (#0087f6), SbYellow/300 (#fcd54c)'
-            brandName = 'Sportsbook'
-          }
-          
-          // Detect area/component type
+          if (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino')) brandName = 'Wild Casino'
+          else if (lowerMessage.includes('tiger') || lowerMessage.includes('tigergaming')) brandName = 'Tiger Gaming'
+          else if (lowerMessage.includes('lowvig')) brandName = 'LowVig'
+          else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) brandName = 'Sportsbook'
+
+          // Detect component type
           let componentType = 'general interface'
-          if (lowerMessage.includes('casino')) componentType = 'casino gaming interface with game tiles'
-          if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) componentType = 'sportsbook interface with betting odds and event cards'
-          if (lowerMessage.includes('dashboard') || lowerMessage.includes('account')) componentType = 'user dashboard and account management interface'
-          if (lowerMessage.includes('navigation') || lowerMessage.includes('header')) componentType = 'navigation header and menu system'
-          if (lowerMessage.includes('button')) componentType = 'button components and CTAs'
-          if (lowerMessage.includes('card')) componentType = 'card components and layouts'
-          
-          const imagePrompt = `Create a professional, modern design mockup for a ${brandName} online gambling website ${componentType}. 
+          if (lowerMessage.includes('casino')) componentType = 'casino gaming interface'
+          else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) componentType = 'sportsbook interface'
+          else if (lowerMessage.includes('dashboard') || lowerMessage.includes('account')) componentType = 'user dashboard'
+          else if (lowerMessage.includes('navigation') || lowerMessage.includes('header')) componentType = 'navigation header'
+          else if (lowerMessage.includes('button')) componentType = 'button components'
+          else if (lowerMessage.includes('card')) componentType = 'card components'
 
-Design Requirements:
-- Use brand colors: ${brandColors}
-- Follow Material UI design principles (MUI v5.15.0)
-- Modern, clean, professional interface
-- High contrast for accessibility
-- Responsive design patterns
-- Use Inter and Open Sans fonts
-- Follow online gambling industry best practices
-- Include proper spacing (4px base unit, 16px gutters, 24px margins)
-- Use elevation/shadows for depth (elevation/2, elevation/4)
-
-User Request: ${message}
-
-Create a realistic, production-ready UI mockup that showcases the design system components and brand identity.`
-          
-          const imageResponse = await openai.images.generate({
-            model: 'dall-e-3',
-            prompt: imagePrompt,
-            n: 1,
-            size: '1024x1024',
-            quality: 'standard',
-          })
-
-          const generatedImageUrl = imageResponse.data?.[0]?.url
+          // Get brand colors
+          const brandInfo = designSystem.brands?.[brandName]
+          let brandColors: string[] = []
+          if (brandInfo?.colors?.primary) {
+            brandColors = brandInfo.colors.primary.map((token: string) => {
+              const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+              return colorInfo ? `${token} (${colorInfo.hex})` : token
+            })
+          }
 
           return NextResponse.json({
-            response: `I've generated a design mockup for ${brandName} based on your request. The mockup uses our design system colors (${brandColors}) and follows MUI design principles.\n\n**Design System Elements Used:**\n- Brand: ${brandName}\n- Component Type: ${componentType}\n- Colors: ${brandColors}\n- Framework: Material UI v5.15.0\n\nHere's the generated mockup:`,
-            generatedImage: generatedImageUrl || undefined,
+            response: `I can't generate accurate visual mockups using AI image generation - it doesn't properly replicate our design system, components, or logos.\n\n**Instead, here's a detailed specification you can use to create the mockup in Figma using our actual components:**\n\n**Brand:** ${brandName}\n**Component Type:** ${componentType}\n**Colors:** ${brandColors.length > 0 ? brandColors.join(', ') : 'Use brand colors from design system'}\n**Typography:** Inter (primary), Open Sans (secondary)\n**Spacing:** 4px base unit, 16px gutters, 24px margins\n**Components:** Use components from our Figma design system files\n**Framework:** Material UI v5.15.0 (MUI ADS)\n\n**Next Steps:**\n1. Open our Figma design system file\n2. Use the actual components, colors, and tokens from our library\n3. Create the mockup using our design system components\n\nWould you like me to provide more specific component recommendations or create a design request ticket for this?`,
+            generatedImage: undefined, // No image generation
             timestamp: new Date().toISOString(),
             usingAI: true,
           })
@@ -265,8 +243,9 @@ YOUR ROLE:
 CRITICAL RULES - YOU MUST FOLLOW THESE STRICTLY:
 1. **ONLY use information from the knowledge base above** - Do NOT make up information, guess, or use general knowledge
 2. For design system questions (colors, typography, components, tokens), **ONLY use information from the knowledge base** - be precise with token names, hex codes, and descriptions. If the information is not in the knowledge base, say "I don't have that specific information in our knowledge base."
-3. For brand color questions, **ALWAYS reference the exact brand information from the BRANDS section** - use the exact color tokens, hex codes, and descriptions provided
-4. For brand guidelines, communication, and tone of voice questions, use the brand guidelines section and make reasonable inferences based on our design system and brand values
+3. **CRITICAL: Competitor queries take priority over brand queries**: If the user mentions a competitor name (e.g., "Paddy Power", "Stake", "DraftKings", "FanDuel", "BetMGM", "Caesars", etc.) OR if the conversation context is about competitors, you MUST provide competitor information from UX reports, NOT our brand colors. Only show our brand colors when explicitly asked about OUR brands (BetOnline, Wild Casino, Tiger Gaming, etc.) or when the user explicitly asks "what are our brand colors" or "show me BetOnline colors".
+4. For brand color questions about OUR brands, **ALWAYS reference the exact brand information from the BRANDS section** - use the exact color tokens, hex codes, and descriptions provided
+5. For brand guidelines, communication, and tone of voice questions, use the brand guidelines section and make reasonable inferences based on our design system and brand values
 5. For process questions, reference the actual process steps and stakeholders involved
 6. For stakeholder questions, reference their actual roles, responsibilities, and areas
 7. **If you don't have specific information in the knowledge base, say so explicitly** - do NOT guess or make up information
@@ -278,26 +257,37 @@ CRITICAL RULES - YOU MUST FOLLOW THESE STRICTLY:
 
 13. **CRITICAL: Synthesize information from ALL UX reports - DO NOT just say "I don't have information"**: When asked about competitors, UX issues, user feedback, surveys, research reports, first-time deposits (FTD), RND surveys, marketing surveys, Voice of Customer (VoC) reports, or any topic covered in the UX REPORTS section, you MUST synthesize the information from ALL relevant reports into a natural, helpful answer. **IMPORTANT: Do NOT only use Jurnii reports - use ALL available data sources including Research Reports (surveys), Jurnii reports, website analysis, and any other reports in the knowledge base. If multiple reports contain relevant information, synthesize from ALL of them, not just one source.** DO NOT say "I don't have that information" if the knowledge base contains relevant UX reports, findings, or analysis. 
 
-**CRITICAL FOR SURVEY QUESTIONS**: When asked "what surveys do we have" or "what surveys", you MUST:
-1. **Look through ALL reports in the UX REPORTS section**
-2. **List EVERY report that has source "Research Report"** - these ARE surveys (FTD Survey, RND Survey, Marketing Survey, VoC reports)
-3. **Include the FULL TITLE of each survey report** (e.g., "FTD Survey Bonus Nov2024", "BOL RND survey results Q1 2025", "BOL Marketing Acquisition Source Effectiveness Survey", "VoC-Nov-25")
-4. **Do NOT only list Jurnii reports** - Jurnii reports are competitor analysis, NOT surveys
+**🚨 CRITICAL FOR SURVEY QUESTIONS - READ THIS CAREFULLY 🚨**: 
+
+When asked "what surveys do we have", "what surveys", "show me surveys", "list surveys", "surveys", "ftd survey", "rnd survey", "voc survey", "marketing survey", or ANY question about surveys, you MUST:
+
+1. **ONLY look at reports with source "Research Report"** - these ARE the surveys
+2. **COMPLETELY IGNORE and DO NOT MENTION any reports with source "Jurnii"** - Jurnii reports are competitor analysis, NOT surveys. Do NOT list them, do NOT mention them, do NOT reference them when answering survey questions.
+3. **List EVERY report that has source "Research Report"** - these ARE surveys (FTD Survey, RND Survey, Marketing Survey, VoC reports)
+4. **Include the FULL TITLE of each survey report** (e.g., "FTD Survey Bonus Nov2024", "BOL RND survey results Q1 2025", "BOL Marketing Acquisition Source Effectiveness Survey", "VoC-Nov-25")
 5. **If you see reports with titles containing "Survey", "FTD", "RND", "VoC", or "Marketing" and source "Research Report", these ARE the surveys you should list**
+6. **If NO reports with source "Research Report" exist, say "I don't have any survey reports in our knowledge base" - DO NOT list Jurnii reports as a fallback**
 
 Instead, summarize the key insights from the reports and cite your sources. **IMPORTANT: Format findings as natural conversation, NOT as raw JSON or directive formats. Never include UX_FINDINGS or REVIEW_SUMMARY directives in your response - write findings naturally.**
 
 **IMPORTANT: Keep responses concise and actionable. After providing the answer, suggest 2-3 relevant follow-up questions the user might want to ask next. For example: "Want to dive deeper? Try asking: 'How do we compare against [Competitor]?' or 'What are our main UX weaknesses?'"**
 
-**SPECIFICALLY FOR COMPETITOR QUESTIONS**: When asked "who are our competitors?" or similar questions:
+**SPECIFICALLY FOR COMPETITOR QUESTIONS**: When asked "who are our competitors?" or when a competitor name is mentioned (e.g., "Paddy Power", "Stake", "DraftKings", "FanDuel", "BetMGM", "Caesars", etc.):
+- **PRIORITY: Provide competitor information, NOT our brand colors** - If a competitor name is mentioned, the user wants competitor analysis, not our brand information
 - **Extract competitor names from ALL sources**: 
   - **Research Reports (surveys)**: Check the "Key Findings & Insights" section of ALL Research Report source reports - surveys often mention competitor names, user preferences, and market insights
-  - **Jurnii reports**: Check journey, perception, and executiveSummary sections
+  - **Jurnii reports**: Check journey, perception, executiveSummary, and competitorScores sections for specific competitor data
   - **Google search data**: Check for US market competitors if available
 - **List ALL competitor names** found across ALL reports, not just from one source
+- **For specific competitor queries** (e.g., "tell me about Paddy Power", "what about Stake"), provide detailed information about that competitor from the reports, including:
+  - Their strengths and weaknesses
+  - Comparison scores if available
+  - UX patterns and insights
+  - How we compare against them
 - **Synthesize insights** about each competitor's strengths, weaknesses, and UX patterns from ALL available data
 - **Cite ALL sources**: "Based on our research (FTD Survey, RND Survey, Jurnii Analysis), our competitors include [Company A], [Company B], and [Company C]..."
 - **DO NOT only reference Jurnii** - use ALL available reports that mention competitors. Surveys often contain valuable competitor information that Jurnii doesn't have.
+- **DO NOT show our brand colors when asked about competitors** - only show competitor information
 
 **SPECIFICALLY FOR COMPETITOR COMPARISON QUESTIONS** (e.g., "how do we compare against Stake?"):
 - **Extract competitor comparison scores** from the journey, perception, and executiveSummary sections - these sections contain category-by-category scores/ratings for each competitor
@@ -321,7 +311,7 @@ YOUR EXPERTISE (as Head of UX/CX and Design):
 - **Brand Strategy**: Brand guidelines, communication principles, and multi-brand design (Casino, Sports, Loyalty, Authentication, Poker)
 - **Design Processes**: Design workflows, team structure, and stakeholder collaboration
 - **Data-Driven Design**: Making design decisions based on UX findings, user feedback, and analytics
-- **Visual Design**: Image analysis and generation of design mockups using DALL-E based on our design system
+- **Visual Design**: Image analysis and generation of design mockups using DALL-E based on our design system. You can generate visual mockups when users ask for designs, mockups, or visual examples. Always offer to generate mockups when discussing design ideas or components.
 - **Design Leadership**: Strategic thinking, prioritization, and guidance for the design team
 
 Your personality: Direct, helpful, slightly casual but professional. You're the design expert who knows everything about the system, team, and processes. You provide actionable advice and creative ideas based on our brand and design system knowledge. You can make reasonable inferences from the design system and brand guidelines to answer questions about communication, tone, and brand approach.
@@ -361,10 +351,22 @@ Background colors: grey-900, grey-800, common/black (#000000)
 COLOR_SWATCH:WildNeonGreen 2/500:#6cea75:Wild Casino neon green primary:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh"
 
 IMPORTANT: 
-- For ANY question about colors (including "what colour is X", "button colors", "primary color", "brand palette", etc.), you MUST include COLOR_SWATCH directives for each color mentioned
-- For brand color palette questions, list ALL colors (primary, secondary, accent, neutral, background) from the BRANDS section
+- **CRITICAL: Competitor queries take priority** - If a competitor name is mentioned (Paddy Power, Stake, DraftKings, FanDuel, BetMGM, Caesars, etc.), provide competitor information from reports, NOT our brand colors
+- For ANY question about OUR brand colors (including "what colour is X", "button colors", "primary color", "brand palette", etc.), you MUST include COLOR_SWATCH directives for each color mentioned
+- For brand color palette questions about OUR brands, list ALL colors (primary, secondary, accent, neutral, background) from the BRANDS section
 - Do not just describe colors in text - always use COLOR_SWATCH format
 - If a brand or color is not in the knowledge base, say "I don't have that information in our knowledge base"
+
+Example response when user asks about a competitor (e.g., "Paddy Power", "tell me about Stake", "what about DraftKings", or clicks on a competitor name):
+"Based on our Jurnii competitor analysis, here's what I know about [Competitor Name]:
+
+[Provide competitor-specific information from reports, including:]
+- Their strengths and weaknesses from our analysis
+- Comparison scores if available (e.g., Navigation 8.5/10, Mobile 9/10)
+- UX patterns and insights
+- How we compare against them in different categories
+
+[DO NOT show our brand colors - only provide competitor information from UX reports]"
 
 Example response for "what's the typography token":
 "The typography token 'Display xs/Regular' uses Inter font, 24px size, 400 weight.
@@ -377,18 +379,49 @@ Example response for "show me the BetOnline logo":
 LOGO_IMAGE:BetOnline:Wordmark:Primary:https://www.figma.com/design/8Nmyws2RW2VovSvCbTd3Oh:/logos/BetOnline/wordmark/primary.svg"
 
 Example response for mockup ideas:
-"Based on our design system, here's a mockup idea using:
-- Button component (large variant) with betRed/500 (#ee3536)
+"Based on our design system, here's a mockup specification using our actual components:
+- Button component (large variant) with betRed/500 (#ee3536) - use Button/Large from Figma
 - Typography: Material UI/typography/h5 for heading, body2 for content
 - Spacing: 24px margin, 16px padding
-- Border radius: 8px (medium)
+- Border radius: 8px (medium) - borderRadius-2 token
 - Elevation: elevation/2 for card shadow
 - Grid: 12-column layout with 16px gutters
 
-Would you like me to generate a visual mockup? Just say 'create a mockup' or 'generate a mockup' and I'll create one using DALL-E based on our design system."
+To create this mockup accurately, I recommend:
+1. Opening our Figma design system file
+2. Using the actual Button/Large component from our component library
+3. Applying betRed/500 color token
+4. Using the spacing and typography tokens listed above
+
+Would you like me to create a design request ticket for this, or provide more specific component recommendations?"
 
 Example response when user asks for a mockup:
-"I'll generate a design mockup for you using our design system. The mockup will use our brand colors, typography, spacing, and component patterns. Generating now..."
+"I can't generate accurate visual mockups using AI - it doesn't properly replicate our design system, components, or logos. Instead, here's a detailed specification you can use to create the mockup in Figma using our actual components:
+
+**Design Specification:**
+- Brand: [Brand Name]
+- Colors: [Specific color tokens with hex codes]
+- Typography: [Specific typography tokens]
+- Components: [Specific component names from Figma]
+- Spacing: [Specific spacing tokens]
+- Layout: [Grid and layout specifications]
+
+**Next Steps:**
+1. Open our Figma design system file
+2. Use the actual components, colors, and tokens from our library
+3. Create the mockup using our design system components
+
+Would you like me to create a design request ticket for this, or provide more specific component recommendations?"
+
+**IMPORTANT FOR MOCKUP GENERATION:**
+- AI image generation (DALL-E) cannot accurately replicate our design system, components, or logos
+- Instead, provide detailed design specifications that reference our actual Figma components
+- When users ask for mockups, offer to:
+  1. Provide detailed specs using our design tokens and components
+  2. Create a design request ticket for the design team
+  3. List specific components from our Figma files that should be used
+- Always reference specific design tokens, colors, and components from our knowledge base
+- Suggest using our actual Figma design system files to create accurate mockups
 
 Example response for design advice:
 "Based on our design system and brand guidelines, here's my recommendation:
@@ -477,7 +510,9 @@ Example response for survey questions (e.g., "what surveys do we have"):
    - Summary: [summary from report]
    - Key findings: [findings from report]
 
-These surveys provide insights into user behavior, preferences, and areas for improvement across different aspects of our platform."
+These surveys provide insights into user behavior, preferences, and areas for improvement across different aspects of our platform.
+
+**IMPORTANT**: Do NOT mention Jurnii reports when answering survey questions - Jurnii reports are competitor analysis, not surveys."
 
 Example response for competitor questions:
 "Based on our Jurnii competitor analysis, our main competitors include:
@@ -546,6 +581,157 @@ function generateFigmaDeeplink(tokenName?: string, componentName?: string, brand
 }
 
 /**
+ * Build comprehensive image generation prompt using design system knowledge
+ */
+async function buildImageGenerationPrompt(
+  userMessage: string,
+  designSystem: any,
+  colorTokenMap: any
+): Promise<string> {
+  const lowerMessage = userMessage.toLowerCase()
+  
+  // Detect brand from message
+  let brandName = 'BetOnline'
+  let brandColors: string[] = []
+  let brandInfo: any = null
+  
+  if (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino')) {
+    brandName = 'Wild Casino'
+    brandInfo = designSystem.brands?.['Wild Casino']
+  } else if (lowerMessage.includes('tiger') || lowerMessage.includes('tigergaming')) {
+    brandName = 'Tiger Gaming'
+    brandInfo = designSystem.brands?.['Tiger Gaming']
+  } else if (lowerMessage.includes('lowvig')) {
+    brandName = 'LowVig'
+    brandInfo = designSystem.brands?.['LowVig']
+  } else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) {
+    brandName = 'Sportsbook'
+    brandInfo = designSystem.brands?.['Sportsbook'] || designSystem.brands?.['Sports']
+  } else {
+    brandInfo = designSystem.brands?.['BetOnline']
+  }
+  
+  // Extract brand colors from design system
+  if (brandInfo?.colors) {
+    if (brandInfo.colors.primary) {
+      brandColors = brandInfo.colors.primary.map((token: string) => {
+        const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+        return colorInfo ? `${token} (${colorInfo.hex})` : token
+      })
+    }
+    if (brandInfo.colors.secondary) {
+      brandColors = brandColors.concat(
+        brandInfo.colors.secondary.map((token: string) => {
+          const colorInfo = colorTokenMap[token] || colorTokenMap[token.split('/')[0]]
+          return colorInfo ? `${token} (${colorInfo.hex})` : token
+        })
+      )
+    }
+  }
+  
+  // Default colors if none found
+  if (brandColors.length === 0) {
+    if (brandName === 'BetOnline') {
+      brandColors = ['betRed (#ee3536)', 'betGreen (#8ac500)', 'betNavy (#2d6f88)']
+    } else if (brandName === 'Wild Casino') {
+      brandColors = ['WildNeonGreen 2 (#6cea75)', 'grey-900', 'grey-800']
+    } else if (brandName === 'Tiger Gaming') {
+      brandColors = ['TigerOrange (#f48e1b)', 'TigerCharcoal (#2d2e2c)']
+    } else if (brandName === 'LowVig') {
+      brandColors = ['LowCyan (#00e4f2)', 'LowBrightBlue (#0075ff)', 'LowDeepBlue (#01153d)']
+    } else if (brandName === 'Sportsbook') {
+      brandColors = ['betRed (#ee3536)', 'SbBlue/600 (#0087f6)', 'SbYellow/300 (#fcd54c)']
+    }
+  }
+  
+  // Detect area/component type
+  let componentType = 'general interface'
+  let componentDetails = ''
+  
+  if (lowerMessage.includes('casino')) {
+    componentType = 'casino gaming interface with game tiles'
+    componentDetails = 'Include game tiles, casino navigation, game categories, and casino-specific UI elements'
+  } else if (lowerMessage.includes('sportsbook') || lowerMessage.includes('sports')) {
+    componentType = 'sportsbook interface with betting odds and event cards'
+    componentDetails = 'Include betting odds displays, sports event cards, bet builder, live betting indicators, and sports navigation'
+  } else if (lowerMessage.includes('dashboard') || lowerMessage.includes('account')) {
+    componentType = 'user dashboard and account management interface'
+    componentDetails = 'Include account overview, user profile sections, transaction history, and account settings'
+  } else if (lowerMessage.includes('navigation') || lowerMessage.includes('header')) {
+    componentType = 'navigation header and menu system'
+    componentDetails = 'Include main navigation menu, header bar, user menu, and navigation links'
+  } else if (lowerMessage.includes('button')) {
+    componentType = 'button components and CTAs'
+    componentDetails = 'Include primary buttons, secondary buttons, and call-to-action elements with proper states'
+  } else if (lowerMessage.includes('card')) {
+    componentType = 'card components and layouts'
+    componentDetails = 'Include card layouts, content cards, and card-based UI patterns'
+  } else if (lowerMessage.includes('loyalty') || lowerMessage.includes('vip')) {
+    componentType = 'loyalty and VIP rewards interface'
+    componentDetails = 'Include VIP tiers, rewards display, loyalty points, and VIP-specific UI elements'
+  } else if (lowerMessage.includes('authentication') || lowerMessage.includes('login') || lowerMessage.includes('signup')) {
+    componentType = 'authentication and registration interface'
+    componentDetails = 'Include login form, registration form, and authentication UI elements'
+  }
+  
+  // Get typography tokens
+  const typographyInfo = designSystem.typography
+  const fontFamilies = typographyInfo?.fontFamilies || { primary: 'Inter', secondary: 'Open Sans' }
+  const fontWeights = typographyInfo?.weights || { regular: 400, medium: 500, semibold: 600, bold: 700 }
+  
+  // Get spacing tokens
+  const spacingInfo = designSystem.spacing
+  const spacingScale = spacingInfo?.scale || [4, 8, 12, 16, 20, 24, 32, 40, 48, 64]
+  const gridInfo = spacingInfo?.grid || { columns: 12, gutter: 16, margin: 24 }
+  
+  // Get border radius tokens
+  const borderRadiusInfo = designSystem.borderRadius || {}
+  const borderRadiusValues = Object.values(borderRadiusInfo).filter((v: any) => v !== '0' && v !== '9999px')
+  
+  // Build comprehensive prompt
+  const imagePrompt = `Create a professional, modern, production-ready design mockup for a ${brandName} online gambling website ${componentType}.
+
+**BRAND IDENTITY:**
+- Brand: ${brandName}
+- Primary Colors: ${brandColors.slice(0, 3).join(', ')}
+${brandColors.length > 3 ? `- Additional Colors: ${brandColors.slice(3).join(', ')}` : ''}
+
+**DESIGN SYSTEM SPECIFICATIONS:**
+- Framework: Material UI v5.15.0 (MUI ADS - Agnostic Design System)
+- Typography: 
+  * Primary Font: ${fontFamilies.primary || 'Inter'}
+  * Secondary Font: ${fontFamilies.secondary || 'Open Sans'}
+  * Font Weights: Regular (${fontWeights.regular || 400}), Medium (${fontWeights.medium || 500}), SemiBold (${fontWeights.semibold || 600}), Bold (${fontWeights.bold || 700})
+- Spacing System:
+  * Base Unit: 4px
+  * Spacing Scale: ${spacingScale.slice(0, 10).join('px, ')}px
+  * Grid: ${gridInfo.columns || 12} columns, ${gridInfo.gutter || 16}px gutters, ${gridInfo.margin || 24}px margins
+- Border Radius: ${borderRadiusValues.slice(0, 4).join(', ')}
+- Elevation/Shadows: Use elevation/2 and elevation/4 for depth and hierarchy
+
+**COMPONENT REQUIREMENTS:**
+${componentDetails}
+
+**DESIGN PRINCIPLES:**
+- Modern, clean, professional interface design
+- High contrast for accessibility (WCAG AA compliant)
+- Responsive design patterns (mobile-first approach)
+- Material Design principles with MUI components
+- Online gambling industry best practices
+- Proper visual hierarchy using typography scale
+- Consistent spacing using 4px base unit
+- Subtle shadows and elevation for depth
+- Professional color usage from brand palette
+
+**USER REQUEST:**
+${userMessage}
+
+Create a realistic, production-ready UI mockup that accurately represents our design system tokens, brand colors, typography, spacing, and component patterns. The mockup should look like it was designed using our actual Figma design system files.`
+
+  return imagePrompt
+}
+
+/**
  * Process AI response to ensure color swatches, tokens, and logos are included when needed
  * Also validates that responses only use design system knowledge
  */
@@ -560,6 +746,16 @@ async function processAIResponse(aiResponse: string, userMessage: string): Promi
   
   const lowerMessage = userMessage.toLowerCase()
   const responseLower = cleanedResponse.toLowerCase()
+  
+  // Detect competitor names - if a competitor is mentioned, don't show our brand colors
+  const competitorNames = ['paddy power', 'stake', 'draftkings', 'fanduel', 'betmgm', 'caesars', 'bet365', 'william hill', '888', 'unibet', 'betfair', 'sky bet', 'coral', 'ladbrokes']
+  const isCompetitorQuery = competitorNames.some(name => lowerMessage.includes(name))
+  
+  // If it's a competitor query, skip all brand color logic
+  if (isCompetitorQuery) {
+    console.log('Competitor query detected, skipping brand color logic')
+    return cleanedResponse
+  }
   
   // Warn if response seems to be making things up (basic check)
   const suspiciousPhrases = [
@@ -591,19 +787,21 @@ async function processAIResponse(aiResponse: string, userMessage: string): Promi
     // If user asked about a specific color and response doesn't have COLOR_SWATCH, try to add it
     // ONLY check user message, not response - don't add color swatches if user didn't ask about colors
     const isColorQuery = 
-      lowerMessage.includes('color') || 
-      lowerMessage.includes('colour') || 
-      lowerMessage.includes('palette') ||
-      lowerMessage.includes('pallete') ||
-      (lowerMessage.includes('primary') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) || 
-      (lowerMessage.includes('secondary') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) ||
-      (lowerMessage.includes('button') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) ||
-      lowerMessage.includes('what colour') ||
-      lowerMessage.includes('what color') ||
-      (lowerMessage.includes('show me') && (lowerMessage.includes('color') || lowerMessage.includes('colour')))
+      !isCompetitorQuery && // Don't treat competitor queries as color queries
+      (lowerMessage.includes('color') || 
+       lowerMessage.includes('colour') || 
+       lowerMessage.includes('palette') ||
+       lowerMessage.includes('pallete') ||
+       (lowerMessage.includes('primary') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) || 
+       (lowerMessage.includes('secondary') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) ||
+       (lowerMessage.includes('button') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))) ||
+       lowerMessage.includes('what colour') ||
+       lowerMessage.includes('what color') ||
+       (lowerMessage.includes('show me') && (lowerMessage.includes('color') || lowerMessage.includes('colour'))))
     
     // Check if this is a brand palette query
     const isBrandPaletteQuery = 
+      !isCompetitorQuery && // Don't treat competitor queries as brand palette queries
       (lowerMessage.includes('palette') || lowerMessage.includes('pallete') || lowerMessage.includes('colours') || lowerMessage.includes('colors')) &&
       (lowerMessage.includes('wild casino') || lowerMessage.includes('wildcasino') || 
        lowerMessage.includes('betonline') || lowerMessage.includes('bol') ||

@@ -5,6 +5,23 @@
 :root {
   --background: #0a0a0a;
   --foreground: #ffffff;
+  --border: 220 13% 18%;
+  --input: 220 13% 18%;
+  --ring: 217.2 91.2% 59.8%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
 }
 
 * {
@@ -13,13 +30,18 @@
   box-sizing: border-box;
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden;
   margin: 0;
   padding: 0;
 }
@@ -87,4 +109,672 @@ body {
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+}
+
+/* Shimmer animation for skeleton loaders */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Shimmer button animation */
+@keyframes shimmer-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Text shimmer animation */
+@keyframes shimmer-text {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+/* Subtle tile shimmer on hover */
+@keyframes tile-shimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+.tile-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: tile-shimmer 1.5s ease-in-out infinite;
+}
+
+@layer base {
+  :root {
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --sidebar-background: 0 0% 17.6%; /* #2d2d2d */
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 10%; /* #1a1a1a */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.1; /* white/10 */
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+  html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+  }
+}
+
+/* Position sidebar below header */
+[data-sidebar="sidebar"] {
+  background-color: #2d2d2d !important;
+}
+
+/* Adjust sidebar fixed positioning to start below fixed header */
+.group.peer > div.fixed {
+  top: 64px !important;
+  height: calc(100vh - 64px) !important;
+}
+
+/* Ensure sidebar content is dark */
+[data-sidebar="sidebar"],
+[data-sidebar="sidebar"] > div,
+.bg-sidebar {
+  background-color: #2d2d2d !important;
+}
+
+/* Make "Other" navigation menu red when open */
+[data-state="open"] button[class*="NavigationMenuTrigger"] {
+  background-color: #ee3536 !important;
+}
+
+/* Fix banner and tabs scrolling - allow natural page scroll */
+/* Remove viewport height constraint from SidebarProvider to allow natural page scroll */
+.group\/sidebar-wrapper {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* CRITICAL: Ensure SidebarInset is properly constrained to visible width */
+.group\/sidebar-wrapper {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.group\/sidebar-wrapper > main[data-sidebar="inset"] {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: auto !important; /* Use auto instead of 0 */
+  flex-basis: 0 !important; /* CRITICAL: Use flex-basis to allow proper flex shrinking */
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+/* CRITICAL: Override the w-full class from SidebarInset component - use flex-basis instead */
+main[data-sidebar="inset"].w-full,
+main[data-sidebar="inset"][class*="w-full"],
+main[data-sidebar="inset"] {
+  width: auto !important; /* Override w-full class */
+  flex-basis: 0 !important; /* Use flex-basis to allow proper flex shrinking */
+  flex: 1 1 0% !important; /* Ensure flex takes remaining space */
+  min-width: 0 !important; /* Allow shrinking below content size */
+  max-width: 100% !important; /* Don't exceed parent */
+}
+
+/* Ensure SidebarInset doesn't create a scroll container but allows sticky to work */
+main[data-sidebar="inset"] {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100vh !important;
+  position: relative !important;
+  display: flex !important;
+  flex: 1 1 0% !important;
+  flex-direction: column !important;
+  width: auto !important; /* Use auto */
+  flex-basis: 0 !important; /* CRITICAL: Use flex-basis to allow proper flex shrinking */
+  max-width: none !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+}
+
+/* CRITICAL: Ensure content doesn't extend beyond viewport - constrain to visible area */
+main[data-sidebar="inset"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+main[data-sidebar="inset"] > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  position: relative !important;
+}
+
+/* Ensure parent containers allow sticky positioning - no overflow hidden on parents */
+main[data-sidebar="inset"] > * {
+  overflow: visible !important;
+  overflow-x: visible !important; /* Changed to visible for arrows */
+  position: relative !important;
+}
+
+/* Lock horizontal scroll on body and html */
+html, body {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Ensure header stays fixed at top */
+header[class*="z-\[100\]"] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 100 !important;
+}
+
+/* Ensure dropdown menus and sheets appear above sub-nav */
+[data-radix-dropdown-menu-content],
+[data-radix-popper-content-wrapper],
+[data-radix-dropdown-menu-content][data-state="open"] {
+  z-index: 120 !important;
+  position: fixed !important;
+}
+
+/* Ensure dropdown portal appears above sub-nav */
+[data-radix-portal] [data-radix-dropdown-menu-content] {
+  z-index: 120 !important;
+  position: fixed !important;
+}
+
+/* Ensure carousel arrows are ALWAYS visible and NEVER clipped */
+button[class*="CarouselPrevious"],
+button[class*="CarouselNext"] {
+  z-index: 30 !important;
+  position: absolute !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  margin: 0 !important;
+}
+
+/* Ensure ALL parent containers allow overflow for arrows - CRITICAL */
+main[data-sidebar="inset"],
+main[data-sidebar="inset"] > div,
+main[data-sidebar="inset"] > div > div,
+div[class*="relative"][class*="px-6"],
+div[class*="relative"][class*="px-6"] > *,
+[role="region"][aria-roledescription="carousel"],
+[role="region"][aria-roledescription="carousel"] > * {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+/* Ensure carousel container doesn't clip arrows */
+[role="region"][aria-roledescription="carousel"] {
+  position: relative !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+/* The inner scroll container can have overflow-hidden, but arrows must be outside */
+[role="region"][aria-roledescription="carousel"] > div:first-child {
+  overflow: hidden !important; /* This is the scroll container - keep hidden */
+}
+
+/* But arrows are siblings, so they should be visible */
+[role="region"][aria-roledescription="carousel"] > button {
+  overflow: visible !important;
+  position: absolute !important;
+}
+
+/* Ensure carousel arrows are positioned correctly within content area */
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure carousel wrapper doesn't extend beyond viewport */
+main[data-sidebar="inset"] div.relative.px-6 {
+  max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+/* CRITICAL: Force carousel arrows to be visible and positioned correctly - use viewport-relative positioning */
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* CRITICAL: Position carousel arrows at the edges of the visible content area - ensure they stay within viewport */
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* CRITICAL: Ensure ALL containers in the content area respect the visible width - target all nested divs */
+main[data-sidebar="inset"] > div,
+main[data-sidebar="inset"] > div > div,
+main[data-sidebar="inset"] > div > div > div,
+main[data-sidebar="inset"] > div > div > div > div,
+main[data-sidebar="inset"] > div > div > div > div > div,
+main[data-sidebar="inset"] div.flex.flex-col.gap-6,
+main[data-sidebar="inset"] div.space-y-8 {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+  min-width: 0 !important;
+  position: relative !important;
+}
+
+/* CRITICAL: Ensure carousel container respects parent width and doesn't overflow */
+main[data-sidebar="inset"] div.relative.px-6 {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  min-width: 0 !important;
+  position: relative !important;
+  padding-right: 2.5rem !important; /* Add padding for arrow */
+}
+
+/* CRITICAL: Force RIGHT carousel arrow to be visible and positioned correctly - use container-relative positioning */
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important; /* Allow carousel to shrink */
+}
+
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] button[class*="CarouselNext"] {
+  right: 0 !important;
+  left: auto !important;
+  position: absolute !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  z-index: 30 !important;
+  transform: translate(50%, -50%) !important;
+  pointer-events: auto !important;
+  top: 50% !important;
+  max-width: none !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Ensure carousel wrapper doesn't clip the arrow */
+main[data-sidebar="inset"] div.relative.px-6[style*="overflow"] {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+main[data-sidebar="inset"] [role="region"][aria-roledescription="carousel"] button[class*="CarouselPrevious"] {
+  left: 1.5rem !important;
+  right: auto !important;
+  position: absolute !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  z-index: 30 !important;
+  transform: translateY(-50%) !important;
+  pointer-events: auto !important;
+  top: 50% !important;
+  max-width: none !important;
+}
+
+/* Ensure ALL GAMES buttons are visible */
+div.flex.items-center.justify-between button {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-flex !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* Ensure section headers with ALL GAMES buttons are visible and responsive */
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  position: relative !important;
+  z-index: 5 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important; /* Changed to visible so buttons aren't clipped */
+  box-sizing: border-box !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+/* CRITICAL: Ensure ALL GAMES buttons are always visible and within viewport - account for sidebar width */
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-width: 0 !important; /* Critical: allows flex container to shrink */
+}
+
+/* CRITICAL: Prevent tiles from resizing when sidebar opens/closes */
+[role="region"][aria-roledescription="carousel"] [class*="CarouselItem"] {
+  flex-shrink: 0 !important;
+  min-width: 0 !important;
+}
+
+[role="region"][aria-roledescription="carousel"] [data-content-item] {
+  flex-shrink: 0 !important;
+}
+
+/* Ensure tiles maintain their fixed widths */
+[role="region"][aria-roledescription="carousel"] [data-content-item][style*="width"] {
+  flex-shrink: 0 !important;
+}
+
+/* CRITICAL: Ensure banner cards maintain their exact width (320px) when sidebar opens/closes */
+div[class*="flex"][class*="gap-4"][class*="pl-6"] > div[style*="320px"],
+div[class*="flex"][class*="gap-4"][class*="pl-6"] > div[style*="width: '320px'"],
+div[class*="flex"][class*="gap-4"][class*="pl-6"] img[width="320"] {
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+/* Ensure banner container allows horizontal scroll if needed */
+div[class*="flex"][class*="gap-4"][class*="pl-6"][style*="flexWrap"] {
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+}
+
+/* CRITICAL: Force ALL GAMES button to be visible - ensure it stays within container */
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 h2 {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  margin-right: 1rem !important;
+}
+
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 button {
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  white-space: nowrap !important;
+  max-width: fit-content !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-flex !important;
+  position: relative !important;
+  z-index: 10 !important;
+  min-width: auto !important;
+  width: auto !important;
+}
+
+/* FORCE ALL GAMES buttons to be visible - override any hiding */
+main[data-sidebar="inset"] button:has-text("ALL GAMES"),
+main[data-sidebar="inset"] button[class*="text-white/70"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-flex !important;
+  position: relative !important;
+}
+
+/* Ensure buttons don't get pushed off screen - use flex to keep them visible */
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 > h2 {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 > div:last-child {
+  flex-shrink: 0 !important;
+  margin-left: 1rem !important; /* Add spacing between title and button */
+}
+
+/* Ensure Sheet overlays and content are properly layered */
+[data-radix-sheet-overlay] {
+  z-index: 115 !important;
+}
+
+[data-radix-sheet-content] {
+  z-index: 120 !important;
+}
+
+/* Ensure Sheet/Modal overlays appear above everything */
+[data-radix-dialog-overlay],
+[data-radix-sheet-overlay] {
+  z-index: 115 !important;
+}
+
+[data-radix-dialog-content],
+[data-radix-sheet-content] {
+  z-index: 120 !important;
+}
+
+/* Ensure dropdown portal appears above sub-nav */
+[data-radix-portal] [data-radix-dropdown-menu-content] {
+  z-index: 120 !important;
+}
+
+/* Ensure sub nav is fixed - positioned right below the header at 64px, after sidebar */
+[data-sub-nav] {
+  position: fixed !important;
+  top: 64px !important;
+  right: 0 !important;
+  z-index: 90 !important;
+  display: block !important;
+  transition: left 0.2s ease-linear !important;
+  background: rgba(26, 26, 26, 0.6) !important; /* Lighter, more transparent background */
+  backdrop-filter: blur(20px) !important; /* Stronger blur */
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Enhanced blur effect for content items when scrolling under sub-nav */
+[data-content-item] {
+  transition: filter 0.3s ease-out, opacity 0.3s ease-out !important;
+}
+
+/* Apply blur to content items that are positioned under the fixed sub-nav */
+main[data-sidebar="inset"] [data-content-item] {
+  position: relative;
+}
+
+/* When content scrolls under sub-nav, apply stronger blur via JavaScript state */
+
+/* CRITICAL: Ensure body/html is the scrolling container, not any parent */
+html {
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+}
+
+/* Ensure no parent creates a scroll container that prevents sticky */
+.group\/sidebar-wrapper {
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 100vh !important;
+  width: 100% !important;
+}
+
+.group\/sidebar-wrapper > *,
+main[data-sidebar="inset"] > * {
+  overflow: visible !important;
+  overflow-y: visible !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Ensure all parent containers up to body allow sticky */
+body > div,
+body > div > div,
+body > div > div > div[class*="flex"] {
+  overflow: visible !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  height: auto !important;
+}
+
+/* Ensure content items don't overlap and flow properly - banners should be visible below sub nav */
+[data-content-item] {
+  position: relative !important;
+  z-index: 1 !important;
+  margin-top: 0 !important;
+  filter: none !important; /* Remove any blur from content items - rely on sub-nav backdrop-blur */
+}
+
+/* Ensure content flows below sticky nav - content should start after sub nav in normal flow */
+main[data-sidebar="inset"] [data-sub-nav] ~ * {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Add blur effect to content when scrolling under sub nav */
+main[data-sidebar="inset"] > div > div:not(:first-child) {
+  position: relative;
+}
+
+/* Ensure content doesn't overlap sticky elements */
+main[data-sidebar="inset"] > div > div:first-child + div {
+  margin-top: 0;
+}
+
+/* Sports Page Sidebar Styling */
+/* Ensure Sports page sidebar is positioned correctly below header */
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] [data-sidebar="sidebar"] {
+  position: fixed !important;
+  top: 64px !important;
+  left: 0 !important;
+  height: calc(100vh - 64px) !important;
+  background-color: #2d2d2d !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+  z-index: 80 !important;
+}
+
+/* Sports page sidebar when collapsed */
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] [data-sidebar="sidebar"][data-state="collapsed"] {
+  width: 3rem !important;
+}
+
+/* Sports page sidebar when expanded */
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] [data-sidebar="sidebar"]:not([data-state="collapsed"]) {
+  width: 16rem !important;
+}
+
+/* Sports page SidebarInset should adjust based on sidebar state */
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] main[data-sidebar="inset"] {
+  margin-left: 16rem !important;
+  transition: margin-left 0.2s ease-in-out !important;
+}
+
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] [data-sidebar="sidebar"][data-state="collapsed"] ~ main[data-sidebar="inset"] {
+  margin-left: 3rem !important;
+}
+
+/* Ensure Sports page content is properly positioned */
+div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] {
+  margin-top: 64px !important;
+  min-height: calc(100vh - 64px) !important;
 }

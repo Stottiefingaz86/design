@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
-import { addUXReport, UXReport } from '@/lib/agent/knowledgeBase'
+import { UXReport } from '@/lib/agent/knowledgeBase'
 import { scrapeJurniiReport, parseReportWithAI } from '@/lib/utils/jurniiScraper'
 import { analyzeWebsite } from '@/lib/utils/websiteAnalyzer'
 import { crawlGoogleReviews } from '@/lib/utils/googleReviewsCrawler'
 import { processAllReports } from '@/lib/utils/reportExtractor'
+import { compareJurniiReports, formatComparison } from '@/lib/utils/jurniiComparison'
+import { getUXReports, addUXReport as addUXReportToSupabase } from '@/lib/supabase/knowledgeBase'
 
 /**
  * API endpoint to add UX reports to the knowledge base
@@ -12,7 +14,7 @@ import { processAllReports } from '@/lib/utils/reportExtractor'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { url, reportData, manual, analyzeWebsite: shouldAnalyzeWebsite, crawlGoogleReviews: shouldCrawlGoogleReviews, processPDFs } = body
+    const { url, reportData, manual, analyzeWebsite: shouldAnalyzeWebsite, crawlGoogleReviews: shouldCrawlGoogleReviews, processPDFs, compareWithPrevious } = body
 
     // If user wants to process all PDFs from public/reports/
     if (processPDFs) {
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
         priority: reportData.priority,
       }
 
-      await addUXReport(report)
+      await addUXReportToSupabase(report)
 
       return NextResponse.json({
         success: true,
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
               priority: 'high',
             }
 
-            await addUXReport(report)
+            await addUXReportToSupabase(report)
 
             return NextResponse.json({
               success: true,
@@ -163,13 +165,44 @@ export async function POST(request: Request) {
                     priority: 'high', // Default, can be adjusted
                   }
 
-                  await addUXReport(report)
+                  // If compareWithPrevious is true, find and compare with previous report
+                  let comparison = null
+                  if (compareWithPrevious) {
+                    try {
+                      const previousReports = await getUXReports()
+                      // Find the most recent Jurnii report with the same URL (or similar title)
+                      const previousReport = previousReports
+                        .filter(r => r.source === 'Jurnii' && r.id !== report.id)
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                      
+                      if (previousReport) {
+                        comparison = compareJurniiReports(previousReport, report)
+                        console.log('📊 Report comparison:', comparison.summary)
+                      } else {
+                        console.log('ℹ️  No previous report found for comparison')
+                      }
+                    } catch (compareError) {
+                      console.error('Comparison error:', compareError)
+                    }
+                  }
+
+                  await addUXReportToSupabase(report)
 
                   return NextResponse.json({
                     success: true,
                     message: 'UX report extracted and added to knowledge base using AI parsing',
                     reportId: report.id,
                     findingsCount: report.findings.length,
+                    comparison: comparison ? {
+                      summary: comparison.summary,
+                      newFindings: comparison.newFindings.length,
+                      removedFindings: comparison.removedFindings.length,
+                      updatedFindings: comparison.updatedFindings.length,
+                      newCompetitorScores: comparison.newCompetitorScores?.length || 0,
+                      updatedCompetitorScores: comparison.updatedCompetitorScores.length,
+                      formatted: formatComparison(comparison),
+                      full: comparison,
+                    } : null,
                   })
                 }
               }
@@ -192,7 +225,7 @@ export async function POST(request: Request) {
               priority: 'high',
             }
 
-            await addUXReport(report)
+            await addUXReportToSupabase(report)
 
             return NextResponse.json({
               success: true,
@@ -233,7 +266,7 @@ export async function POST(request: Request) {
               totalReviews: searchSummary.totalReviews,
               themes: searchSummary.themes,
             }
-            await addUXReport(report)
+            await addUXReportToSupabase(report)
             return NextResponse.json({
               success: true,
               message: 'Google web search completed and insights added to knowledge base',

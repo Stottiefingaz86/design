@@ -350,6 +350,10 @@ export function ChatWithCH() {
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastScrollTopRef = useRef<number>(0)
   const lastAutoScrollTimeRef = useRef<number>(0) // Throttle auto-scroll calls
+  // Use refs to track scroll state so they're always current in closures
+  const userHasScrolledRef = useRef<boolean>(false)
+  const isScrollingRef = useRef<boolean>(false)
+  const isUserScrolledUpRef = useRef<boolean>(false)
   const triggerKool = useSceneStore((state) => state.triggerKool)
   
   // Design request flow state
@@ -554,11 +558,20 @@ export function ChatWithCH() {
     const handleScroll = () => {
       const currentScrollTop = container.scrollTop
       const scrollDelta = currentScrollTop - lastScrollTopRef.current
+      const scrollHeight = container.scrollHeight
+      const clientHeight = container.clientHeight
+      const distanceFromBottom = scrollHeight - currentScrollTop - clientHeight
       
-      // If user scrolled up (negative delta or scrollTop decreased), mark as manual scroll
-      if (scrollDelta < -5 || (scrollDelta === 0 && currentScrollTop < lastScrollTopRef.current)) {
+      // Immediately check if user scrolled up (negative delta or scrollTop decreased)
+      // OR if user is not at the bottom
+      if (scrollDelta < -5 || (scrollDelta === 0 && currentScrollTop < lastScrollTopRef.current) || distanceFromBottom > 50) {
         setUserHasScrolled(true)
         setIsUserScrolledUp(true)
+        // Update refs immediately so streaming interval can check them - CRITICAL for stopping auto-scroll
+        userHasScrolledRef.current = true
+        isUserScrolledUpRef.current = true
+        // Reset auto-scroll throttle when user scrolls up - set far in future to prevent any auto-scroll
+        lastAutoScrollTimeRef.current = Date.now() + 10000
       }
       
       // Update last scroll position
@@ -566,6 +579,7 @@ export function ChatWithCH() {
       
       // Mark that user is actively scrolling
       setIsScrolling(true)
+      isScrollingRef.current = true
       
       // Clear any existing timeout
       if (scrollTimeoutRef.current) {
@@ -575,12 +589,15 @@ export function ChatWithCH() {
       // After user stops scrolling for 200ms, check position
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false)
+        isScrollingRef.current = false
         const atBottom = isAtBottom()
         setIsUserScrolledUp(!atBottom)
+        isUserScrolledUpRef.current = !atBottom
         
         // If user is at bottom, reset manual scroll flag
         if (atBottom) {
           setUserHasScrolled(false)
+          userHasScrolledRef.current = false
         }
       }, 200)
 
@@ -589,12 +606,16 @@ export function ChatWithCH() {
       if (!atBottom) {
         setIsUserScrolledUp(true)
         setUserHasScrolled(true)
+        isUserScrolledUpRef.current = true
+        userHasScrolledRef.current = true
         // Reset auto-scroll throttle when user scrolls up
         lastAutoScrollTimeRef.current = 0
       } else if (atBottom && scrollDelta > 5) {
         // User scrolled down to bottom - reset manual scroll flag
         setUserHasScrolled(false)
         setIsUserScrolledUp(false)
+        userHasScrolledRef.current = false
+        isUserScrolledUpRef.current = false
       }
     }
 
@@ -943,42 +964,69 @@ export function ChatWithCH() {
             )
           )
           
-          // Auto-scroll during streaming - HEAVILY THROTTLED to prevent shaking
-          // Only scroll every 200ms max, and only if user is at bottom
-          const now = Date.now()
-          const timeSinceLastScroll = now - lastAutoScrollTimeRef.current
+          // Auto-scroll during streaming - COMPLETELY DISABLED if user has scrolled up
+          // Check refs FIRST - if user has scrolled, don't even check position
+          if (userHasScrolledRef.current || isUserScrolledUpRef.current || isScrollingRef.current) {
+            // User has scrolled up - DO NOT auto-scroll at all
+            return
+          }
           
-          // Only attempt scroll every 200ms (much less frequent)
-          if (timeSinceLastScroll > 200) {
-            const container = messagesContainerRef.current
-            if (container) {
-              const scrollTop = container.scrollTop
-              const scrollHeight = container.scrollHeight
-              const clientHeight = container.clientHeight
-              const distanceFromBottom = scrollHeight - scrollTop - clientHeight
-              
-              // Only auto-scroll if user is VERY close to bottom (within 30px)
-              // This prevents interference when user has scrolled up even slightly
-              if (distanceFromBottom < 30) {
-                lastAutoScrollTimeRef.current = now
-                // Use requestAnimationFrame for smoother scrolling
-                requestAnimationFrame(() => {
-                  // Double-check position hasn't changed (user might have scrolled)
-                  const container = messagesContainerRef.current
-                  if (container && messagesEndRef.current) {
-                    const currentDistance = container.scrollHeight - container.scrollTop - container.clientHeight
-                    // Only scroll if still very close to bottom AND user hasn't manually scrolled
-                    if (currentDistance < 30 && !userHasScrolled) {
-                      // Use scrollTop directly instead of scrollIntoView to avoid jitter
-                      // Only update if it actually needs to change
-                      const targetScroll = container.scrollHeight - container.clientHeight
-                      if (Math.abs(container.scrollTop - targetScroll) > 5) {
-                        container.scrollTop = targetScroll
-                      }
-                    }
+          // Only proceed if user hasn't scrolled up
+          const container = messagesContainerRef.current
+          if (!container) return
+          
+          // Check position directly - if not at bottom, don't scroll
+          const scrollTop = container.scrollTop
+          const scrollHeight = container.scrollHeight
+          const clientHeight = container.clientHeight
+          const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+          
+          // If user is more than 50px from bottom, they've scrolled up - stop immediately
+          if (distanceFromBottom > 50) {
+            // User is not at bottom - update refs and stop
+            userHasScrolledRef.current = true
+            isUserScrolledUpRef.current = true
+            return
+          }
+          
+          // Only auto-scroll if user is VERY close to bottom (within 30px)
+          // Double-check refs haven't changed
+          if (distanceFromBottom < 30 && !userHasScrolledRef.current && !isScrollingRef.current && !isUserScrolledUpRef.current) {
+            const now = Date.now()
+            const timeSinceLastScroll = now - lastAutoScrollTimeRef.current
+            
+            // Only attempt scroll every 500ms (more throttled)
+            if (timeSinceLastScroll > 500) {
+              lastAutoScrollTimeRef.current = now
+              // Use requestAnimationFrame for smoother scrolling
+              requestAnimationFrame(() => {
+                // Triple-check refs and position before scrolling
+                const container = messagesContainerRef.current
+                if (!container || !messagesEndRef.current) return
+                
+                // Check refs FIRST - if user scrolled, abort immediately
+                if (userHasScrolledRef.current || isUserScrolledUpRef.current || isScrollingRef.current) {
+                  return // Abort - user has scrolled
+                }
+                
+                // Check position again - if not at bottom, abort
+                const currentDistance = container.scrollHeight - container.scrollTop - container.clientHeight
+                if (currentDistance > 50) {
+                  // User scrolled up - update refs and abort
+                  userHasScrolledRef.current = true
+                  isUserScrolledUpRef.current = true
+                  return
+                }
+                
+                // Only scroll if still very close to bottom
+                if (currentDistance < 30) {
+                  // Use scrollTop directly instead of scrollIntoView to avoid jitter
+                  const targetScroll = container.scrollHeight - container.clientHeight
+                  if (Math.abs(container.scrollTop - targetScroll) > 5) {
+                    container.scrollTop = targetScroll
                   }
-                })
-              }
+                }
+              })
             }
           }
         } else {
@@ -1244,11 +1292,13 @@ export function ChatWithCH() {
                         {message.images && message.images.length > 0 && (
                           <div className="mb-2 space-y-2">
                             {message.images.map((img, idx) => (
-                              <img
+                              <ImageWithSkeleton
                                 key={idx}
                                 src={img}
                                 alt={`Uploaded ${idx + 1}`}
-                                className="max-w-full max-h-48 rounded-lg object-contain border border-white/10"
+                                className="rounded-lg object-contain border border-white/10"
+                                maxHeight="192px"
+                                skeletonHeight={192}
                               />
                             ))}
                           </div>
@@ -1257,10 +1307,12 @@ export function ChatWithCH() {
                         {/* Display generated image */}
                         {message.generatedImage && (
                           <div className="mb-2">
-                            <img
+                            <ImageWithSkeleton
                               src={message.generatedImage}
                               alt="AI Generated"
-                              className="max-w-full max-h-64 rounded-lg object-contain border border-white/10"
+                              className="rounded-lg object-contain border border-white/10"
+                              maxHeight="256px"
+                              skeletonHeight={256}
                             />
                           </div>
                         )}
@@ -1275,6 +1327,7 @@ export function ChatWithCH() {
                         )}
                         
                         {/* Render text with markdown-style formatting and visual markups */}
+                        {/* Always show text - skeleton loaders are only for images, not text */}
                         {finalText && (
                         <div className="space-y-2 inline-block">
                           {formatTextWithMarkups(finalText)}
@@ -1602,6 +1655,87 @@ function ColorSwatchBlock({ swatch }: { swatch: ColorSwatch }) {
   )
 }
 
+// Skeleton Loader Component
+function ImageSkeleton({ width = 120, height = 60, className = '' }: { width?: number; height?: number; className?: string }) {
+  return (
+    <div 
+      className={`bg-white/5 border border-white/10 rounded relative overflow-hidden ${className}`}
+      style={{ width: width ? `${width}px` : '100%', height: height ? `${height}px` : 'auto', minHeight: height ? `${height}px` : '192px' }}
+    >
+      <div 
+        className="w-full h-full bg-gradient-to-r from-white/5 via-white/10 to-white/5"
+        style={{
+          backgroundSize: '200% 100%',
+          animation: 'shimmer 1.5s infinite'
+        }}
+      />
+    </div>
+  )
+}
+
+// Image with Skeleton Loader Component
+function ImageWithSkeleton({ 
+  src, 
+  alt, 
+  className = '', 
+  maxWidth = '100%', 
+  maxHeight = '192px',
+  skeletonWidth,
+  skeletonHeight = 192
+}: { 
+  src: string
+  alt: string
+  className?: string
+  maxWidth?: string
+  maxHeight?: string
+  skeletonWidth?: number
+  skeletonHeight?: number
+}) {
+  const [imageLoading, setImageLoading] = useState(true)
+  const [imageLoaded, setImageLoaded] = useState(false)
+  const [imageError, setImageError] = useState(false)
+
+  return (
+    <div className="relative">
+      {imageLoading && !imageError && (
+        <ImageSkeleton 
+          width={skeletonWidth} 
+          height={skeletonHeight}
+          className="absolute inset-0"
+        />
+      )}
+      {!imageError && (
+        <img
+          src={src}
+          alt={alt}
+          className={`${className} transition-opacity duration-300 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          style={{ 
+            maxWidth,
+            maxHeight,
+            width: 'auto',
+            height: 'auto'
+          }}
+          onLoad={() => {
+            setImageLoaded(true)
+            setImageLoading(false)
+          }}
+          onError={() => {
+            setImageError(true)
+            setImageLoading(false)
+          }}
+        />
+      )}
+      {imageError && (
+        <div className="flex items-center justify-center bg-white/5 border border-white/10 rounded text-white/50 text-xs p-4" style={{ minHeight: `${skeletonHeight}px` }}>
+          Failed to load image
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Logo Image Block Component
 function LogoImageBlock({ logo }: { logo: LogoImage }) {
   // Generate logo file path based on brand, type, and color
@@ -1623,6 +1757,7 @@ function LogoImageBlock({ logo }: { logo: LogoImage }) {
   const logoPath = getLogoPath()
   const [imageError, setImageError] = useState(false)
   const [imageLoading, setImageLoading] = useState(true)
+  const [imageLoaded, setImageLoaded] = useState(false)
   
   // Debug: log the logo path
   useEffect(() => {
@@ -1638,17 +1773,18 @@ function LogoImageBlock({ logo }: { logo: LogoImage }) {
       </div>
       <div className="flex items-center gap-3">
         {imageLoading && !imageError && (
-          <div className="w-[120px] h-[60px] flex items-center justify-center bg-white/5 border border-white/10 rounded text-white/50 text-xs">
-            Loading...
-          </div>
+          <ImageSkeleton width={120} height={60} />
         )}
-        {!imageError ? (
+        {!imageError && (
           <img
             src={logoPath}
             alt={`${logo.brand} ${logo.type} ${logo.color}`}
-            className="max-w-[120px] max-h-[60px] object-contain bg-white/5 rounded"
+            className={`max-w-[120px] max-h-[60px] object-contain bg-white/5 rounded transition-opacity duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0 absolute'
+            }`}
             onLoad={() => {
               console.log('Logo loaded successfully:', logoPath)
+              setImageLoaded(true)
               setImageLoading(false)
             }}
             onError={(e) => {
@@ -1658,14 +1794,14 @@ function LogoImageBlock({ logo }: { logo: LogoImage }) {
               setImageLoading(false)
             }}
             style={{ 
-              display: imageLoading ? 'none' : 'block',
               width: 'auto',
               height: 'auto',
               maxWidth: '120px',
               maxHeight: '60px'
             }}
           />
-        ) : (
+        )}
+        {imageError && (
           <div className="w-[120px] h-[60px] flex flex-col items-center justify-center bg-white/5 border border-white/10 rounded text-white/50 text-xs text-center p-2">
             <div className="text-[8px] mb-1">📐</div>
             <div className="text-[8px]">Logo</div>

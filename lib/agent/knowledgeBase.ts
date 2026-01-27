@@ -263,8 +263,16 @@ export const knowledgeBase: KnowledgeBase = {
         'Sports event cards',
         'Bet builder components',
         'Sports navigation',
-        'MUI ADS components'
+        'MUI ADS components',
+        'Common Components',
+        'Event Row Components',
+        'Design tokens (borderRadius-3: 12px, borderRadius-4: 16px, borderRadius-9: 40px, elevation/3)',
+        'Final Designs for BetOnline and Sportbetting brands',
+        'Wireframes',
+        'Benchmark & References',
+        'Playground'
       ],
+      lastUpdated: '2025-01-27',
     },
     {
       name: 'BetOnline BrandBook - Toolkit',
@@ -727,6 +735,9 @@ ${colorTokensList}
 **BORDER RADIUS (From Figma):**
 - borderRadius-1: 4px
 - borderRadius-2: 8px (BetOnline brand book)
+- borderRadius-3: 12px (Sportsbook-26)
+- borderRadius-4: 16px (Sportsbook-26)
+- borderRadius-9: 40px (Sportsbook-26)
 - Small: 4px
 - Medium: 8px
 - Large: 12px
@@ -735,6 +746,10 @@ ${colorTokensList}
 
 **SHADOWS/ELEVATION (From Figma):**
 - Elevation levels: elevation/1 through elevation/24
+- elevation/3 (Sportsbook-26): Multi-layer shadow effect with:
+  - Effect 1: DROP_SHADOW, color: #00000033, offset: (0, 3), radius: 3, spread: -2
+  - Effect 2: DROP_SHADOW, color: #00000024, offset: (0, 3), radius: 4, spread: 0
+  - Effect 3: DROP_SHADOW, color: #0000001F, offset: (0, 1), radius: 8, spread: 0
 - Material UI shadows: --joy-shadow-xs, --joy-shadow-sm, --joy-shadow-md, --joy-shadow-lg, --joy-shadow-xl
 
 **COMPONENTS (From Figma):**
@@ -801,66 +816,137 @@ ${logos.length > 0
     : '  (No logos added yet)'}
 
 **UX REPORTS & INSIGHTS:**
+
+**IMPORTANT**: Reports are categorized by source:
+- **Research Report** = Surveys (FTD, RND, Marketing, VoC) - These are surveys, NOT competitor analysis
+- **Jurnii** = Competitor analysis and UX reports - These are NOT surveys
+
 ${uxReports.length > 0
-    ? uxReports.map(report => {
-        // Include report type/category in description for better AI recognition
-        const titleLower = (report.title || '').toLowerCase()
-        const reportType = report.source === 'Research Report' 
-          ? (titleLower.includes('survey') || titleLower.includes('ftd') || titleLower.includes('first time deposit') ? 'Survey' : 
-             titleLower.includes('voc') || titleLower.includes('voice of customer') ? 'Voice of Customer' :
-             titleLower.includes('rnd') || titleLower.includes('r&d') ? 'R&D Survey' :
-             titleLower.includes('marketing') ? 'Marketing Survey' :
-             'Survey/Research Report') // Default to Survey for all Research Reports
-          : report.source
+    ? (() => {
+        // Separate reports into Research Reports (surveys) and Jurnii/other reports
+        const researchReports = uxReports.filter(r => r.source === 'Research Report')
+        const otherReports = uxReports.filter(r => r.source !== 'Research Report')
         
-        let desc = `  - ${report.title} (${reportType}${report.date ? `, ${report.date}` : ''})`
-        if (report.sourceUrl) desc += `\n    Source: ${report.sourceUrl}`
-        if (report.summary) desc += `\n    Summary: ${report.summary}`
-        if (report.priority) desc += `\n    Priority: ${report.priority}`
+        let output = ''
         
-        // Include executive summary - CRITICAL for Research Reports as it contains keyFindings with competitor names, statistics, insights
-        // For Research Reports, executiveSummary contains all key findings and recommendations from PDF extraction
-        if (report.executiveSummary) {
-          desc += `\n    Key Findings & Insights: ${typeof report.executiveSummary === 'string' ? report.executiveSummary : JSON.stringify(report.executiveSummary)}`
+        // Research Reports (Surveys) section
+        if (researchReports.length > 0) {
+          output += `**RESEARCH REPORTS (SURVEYS) - These are surveys, NOT competitor analysis:**\n`
+          output += researchReports.map(report => {
+            // Include report type/category in description for better AI recognition
+            const titleLower = (report.title || '').toLowerCase()
+            const reportType = titleLower.includes('survey') || titleLower.includes('ftd') || titleLower.includes('first time deposit') ? 'Survey' : 
+                               titleLower.includes('voc') || titleLower.includes('voice of customer') ? 'Voice of Customer' :
+                               titleLower.includes('rnd') || titleLower.includes('r&d') ? 'R&D Survey' :
+                               titleLower.includes('marketing') ? 'Marketing Survey' :
+                               'Survey/Research Report' // Default to Survey for all Research Reports
+            
+            let desc = `  - ${report.title} (${reportType}${report.date ? `, ${report.date}` : ''})`
+            if (report.sourceUrl) desc += `\n    Source: ${report.sourceUrl}`
+            if (report.summary) desc += `\n    Summary: ${report.summary}`
+            if (report.priority) desc += `\n    Priority: ${report.priority}`
+            
+            // Include executive summary - CRITICAL for Research Reports as it contains keyFindings with competitor names, statistics, insights
+            // For Research Reports, executiveSummary contains all key findings and recommendations from PDF extraction
+            if (report.executiveSummary) {
+              desc += `\n    Key Findings & Insights: ${typeof report.executiveSummary === 'string' ? report.executiveSummary : JSON.stringify(report.executiveSummary)}`
+            }
+            
+            // Include perception - often contains competitor comparisons
+            if (report.perception) {
+              desc += `\n    Perception: ${typeof report.perception === 'string' ? report.perception : Array.isArray(report.perception) ? report.perception.join(' | ') : JSON.stringify(report.perception)}`
+            }
+            
+            // Include journey - often contains competitor names and journey insights
+            if (report.journey) {
+              desc += `\n    Journey: ${typeof report.journey === 'string' ? report.journey : Array.isArray(report.journey) ? report.journey.map((j: any) => typeof j === 'string' ? j : JSON.stringify(j)).join(' | ') : JSON.stringify(report.journey)}`
+            }
+            
+            // Include trends - may contain competitor trends
+            if (report.trends) {
+              desc += `\n    Trends: ${typeof report.trends === 'string' ? report.trends : Array.isArray(report.trends) ? report.trends.map((t: any) => typeof t === 'string' ? t : JSON.stringify(t)).join(' | ') : JSON.stringify(report.trends)}`
+            }
+            
+            // Include performance - may contain competitor metrics
+            if (report.performance) {
+              desc += `\n    Performance: ${typeof report.performance === 'string' ? report.performance : Array.isArray(report.performance) ? report.performance.map((p: any) => typeof p === 'string' ? p : JSON.stringify(p)).join(' | ') : JSON.stringify(report.performance)}`
+            }
+            
+            // Include checking - may contain competitor checks
+            if (report.checking) {
+              desc += `\n    Checking: ${typeof report.checking === 'string' ? report.checking : Array.isArray(report.checking) ? report.checking.map((c: any) => typeof c === 'string' ? c : JSON.stringify(c)).join(' | ') : JSON.stringify(report.checking)}`
+            }
+            
+            if (report.findings?.length) {
+              desc += `\n    Findings:`
+              report.findings.forEach((finding, idx) => {
+                desc += `\n      ${idx + 1}. [${finding.severity.toUpperCase()}] ${finding.issue}`
+                desc += `\n         Description: ${finding.description}`
+                if (finding.recommendation) desc += `\n         Recommendation: ${finding.recommendation}`
+                if (finding.affectedArea) desc += `\n         Affected Area: ${finding.affectedArea}`
+                if (finding.section) desc += `\n         Section: ${finding.section}`
+              })
+            }
+            return desc
+          }).join('\n\n')
+          output += '\n\n'
         }
         
-        // Include perception - often contains competitor comparisons
-        if (report.perception) {
-          desc += `\n    Perception: ${typeof report.perception === 'string' ? report.perception : Array.isArray(report.perception) ? report.perception.join(' | ') : JSON.stringify(report.perception)}`
+        // Jurnii/Other Reports section
+        if (otherReports.length > 0) {
+          output += `**JURNII & OTHER UX REPORTS (COMPETITOR ANALYSIS) - These are NOT surveys:**\n`
+          output += otherReports.map(report => {
+            let desc = `  - ${report.title} (${report.source}${report.date ? `, ${report.date}` : ''})`
+            if (report.sourceUrl) desc += `\n    Source: ${report.sourceUrl}`
+            if (report.summary) desc += `\n    Summary: ${report.summary}`
+            if (report.priority) desc += `\n    Priority: ${report.priority}`
+            
+            // Include executive summary
+            if (report.executiveSummary) {
+              desc += `\n    Executive Summary: ${typeof report.executiveSummary === 'string' ? report.executiveSummary : JSON.stringify(report.executiveSummary)}`
+            }
+            
+            // Include perception - often contains competitor comparisons
+            if (report.perception) {
+              desc += `\n    Perception: ${typeof report.perception === 'string' ? report.perception : Array.isArray(report.perception) ? report.perception.join(' | ') : JSON.stringify(report.perception)}`
+            }
+            
+            // Include journey - often contains competitor names and journey insights
+            if (report.journey) {
+              desc += `\n    Journey: ${typeof report.journey === 'string' ? report.journey : Array.isArray(report.journey) ? report.journey.map((j: any) => typeof j === 'string' ? j : JSON.stringify(j)).join(' | ') : JSON.stringify(report.journey)}`
+            }
+            
+            // Include trends - may contain competitor trends
+            if (report.trends) {
+              desc += `\n    Trends: ${typeof report.trends === 'string' ? report.trends : Array.isArray(report.trends) ? report.trends.map((t: any) => typeof t === 'string' ? t : JSON.stringify(t)).join(' | ') : JSON.stringify(report.trends)}`
+            }
+            
+            // Include performance - may contain competitor metrics
+            if (report.performance) {
+              desc += `\n    Performance: ${typeof report.performance === 'string' ? report.performance : Array.isArray(report.performance) ? report.performance.map((p: any) => typeof p === 'string' ? p : JSON.stringify(p)).join(' | ') : JSON.stringify(report.performance)}`
+            }
+            
+            // Include checking - may contain competitor checks
+            if (report.checking) {
+              desc += `\n    Checking: ${typeof report.checking === 'string' ? report.checking : Array.isArray(report.checking) ? report.checking.map((c: any) => typeof c === 'string' ? c : JSON.stringify(c)).join(' | ') : JSON.stringify(report.checking)}`
+            }
+            
+            if (report.findings?.length) {
+              desc += `\n    Findings:`
+              report.findings.forEach((finding, idx) => {
+                desc += `\n      ${idx + 1}. [${finding.severity.toUpperCase()}] ${finding.issue}`
+                desc += `\n         Description: ${finding.description}`
+                if (finding.recommendation) desc += `\n         Recommendation: ${finding.recommendation}`
+                if (finding.affectedArea) desc += `\n         Affected Area: ${finding.affectedArea}`
+                if (finding.section) desc += `\n         Section: ${finding.section}`
+              })
+            }
+            return desc
+          }).join('\n\n')
         }
         
-        // Include journey - often contains competitor names and journey insights
-        if (report.journey) {
-          desc += `\n    Journey: ${typeof report.journey === 'string' ? report.journey : Array.isArray(report.journey) ? report.journey.map((j: any) => typeof j === 'string' ? j : JSON.stringify(j)).join(' | ') : JSON.stringify(report.journey)}`
-        }
-        
-        // Include trends - may contain competitor trends
-        if (report.trends) {
-          desc += `\n    Trends: ${typeof report.trends === 'string' ? report.trends : Array.isArray(report.trends) ? report.trends.map((t: any) => typeof t === 'string' ? t : JSON.stringify(t)).join(' | ') : JSON.stringify(report.trends)}`
-        }
-        
-        // Include performance - may contain competitor metrics
-        if (report.performance) {
-          desc += `\n    Performance: ${typeof report.performance === 'string' ? report.performance : Array.isArray(report.performance) ? report.performance.map((p: any) => typeof p === 'string' ? p : JSON.stringify(p)).join(' | ') : JSON.stringify(report.performance)}`
-        }
-        
-        // Include checking - may contain competitor checks
-        if (report.checking) {
-          desc += `\n    Checking: ${typeof report.checking === 'string' ? report.checking : Array.isArray(report.checking) ? report.checking.map((c: any) => typeof c === 'string' ? c : JSON.stringify(c)).join(' | ') : JSON.stringify(report.checking)}`
-        }
-        
-        if (report.findings?.length) {
-          desc += `\n    Findings:`
-          report.findings.forEach((finding, idx) => {
-            desc += `\n      ${idx + 1}. [${finding.severity.toUpperCase()}] ${finding.issue}`
-            desc += `\n         Description: ${finding.description}`
-            if (finding.recommendation) desc += `\n         Recommendation: ${finding.recommendation}`
-            if (finding.affectedArea) desc += `\n         Affected Area: ${finding.affectedArea}`
-            if (finding.section) desc += `\n         Section: ${finding.section}`
-          })
-        }
-        return desc
-      }).join('\n\n')
+        return output || '  (No UX reports added yet)'
+      })()
     : '  (No UX reports added yet)'}
 
 ${additionalNotes && additionalNotes.length > 0 ? `**ADDITIONAL NOTES:**\n${additionalNotes.map(note => `  - ${note}`).join('\n')}` : ''}
