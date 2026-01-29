@@ -34,10 +34,10 @@ export const PictureInPictureControl = React.forwardRef<
 >((props, forwardedRef) => {
   const readyState = useMediaStore((state) => state.readyState)
   const isPictureInPictureActive = useMediaStore(
-    (state) => state.isPictureInPictureActive
+    (state: any) => (state as any).isPictureInPictureActive ?? false
   )
   const isPictureInPictureSupported = useMediaStore(
-    (state) => state.isPictureInPictureSupported
+    (state: any) => (state as any).isPictureInPictureSupported ?? false
   )
   const { togglePictureInPicture } = usePictureInPicture()
 

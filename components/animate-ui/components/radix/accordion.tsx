@@ -157,6 +157,8 @@ const AccordionContent = React.forwardRef<
     }
   }, [children])
   
+  const { onAnimationStart, onAnimationEnd, ...motionProps } = props as any
+  
   return (
     <motion.div
       ref={ref}
@@ -171,7 +173,7 @@ const AccordionContent = React.forwardRef<
       }}
       style={{ overflow: "hidden" }}
       className={cn("text-sm", className)}
-      {...props}
+      {...motionProps}
     >
       <div ref={contentRef} className="pb-4 pt-0">
         {children}

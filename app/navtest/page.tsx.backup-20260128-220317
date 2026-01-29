@@ -1,40 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import React from 'react'
 import { createPortal } from 'react-dom'
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  FilterFn,
-  flexRender,
-  getCoreRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  PaginationState,
-  Row,
-  SortingState,
-  useReactTable,
-  VisibilityState
-} from "@tanstack/react-table"
-import {
-  ChevronDownIcon,
-  ChevronFirstIcon,
-  ChevronLastIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  CircleAlertIcon,
-  CircleXIcon,
-  Columns3Icon,
-  EllipsisIcon,
-  FilterIcon,
-  ListFilterIcon,
-  PlusIcon,
-  TrashIcon
-} from "lucide-react"
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import Image from 'next/image'
 import { 
@@ -103,13 +71,7 @@ import {
   IconArrowRight,
   IconCheck,
   IconLoader2,
-  IconFilter,
-  IconBell,
-  IconTicket,
-  IconClock,
-  IconCoins,
-  IconDownload,
-  IconExternalLink
+  IconFilter
 } from '@tabler/icons-react'
 import { colorTokenMap } from '@/lib/agent/designSystem'
 import { Button } from '@/components/ui/button'
@@ -121,7 +83,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
@@ -154,34 +115,11 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 } from '@/components/ui/carousel'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination'
-import { LinearMediaPlayer } from '@/components/linear-player/components/media-player'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import {
   Tooltip,
   TooltipContent,
@@ -220,6 +158,7 @@ import {
   useFamilyDrawer,
   type ViewsRegistry,
 } from '@/components/ui/family-drawer'
+import { Input } from '@/components/ui/input'
 
 // Available square tile images
 const squareTileImages = [
@@ -585,553 +524,6 @@ function VIPProgressBar({ value = 45 }: { value?: number }) {
   )
 }
 
-// Total Rewards Claimed Card Component
-function TotalRewardsCard() {
-  const [shouldAnimate, setShouldAnimate] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const targetValue = 673.28
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && !shouldAnimate) {
-            setShouldAnimate(true)
-            observer.disconnect()
-          }
-        })
-      },
-      { threshold: 0.1 }
-    )
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current)
-    }
-
-    return () => {
-      if (containerRef.current) {
-        observer.unobserve(containerRef.current)
-      }
-      observer.disconnect()
-    }
-  }, [shouldAnimate])
-
-  return (
-    <div className="mb-12 w-full flex justify-center" ref={containerRef}>
-      <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300" style={{ width: '700px', height: '140px' }}>
-        <CardContent className="p-6 flex flex-col justify-center items-center h-full text-center">
-          <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">Total Rewards Claimed</CardTitle>
-          <div className="text-5xl font-bold text-white dark:text-white text-gray-900 dark:text-white transition-colors duration-300">
-            $<NumberFlow 
-              value={shouldAnimate ? targetValue : 0}
-              format={{ notation: 'standard', minimumFractionDigits: 2, maximumFractionDigits: 2 }}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
-// Levels Carousel Component with Timeline
-function LevelsCarousel() {
-  const [api, setApi] = useState<CarouselApi>()
-  const [current, setCurrent] = useState(0)
-  
-  // All level cards
-  const allLevels = [
-    {
-      name: 'Bronze',
-      tier: 'Bronze',
-      color: 'amber',
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-600/20',
-      textColor: 'text-amber-600',
-      wager: '$0.00',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Monthly Cash Boost']
-    },
-    {
-      name: 'Silver',
-      tier: 'Silver',
-      color: 'gray',
-      iconColor: 'text-gray-400',
-      bgColor: 'bg-gray-400/20',
-      textColor: 'text-gray-400',
-      wager: '$10K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses']
-    },
-    {
-      name: 'Gold',
-      tier: 'Gold',
-      color: 'yellow',
-      iconColor: 'text-yellow-400',
-      bgColor: 'bg-yellow-400/20',
-      textColor: 'text-yellow-400',
-      wager: '$50K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses'],
-      isActive: true
-    },
-    {
-      name: 'Platinum I',
-      tier: 'Platinum',
-      color: 'cyan',
-      iconColor: 'text-cyan-400',
-      bgColor: 'bg-cyan-400/20',
-      textColor: 'text-cyan-400',
-      wager: '$100K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses']
-    },
-    {
-      name: 'Platinum II',
-      tier: 'Platinum',
-      color: 'cyan',
-      iconColor: 'text-cyan-400',
-      bgColor: 'bg-cyan-400/20',
-      textColor: 'text-cyan-400',
-      wager: '$250K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses']
-    },
-    {
-      name: 'Platinum III',
-      tier: 'Platinum',
-      color: 'cyan',
-      iconColor: 'text-cyan-400',
-      bgColor: 'bg-cyan-400/20',
-      textColor: 'text-cyan-400',
-      wager: '$500K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses']
-    },
-    {
-      name: 'Diamond I',
-      tier: 'Diamond',
-      color: 'blue',
-      iconColor: 'text-blue-400',
-      bgColor: 'bg-blue-400/20',
-      textColor: 'text-blue-400',
-      wager: '$750K',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events']
-    },
-    {
-      name: 'Diamond II',
-      tier: 'Diamond',
-      color: 'blue',
-      iconColor: 'text-blue-400',
-      bgColor: 'bg-blue-400/20',
-      textColor: 'text-blue-400',
-      wager: '$1M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events']
-    },
-    {
-      name: 'Diamond III',
-      tier: 'Diamond',
-      color: 'blue',
-      iconColor: 'text-blue-400',
-      bgColor: 'bg-blue-400/20',
-      textColor: 'text-blue-400',
-      wager: '$1.5M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events']
-    },
-    {
-      name: 'Elite I',
-      tier: 'Elite',
-      color: 'purple',
-      iconColor: 'text-purple-400',
-      bgColor: 'bg-purple-400/20',
-      textColor: 'text-purple-400',
-      wager: '$2M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager']
-    },
-    {
-      name: 'Elite II',
-      tier: 'Elite',
-      color: 'purple',
-      iconColor: 'text-purple-400',
-      bgColor: 'bg-purple-400/20',
-      textColor: 'text-purple-400',
-      wager: '$2.5M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager']
-    },
-    {
-      name: 'Elite III',
-      tier: 'Elite',
-      color: 'purple',
-      iconColor: 'text-purple-400',
-      bgColor: 'bg-purple-400/20',
-      textColor: 'text-purple-400',
-      wager: '$3M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager']
-    },
-    {
-      name: 'Black I',
-      tier: 'Black',
-      color: 'slate',
-      iconColor: 'text-slate-400',
-      bgColor: 'bg-slate-400/20',
-      textColor: 'text-slate-400',
-      wager: '$3.5M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge']
-    },
-    {
-      name: 'Black II',
-      tier: 'Black',
-      color: 'slate',
-      iconColor: 'text-slate-400',
-      bgColor: 'bg-slate-400/20',
-      textColor: 'text-slate-400',
-      wager: '$4M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge']
-    },
-    {
-      name: 'Black III',
-      tier: 'Black',
-      color: 'slate',
-      iconColor: 'text-slate-400',
-      bgColor: 'bg-slate-400/20',
-      textColor: 'text-slate-400',
-      wager: '$5M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge']
-    },
-    {
-      name: 'Obsidian I',
-      tier: 'Obsidian',
-      color: 'violet',
-      iconColor: 'text-violet-400',
-      bgColor: 'bg-violet-400/20',
-      textColor: 'text-violet-400',
-      wager: '$6M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge', 'Private Events']
-    },
-    {
-      name: 'Obsidian II',
-      tier: 'Obsidian',
-      color: 'violet',
-      iconColor: 'text-violet-400',
-      bgColor: 'bg-violet-400/20',
-      textColor: 'text-violet-400',
-      wager: '$7.5M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge', 'Private Events']
-    },
-    {
-      name: 'Obsidian III',
-      tier: 'Obsidian',
-      color: 'violet',
-      iconColor: 'text-violet-400',
-      bgColor: 'bg-violet-400/20',
-      textColor: 'text-violet-400',
-      wager: '$10M',
-      benefits: ['Daily Cash Race', 'Birthday Rewards', 'Weekly Cash Boost', 'Monthly Cash Boost', 'Level Up Bonuses', 'Exclusive Events', 'Personal Account Manager', 'VIP Concierge', 'Private Events']
-    }
-  ]
-
-  // Timeline tiers (one crown per tier)
-  const tiers = [
-    { name: 'Bronze', color: 'amber', iconColor: 'text-amber-600' },
-    { name: 'Silver', color: 'gray', iconColor: 'text-gray-400' },
-    { name: 'Gold', color: 'yellow', iconColor: 'text-yellow-400' },
-    { name: 'Platinum', color: 'cyan', iconColor: 'text-cyan-400' },
-    { name: 'Diamond', color: 'blue', iconColor: 'text-blue-400' },
-    { name: 'Elite', color: 'purple', iconColor: 'text-purple-400' },
-    { name: 'Black', color: 'slate', iconColor: 'text-slate-400' },
-    { name: 'Obsidian', color: 'violet', iconColor: 'text-violet-400' }
-  ]
-
-  // Get the current tier based on the current card
-  const getCurrentTier = () => {
-    if (current < allLevels.length) {
-      return allLevels[current].tier
-    }
-    return 'Bronze'
-  }
-
-  // Find first index of a tier
-  const getTierFirstIndex = (tierName: string) => {
-    return allLevels.findIndex(level => level.tier === tierName)
-  }
-
-  const [canScrollPrev, setCanScrollPrev] = useState(false)
-  const [canScrollNext, setCanScrollNext] = useState(false)
-
-  useEffect(() => {
-    if (!api) return
-
-    setCurrent(api.selectedScrollSnap())
-    setCanScrollPrev(api.canScrollPrev())
-    setCanScrollNext(api.canScrollNext())
-
-    api.on('select', () => {
-      setCurrent(api.selectedScrollSnap())
-      setCanScrollPrev(api.canScrollPrev())
-      setCanScrollNext(api.canScrollNext())
-    })
-  }, [api])
-
-  return (
-    <div className="mb-12 w-full mt-12 flex flex-col items-center">
-      {/* Title and Subtitle */}
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-bold text-white mb-3 tracking-tight">The Levels</h2>
-        <p className="text-sm text-white/80 max-w-2xl mx-auto leading-relaxed">
-          At BetOnline, you can start raking in the rewards as soon as you sign up.
-          <br />
-          Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-        </p>
-      </div>
-
-      {/* Timeline */}
-      <div className="relative mb-8 w-full px-4">
-        <div className="h-px bg-white/20 absolute top-1/2 left-4 right-4 -translate-y-1/2"></div>
-        <TooltipProvider>
-          <div className="flex justify-between relative z-10 px-0">
-            {tiers.map((tier, index) => {
-              const tierFirstIndex = getTierFirstIndex(tier.name)
-              const currentTier = getCurrentTier()
-              const isActive = currentTier === tier.name
-              
-              return (
-                <Tooltip key={index}>
-                  <TooltipTrigger asChild>
-                    <div 
-                      className="flex flex-col items-center cursor-pointer"
-                      onClick={() => {
-                        if (api && tierFirstIndex !== -1) {
-                          api.scrollTo(tierFirstIndex)
-                        }
-                      }}
-                    >
-                      <div className={`w-8 h-8 rounded-full bg-[#1a1a1a] border-2 flex items-center justify-center transition-all duration-300 hover:scale-110 ${
-                        isActive ? 'border-white scale-110' : 'border-white/30'
-                      }`}>
-                        <IconCrown className={`w-5 h-5 ${tier.iconColor}`} />
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="bg-[#2d2d2d] border-white/20 text-white">
-                    <p>{tier.name}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )
-            })}
-          </div>
-        </TooltipProvider>
-      </div>
-
-      {/* Carousel */}
-      <div className="relative w-full overflow-visible px-0 flex justify-center">
-        <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', loop: false }}>
-          <CarouselContent className="!ml-0 -mr-0">
-            {allLevels.map((level, index) => {
-              const isFirst = index === 0
-              const isLast = index === allLevels.length - 1
-              const isAtStart = current === 0
-              const isAtEnd = current === allLevels.length - 1
-              
-              // Add left padding to first card only when at start
-              // Add right padding to last card only when at end
-              // Add more space between cards
-              const leftPadding = isFirst && isAtStart ? "pl-6" : "pl-0"
-              const rightPadding = isLast && isAtEnd ? "pr-6" : "pr-0"
-              const cardSpacing = index === 0 ? "" : "ml-6"
-              
-              return (
-              <CarouselItem key={index} className={`${leftPadding} ${rightPadding} ${cardSpacing} basis-auto flex-shrink-0`}>
-                <Card className="bg-white/5 border-white/10 relative flex-shrink-0 overflow-hidden" style={{ width: '240px', minHeight: '320px' }}>
-                  {level.isActive && (
-                    <div className="absolute inset-0 opacity-100 pointer-events-none rounded-lg tile-shimmer" />
-                  )}
-                  <CardContent className="p-4 relative z-10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <IconCrown className={`w-5 h-5 ${level.iconColor}`} />
-                      <span className={`text-xs font-semibold ${level.bgColor} ${level.textColor} px-2 py-1 rounded`}>
-                        {level.name}
-                      </span>
-                    </div>
-                    <div className={`text-lg font-semibold mb-1 ${level.isActive ? 'text-white' : 'text-white/50'}`}>
-                      {level.wager}
-                    </div>
-                    <div className={`text-sm mb-4 ${level.isActive ? 'text-white/70' : 'text-white/50'}`}>
-                      Wager Amount
-                    </div>
-                    <div className="space-y-2">
-                      {level.benefits.map((benefit, benefitIndex) => (
-                        <div key={benefitIndex} className={`flex items-center gap-2 text-sm ${level.isActive ? 'text-white' : 'text-white/50'}`}>
-                          <div className={`h-4 w-4 rounded-full flex items-center justify-center ${level.isActive ? 'bg-white/20' : 'bg-white/10'}`}>
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>{benefit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              )
-            })}
-          </CarouselContent>
-          <Button
-            onClick={() => {
-              if (api) {
-                const currentIndex = api.selectedScrollSnap()
-                const targetIndex = Math.max(0, currentIndex - 1)
-                api.scrollTo(targetIndex)
-              }
-            }}
-            className="!left-2 !top-1/2 !-translate-y-1/2 !-translate-x-0 !absolute text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30 !visible !opacity-100 !flex h-8 w-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed items-center justify-center p-0"
-            variant="outline"
-            size="icon"
-            disabled={!api || !canScrollPrev}
-          >
-            <IconChevronLeft className="h-4 w-4 m-0" strokeWidth={1.5} />
-            <span className="sr-only">Previous slide</span>
-          </Button>
-          <Button
-            onClick={() => {
-              if (api) {
-                const currentIndex = api.selectedScrollSnap()
-                const slideCount = api.scrollSnapList().length
-                const targetIndex = Math.min(slideCount - 1, currentIndex + 1)
-                api.scrollTo(targetIndex)
-              }
-            }}
-            className="!right-2 !top-1/2 !-translate-y-1/2 !-translate-x-0 !absolute text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30 !visible !opacity-100 !flex h-8 w-8 rounded-full disabled:opacity-50 disabled:cursor-not-allowed items-center justify-center p-0"
-            variant="outline"
-            size="icon"
-            disabled={!api || !canScrollNext}
-          >
-            <IconChevronRight className="h-4 w-4 m-0" strokeWidth={1.5} />
-            <span className="sr-only">Next slide</span>
-          </Button>
-        </Carousel>
-      </div>
-    </div>
-  )
-}
-
-// Scroll Video Player Component
-function ScrollVideoPlayer() {
-  const videoRef = useRef<HTMLDivElement>(null)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [scale, setScale] = useState(1)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [hasStartedPlaying, setHasStartedPlaying] = useState(false)
-  const [viewportSize, setViewportSize] = useState({ width: 1920, height: 1080 })
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!videoRef.current) return
-
-      const rect = videoRef.current.getBoundingClientRect()
-      const windowHeight = window.innerHeight
-      const videoTop = rect.top
-      const videoHeight = rect.height
-      const videoCenter = videoTop + videoHeight / 2
-      const viewportCenter = windowHeight / 2
-
-      // Calculate distance from viewport center
-      const distanceFromCenter = Math.abs(videoCenter - viewportCenter)
-      const maxDistance = windowHeight * 0.8 // Wider range for smoother transition
-      
-      // Calculate scroll progress (1 when centered, 0 when far away)
-      // This creates a bell curve effect - grows as it approaches center, shrinks as it moves away
-      const scrollProgress = Math.max(0, Math.min(1, 1 - (distanceFromCenter / maxDistance)))
-      
-      // Scale from 1 to 1.3 (smaller growth, not fullscreen)
-      const newScale = 1 + (scrollProgress * 0.3)
-      setScale(newScale)
-      
-      // Never go fullscreen
-      setIsFullscreen(false)
-      
-      // Auto-play when near center using Vimeo API
-      if (scrollProgress > 0.7 && iframeRef.current && !hasStartedPlaying) {
-        try {
-          // Use Vimeo Player API to play
-          const iframe = iframeRef.current
-          if (iframe.contentWindow) {
-            iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), 'https://player.vimeo.com')
-          }
-        } catch (e) {
-          // Vimeo API might not be ready, that's okay
-        }
-        setHasStartedPlaying(true)
-      }
-    }
-
-    const handleResize = () => {
-      setViewportSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      })
-      handleScroll()
-    }
-
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', handleResize, { passive: true })
-    handleResize() // Initial check
-    handleScroll() // Initial check
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [hasStartedPlaying])
-
-  // Extract Vimeo video ID from URL
-  const vimeoId = "1125227832"
-  // Build Vimeo embed URL with autoplay parameter that will be controlled by scroll
-  const vimeoEmbedUrl = `https://player.vimeo.com/video/${vimeoId}?autoplay=0&loop=0&muted=0&controls=1&responsive=1`
-
-  // Calculate dimensions based on scale, maintaining 16:9 aspect ratio
-  const baseWidth = 800
-  const baseHeight = 450 // 16:9 aspect ratio
-  const scaledWidth = baseWidth * scale
-  const scaledHeight = baseHeight * scale
-  
-  // When fullscreen, use viewport dimensions but maintain aspect ratio
-  const maxWidth = viewportSize.width
-  const maxHeight = viewportSize.height
-  
-  // Calculate final dimensions maintaining aspect ratio
-  // Never go fullscreen, just scale smoothly
-  const finalWidth = scaledWidth
-  const finalHeight = scaledHeight
-
-  return (
-    <div 
-      ref={videoRef}
-      className="relative w-full my-12 overflow-visible flex justify-center items-center"
-      style={{
-        height: 'auto',
-        minHeight: '400px'
-      }}
-    >
-      <div
-        className="relative"
-        style={{
-          width: `${finalWidth}px`,
-          height: `${finalHeight}px`,
-          aspectRatio: '16/9',
-          willChange: 'width, height',
-          transition: 'width 0.1s ease-out, height 0.1s ease-out'
-        }}
-      >
-        <div className="relative w-full h-full bg-black rounded-lg overflow-hidden">
-          <iframe
-            ref={iframeRef}
-            src={vimeoEmbedUrl}
-            className="w-full h-full"
-            frameBorder="0"
-            allow="autoplay; fullscreen; picture-in-picture"
-            allowFullScreen
-            style={{
-              pointerEvents: 'auto'
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // Daily Races Timer Component
 function DailyRacesTimer() {
   const [hours, setHours] = useState(6)
@@ -1165,992 +557,6 @@ function DailyRacesTimer() {
       <NumberFlow value={minutes} />
       <span className="mx-1">:</span>
       <NumberFlow value={seconds} />
-    </div>
-  )
-}
-
-// Bonus data type
-type BonusItem = {
-  id: string;
-  code: string;
-  amount: string;
-  rollover: string;
-  date: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'COMPLETE';
-  statusColor: string;
-};
-
-// Custom filter function for multi-column searching
-const multiColumnFilterFn: FilterFn<BonusItem> = (row, columnId, filterValue) => {
-  const searchableRowContent = `${row.original.code} ${row.original.amount}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
-};
-
-const statusFilterFn: FilterFn<BonusItem> = (row, columnId, filterValue: string[]) => {
-  if (!filterValue?.length) return true;
-  const status = row.getValue(columnId) as string;
-  return filterValue.includes(status);
-};
-
-// Promos Page Component
-function PromosPage({ brandPrimary }: { brandPrimary: string }) {
-  const [activeTab, setActiveTab] = useState('Deposit Bonus')
-
-  const promoData = [
-    { id: '1', title: '50 Free Spins', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '2', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '3', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '4', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '5', title: '50 Free Spins', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '6', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '7', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '8', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-  ]
-
-  return (
-    <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
-      <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
-        {/* Banner Carousel - Reusing Casino Banner with Arrows */}
-        <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
-            <CarouselContent className="ml-6 -mr-2 md:-mr-4">
-              {/* VIP Rewards Card */}
-              <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
-                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
-                    <VIPProgressBar value={45} />
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Daily Races Card */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                      <div className="text-right">
-                        <DailyRacesTimer />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Weekly Game Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/weekly.png"
-                    alt="Weekly Game Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-              
-              {/* Originals Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/orginals.png"
-                    alt="Originals Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-          </Carousel>
-        </div>
-
-        {/* Promos Section */}
-        <div className="w-full">
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-white mb-6">Promos</h1>
-
-          {/* Tabs - Using AnimateTabs like Casino */}
-          <div className="mb-6">
-            <AnimateTabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <AnimateTabsList className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300">
-                {['Deposit Bonus', 'Sports', 'Casino', 'Poker'].map((tab) => (
-                  <TabsTab 
-                    key={tab}
-                    value={tab} 
-                    className="relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5"
-                  >
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="activePromosTab"
-                        className="absolute inset-0 rounded-2xl -z-10"
-                        style={{ backgroundColor: brandPrimary }}
-                        initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 40
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab}</span>
-                  </TabsTab>
-                ))}
-              </AnimateTabsList>
-            </AnimateTabs>
-          </div>
-
-          {/* Promo Cards Grid */}
-          <div className="grid grid-cols-4 gap-4">
-            {promoData.map((promo) => (
-              <Card key={promo.id} className="bg-white/5 border-white/10 overflow-hidden">
-                {/* Image Placeholder with Glare Animation */}
-                <div className="w-full h-48 bg-white/5 relative overflow-hidden">
-                  <div className="absolute inset-0 tile-shimmer"></div>
-                </div>
-                <CardContent className="p-4">
-                  <CardTitle className="text-lg font-semibold text-white mb-2">{promo.title}</CardTitle>
-                  <p className="text-sm text-white/70 mb-4 line-clamp-3">{promo.description}</p>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full bg-red-500 hover:bg-red-600 text-white"
-                    style={{ backgroundColor: brandPrimary }}
-                  >
-                    MORE INFO
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    </SidebarInset>
-  )
-}
-
-// My Bonus Page Component
-function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
-  const id = useId()
-  const [activeTab, setActiveTab] = useState('Sports')
-  const [expandedRow, setExpandedRow] = useState<string | null>(null)
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [sorting, setSorting] = useState<SortingState>([])
-
-  // Bonus data
-  const [data, setData] = useState<BonusItem[]>([
-    { id: '1', code: '1000Happy', amount: '$4.00', rollover: '$0.00', date: '11/04/2014', status: 'ACTIVE', statusColor: 'bg-green-500' },
-    { id: '2', code: 'No Promo Code', amount: '$5.00', rollover: '$0.00', date: '11/04/2014', status: 'EXPIRED', statusColor: 'bg-orange-500' },
-    { id: '3', code: 'No Promo Code', amount: '$5.00', rollover: '$0.00', date: '11/04/2014', status: 'EXPIRED', statusColor: 'bg-orange-500' },
-    { id: '4', code: 'Sports2025', amount: '$10.00', rollover: '$8.00', date: '11/04/2014', status: 'CANCELLED', statusColor: 'bg-gray-400' },
-    { id: '5', code: '1000Happy', amount: '$4.00', rollover: '$0.00', date: '11/04/2014', status: 'COMPLETE', statusColor: 'bg-blue-500' },
-  ])
-
-  const columns: ColumnDef<BonusItem>[] = useMemo(() => [
-    {
-      header: "Code",
-      accessorKey: "code",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("code")}</div>,
-      size: 180,
-      filterFn: multiColumnFilterFn,
-      enableHiding: false
-    },
-    {
-      header: "Amount",
-      accessorKey: "amount",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("amount")}</div>,
-      size: 120
-    },
-    {
-      header: "Rollover",
-      accessorKey: "rollover",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("rollover")}</div>,
-      size: 120
-    },
-    {
-      header: "Date",
-      accessorKey: "date",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("date")}</div>,
-      size: 120
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string
-        const statusColors: Record<string, { text: string; border: string; bg: string }> = {
-          'ACTIVE': { text: 'text-green-400/70', border: 'border-green-400/30', bg: 'bg-green-500/5' },
-          'EXPIRED': { text: 'text-orange-400/70', border: 'border-orange-400/30', bg: 'bg-orange-500/5' },
-          'CANCELLED': { text: 'text-gray-400/70', border: 'border-gray-400/30', bg: 'bg-gray-400/5' },
-          'COMPLETE': { text: 'text-blue-400/70', border: 'border-blue-400/30', bg: 'bg-blue-500/5' },
-        }
-        const colors = statusColors[status] || statusColors['ACTIVE']
-        return (
-          <span className={cn("px-2 py-0.5 rounded text-[11px] font-normal border", colors.text, colors.border, colors.bg)}>
-            {status}
-          </span>
-        )
-      },
-      size: 120,
-      filterFn: statusFilterFn
-    },
-    {
-      id: "actions",
-      header: () => <span className="sr-only">More</span>,
-      cell: () => null,
-      size: 60,
-      enableHiding: false
-    }
-  ], [])
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    enableSortingRemoval: false,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility
-    }
-  })
-
-  // Get unique status values
-  const uniqueStatusValues = useMemo(() => {
-    const statusColumn = table.getColumn("status");
-    if (!statusColumn) return [];
-    const values = Array.from(statusColumn.getFacetedUniqueValues().keys());
-    return values.sort();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  // Get counts for each status
-  const statusCounts = useMemo(() => {
-    const statusColumn = table.getColumn("status");
-    if (!statusColumn) return new Map();
-    return statusColumn.getFacetedUniqueValues();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  const selectedStatuses = useMemo(() => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
-    return filterValue ?? [];
-  }, [table.getColumn("status")?.getFilterValue()]);
-
-  const handleStatusChange = (checked: boolean, value: string) => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
-    const newFilterValue = filterValue ? [...filterValue] : [];
-
-    if (checked) {
-      newFilterValue.push(value);
-    } else {
-      const index = newFilterValue.indexOf(value);
-      if (index > -1) {
-        newFilterValue.splice(index, 1);
-      }
-    }
-
-    table.getColumn("status")?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
-  };
-
-  return (
-    <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
-      <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
-        {/* Banner Carousel - Reusing Casino Banner with Arrows */}
-        <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
-            <CarouselContent className="ml-6 -mr-2 md:-mr-4">
-              {/* VIP Rewards Card */}
-              <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
-                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
-                    <VIPProgressBar value={45} />
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Daily Races Card */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                      <div className="text-right">
-                        <DailyRacesTimer />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Weekly Game Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/weekly.png"
-                    alt="Weekly Game Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-              
-              {/* Originals Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/orginals.png"
-                    alt="Originals Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-          </Carousel>
-        </div>
-
-        {/* My Bonus Section */}
-        <div className="w-full">
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-white mb-6">My Bonus</h1>
-
-          {/* Tabs - Using AnimateTabs like Casino */}
-          <div className="mb-6">
-            <AnimateTabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <AnimateTabsList className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300">
-                {['Sports', 'Casino'].map((tab) => (
-                  <TabsTab 
-                    key={tab}
-                    value={tab} 
-                    className="relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5"
-                  >
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="activeBonusTab"
-                        className="absolute inset-0 rounded-2xl -z-10"
-                        style={{ backgroundColor: brandPrimary }}
-                        initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 40
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab}</span>
-                  </TabsTab>
-                ))}
-              </AnimateTabsList>
-            </AnimateTabs>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              {/* Filter by code or amount */}
-              <div className="relative">
-                <Input
-                  id={`${id}-input`}
-                  ref={inputRef}
-                  className={cn(
-                    "peer min-w-60 ps-9 bg-white/5 border-white/10 text-white placeholder:text-white/50",
-                    Boolean(table.getColumn("code")?.getFilterValue()) && "pe-9"
-                  )}
-                  value={(table.getColumn("code")?.getFilterValue() ?? "") as string}
-                  onChange={(e) => table.getColumn("code")?.setFilterValue(e.target.value)}
-                  placeholder="Filter by code or amount..."
-                  type="text"
-                  aria-label="Filter by code or amount"
-                />
-                <div className="text-white/50 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <ListFilterIcon size={16} aria-hidden="true" />
-                </div>
-                {Boolean(table.getColumn("code")?.getFilterValue()) && (
-                  <button
-                    className="text-white/50 hover:text-white focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Clear filter"
-                    onClick={() => {
-                      table.getColumn("code")?.setFilterValue("");
-                      if (inputRef.current) {
-                        inputRef.current.focus();
-                      }
-                    }}>
-                    <CircleXIcon size={16} aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-              {/* Filter by status */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                    <FilterIcon className="-ms-1 opacity-60" size={16} aria-hidden="true" />
-                    Status
-                    {selectedStatuses.length > 0 && (
-                      <span className="bg-white/10 text-white/70 -me-1 inline-flex h-5 max-h-full items-center rounded border border-white/20 px-1 font-[inherit] text-[0.625rem] font-medium">
-                        {selectedStatuses.length}
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto min-w-36 p-3 bg-[#2d2d2d] border-white/10" align="start">
-                  <div className="space-y-3">
-                    <div className="text-white/70 text-xs font-medium">Filters</div>
-                    <div className="space-y-3">
-                      {uniqueStatusValues.map((value, i) => (
-                        <div key={value} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`${id}-${i}`}
-                            checked={selectedStatuses.includes(value)}
-                            onCheckedChange={(checked: boolean) => handleStatusChange(checked, value)}
-                            className="border-white/20"
-                          />
-                          <Label
-                            htmlFor={`${id}-${i}`}
-                            className="flex grow justify-between gap-2 font-normal text-white">
-                            {value}{" "}
-                            <span className="text-white/50 ms-2 text-xs">
-                              {statusCounts.get(value)}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              {/* Toggle columns visibility */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                    <Columns3Icon className="-ms-1 opacity-60" size={16} aria-hidden="true" />
-                    View
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#2d2d2d] border-white/10">
-                  <DropdownMenuLabel className="text-white">Toggle columns</DropdownMenuLabel>
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize text-white"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                          onSelect={(event) => event.preventDefault()}>
-                          {column.id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden mb-4">
-            <Table className="table-fixed">
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="hover:bg-transparent border-white/10">
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead
-                          key={header.id}
-                          style={{ width: `${header.getSize()}px` }}
-                          className="h-11 text-white/60 text-xs font-normal">
-                          {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                            <div
-                              className={cn(
-                                header.column.getCanSort() &&
-                                  "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
-                              )}
-                              onClick={header.column.getToggleSortingHandler()}
-                              onKeyDown={(e) => {
-                                if (
-                                  header.column.getCanSort() &&
-                                  (e.key === "Enter" || e.key === " ")
-                                ) {
-                                  e.preventDefault();
-                                  header.column.getToggleSortingHandler()?.(e);
-                                }
-                              }}
-                              tabIndex={header.column.getCanSort() ? 0 : undefined}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                              {{
-                                asc: (
-                                  <ChevronUpIcon
-                                    className="shrink-0 opacity-60 text-white"
-                                    size={16}
-                                    aria-hidden="true"
-                                  />
-                                ),
-                                desc: (
-                                  <ChevronDownIcon
-                                    className="shrink-0 opacity-60 text-white"
-                                    size={16}
-                                    aria-hidden="true"
-                                  />
-                                )
-                              }[header.column.getIsSorted() as string] ?? null}
-                            </div>
-                          ) : (
-                            flexRender(header.column.columnDef.header, header.getContext())
-                          )}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <React.Fragment key={row.id}>
-                      <TableRow className="border-white/10 hover:bg-white/5">
-                        {row.getVisibleCells().map((cell) => {
-                          // Skip rendering the actions cell in the main row
-                          if (cell.column.id === "actions") {
-                            return null
-                          }
-                          return (
-                            <TableCell key={cell.id}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          )
-                        })}
-                        <TableCell className="w-[60px]">
-                          <button
-                            onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
-                            className="flex items-center justify-center w-full h-full"
-                          >
-                            <IconChevronDown 
-                              className={cn(
-                                "w-4 h-4 text-white/70 transition-transform",
-                                expandedRow === row.id && "rotate-180"
-                              )} 
-                            />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                      {expandedRow === row.id && (
-                        <TableRow className="border-white/10">
-                          <TableCell colSpan={columns.length} className="py-4 bg-white/5">
-                            <div className="space-y-2 pl-4">
-                              <div className="text-sm text-white/70">
-                                <strong className="text-white">Bonus Details:</strong> Additional information about this bonus will appear here.
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-white/70">
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </div>
-    </SidebarInset>
-  )
-}
-
-// VIP Rewards Page Component
-function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setShowToast, setToastMessage, setToastAction }: { brandPrimary: string; setVipDrawerOpen: (open: boolean) => void; setVipActiveTab: (tab: string) => void; setShowToast: (show: boolean) => void; setToastMessage: (message: string) => void; setToastAction: (action: { label: string; onClick: () => void } | null) => void }) {
-  const { state: sidebarState } = useSidebar()
-  const [vipActiveSidebarItem, setVipActiveSidebarItem] = useState('Overview')
-  const [hasShownToast, setHasShownToast] = useState(false)
-  
-  // Show toast when VIP Rewards page is first shown
-  useEffect(() => {
-    if (!hasShownToast) {
-      setToastMessage('You have a cash boost available')
-      setToastAction({
-        label: 'View',
-        onClick: () => {
-          setVipDrawerOpen(true)
-          setVipActiveTab('Overview')
-        }
-      })
-      setShowToast(true)
-      setTimeout(() => {
-        setShowToast(false)
-        setToastAction(null)
-      }, 5000)
-      setHasShownToast(true)
-    }
-  }, [hasShownToast, setShowToast, setToastMessage, setToastAction, setVipDrawerOpen, setVipActiveTab])
-  
-  return (
-    <div className="flex w-full min-h-screen bg-[#1a1a1a]">
-      {/* VIP Rewards Sidebar */}
-      <Sidebar 
-        collapsible="icon"
-        variant="sidebar"
-        className="!bg-[#2d2d2d] border-r border-white/10 text-white [&>div]:!bg-[#2d2d2d]"
-      >
-        <SidebarContent className="overflow-y-auto">
-          <TooltipProvider>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {/* Menu Items */}
-                  {[
-              { id: 'Overview', icon: IconLayoutDashboard, label: 'VIP Dashboard' },
-              { id: 'My Bonus', icon: IconGift, label: 'My Bonus' },
-              { id: 'Promos', icon: IconSparkles, label: 'Promos' },
-              { id: 'Cash Races', icon: IconClock, label: 'Cash Races' },
-              { id: 'Contests', icon: IconTrophy, label: 'Contests' },
-              { id: 'Refer A Friend', icon: IconUserPlus, label: 'Refer A Friend' },
-              { type: 'separator' },
-              { id: 'Reloads', icon: IconCoins, label: 'Reloads', linkTo: 'reloads' },
-              { id: 'Cash Drop', icon: IconCoins, label: 'Cash Drop', linkTo: 'draw' },
-              { id: 'Bet & Get', icon: IconCoins, label: 'Bet & Get', linkTo: 'draw' },
-              { type: 'separator' },
-              { id: 'Get Telegram', icon: IconDownload, label: 'Get Telegram' },
-            ].map((item, index) => {
-              if (item.type === 'separator') {
-                return (
-                  <React.Fragment key={`separator-${index}`}>
-                    <Separator className="bg-white/10 my-2" />
-                  </React.Fragment>
-                )
-              }
-              if (item.type === 'title') {
-                return (
-                  <div key={`title-${index}`} className="px-3 py-2 mb-1">
-                    <div className="text-white/60 text-xs font-medium">{item.label}</div>
-                  </div>
-                )
-              }
-              if (!item.icon || !item.id) return null
-              const Icon = item.icon
-              const itemId = item.id
-              const isActive = vipActiveSidebarItem === itemId
-              return (
-                <SidebarMenuItem key={itemId}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if (item.linkTo) {
-                            // Deep link to VIP hub drawer
-                            if (item.linkTo === 'reloads') {
-                              setVipDrawerOpen(true)
-                              setVipActiveTab('Reloads')
-                            } else if (item.linkTo === 'draw') {
-                              setVipDrawerOpen(true)
-                              if (itemId === 'Cash Drop') {
-                                setVipActiveTab('Cash Drop')
-                              } else if (itemId === 'Bet & Get') {
-                                setVipActiveTab('Bet & Get')
-                              }
-                            }
-                          } else {
-                            setVipActiveSidebarItem(itemId)
-                          }
-                        }}
-                        className={cn(
-                          "w-full justify-start rounded-small h-auto py-2.5 px-3 text-sm font-medium cursor-pointer",
-                          "data-[active=true]:text-white data-[active=true]:font-medium",
-                          "data-[active=false]:text-white/70 hover:text-white hover:bg-white/5"
-                        )}
-                        style={isActive ? { backgroundColor: brandPrimary } : undefined}
-                      >
-                        <Icon strokeWidth={1.5} className="w-5 h-5" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.linkTo && (
-                          <IconExternalLink className="w-4 h-4 text-white/50" />
-                        )}
-                      </SidebarMenuButton>
-                    </TooltipTrigger>
-                    {sidebarState === 'collapsed' && (
-                      <TooltipContent side="right" className="bg-[#2d2d2d] border-white/10 text-white">
-                        <p>{item.label}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </SidebarMenuItem>
-              )
-            })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </TooltipProvider>
-        </SidebarContent>
-      </Sidebar>
-      
-      {vipActiveSidebarItem === 'My Bonus' ? (
-        <MyBonusPage brandPrimary={brandPrimary} />
-      ) : vipActiveSidebarItem === 'Promos' ? (
-        <PromosPage brandPrimary={brandPrimary} />
-      ) : (
-        <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
-        {/* Hero Image */}
-        <div className="w-full relative">
-          <img 
-            src="/banners/sports_league/Hero.png" 
-            alt="VIP Rewards Hero" 
-            className="w-full h-auto object-cover"
-          />
-        </div>
-        
-        <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto flex flex-col items-center w-full">
-          {/* Cards from Casino Banner - Centered */}
-          <div className="mb-4 w-full flex justify-center items-center mt-8">
-            <div className="flex items-center gap-3">
-              {/* VIP Rewards Card - Wider */}
-              <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '280px', height: '140px' }}>
-                <CardContent className="p-4">
-                  <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">Gold To Platinum I</CardTitle>
-                  <VIPProgressBar value={45} />
-                  <div className="text-xs text-gray-600 dark:text-white/50 mt-2 transition-colors duration-300">Updated 24/25/2024, 8:00 PM ET</div>
-                </CardContent>
-              </Card>
-              
-              {/* Daily Races Card - Wider */}
-              <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '420px', height: '140px' }}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                    <div className="text-right">
-                      <DailyRacesTimer />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
-                    <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                      <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                      <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                    </div>
-                    <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                      <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                      <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                    </div>
-                    <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                      <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                      <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Total Rewards Claimed - Same width as VIP Rewards + Daily Races combined (700px) */}
-          <TotalRewardsCard />
-
-          {/* The Levels Section */}
-          <LevelsCarousel />
-
-          {/* The Rewards Section */}
-          <div className="w-full mb-12">
-            {/* Header with Image */}
-            <div className="flex flex-col items-center mb-4">
-              {/* Rewards Image */}
-              <div className="mb-4 inline-block">
-                <img 
-                  src="/banners/sports_league/rewrds image.png" 
-                  alt="Rewards" 
-                  className="h-auto"
-                  style={{ width: '240px' }}
-                />
-              </div>
-              {/* Title */}
-              <h2 className="text-3xl font-bold text-white">The Rewards</h2>
-            </div>
-            <p className="text-white/70 mb-12 max-w-3xl mx-auto text-center">
-              At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-            </p>
-            
-            {/* Reward Cards - Single Card with Separators */}
-            <div className="max-w-4xl mx-auto">
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  {/* Reloads */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Reloads</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Reloads')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Cash Drop Codes */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Cash Drop Codes</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Cash Drop')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Bet & Get */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Bet & Get</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Bet & Get')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Cash Boosts */}
-                  <div>
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Cash Boosts</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Overview')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </SidebarInset>
-      )}
     </div>
   )
 }
@@ -4489,7 +2895,7 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
           }
         }}
       >
-        <FamilyDrawerContent className="bg-white">
+        <FamilyDrawerContent className="bg-white" style={{ backgroundColor: '#ffffff' }}>
           <FamilyDrawerAnimatedWrapper 
             key={`betslip-wrapper-${bets.length}-${betslipCollapsed}`}
             className={betslipCollapsed ? "px-3 py-1.5" : "px-2 pb-2 pt-2.5"}
@@ -4501,761 +2907,6 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
         </FamilyDrawerContent>
       </FamilyDrawerRoot>
     </div>
-  )
-}
-
-// VIP Drawer Content Component
-function VipDrawerContent({
-  vipActiveTab,
-  setVipActiveTab,
-  canScrollVipLeft,
-  setCanScrollVipLeft,
-  canScrollVipRight,
-  setCanScrollVipRight,
-  vipTabsContainerRef,
-  vipDrawerOpen,
-  brandPrimary,
-  claimedBoosts,
-  setClaimedBoosts,
-  boostProcessing,
-  setBoostProcessing,
-  boostClaimMessage,
-  setBoostClaimMessage,
-  onBoostClaimed
-}: {
-  vipActiveTab: string
-  setVipActiveTab: (tab: string) => void
-  canScrollVipLeft: boolean
-  setCanScrollVipLeft: (can: boolean) => void
-  canScrollVipRight: boolean
-  setCanScrollVipRight: (can: boolean) => void
-  vipTabsContainerRef: React.RefObject<HTMLDivElement>
-  vipDrawerOpen: boolean
-  brandPrimary: string
-  claimedBoosts: Set<string>
-  setClaimedBoosts: (boosts: Set<string> | ((prev: Set<string>) => Set<string>)) => void
-  boostProcessing: string | null
-  setBoostProcessing: (id: string | null) => void
-  boostClaimMessage: { amount: number } | null
-  setBoostClaimMessage: (message: { amount: number } | null) => void
-  onBoostClaimed: (amount: number) => void
-}) {
-  const checkScroll = useCallback(() => {
-    const container = vipTabsContainerRef.current
-    if (!container) return
-    const { scrollLeft, scrollWidth, clientWidth } = container
-    setCanScrollVipLeft(scrollLeft > 5)
-    setCanScrollVipRight(scrollLeft < scrollWidth - clientWidth - 5)
-  }, [vipTabsContainerRef, setCanScrollVipLeft, setCanScrollVipRight])
-
-  useEffect(() => {
-    if (!vipDrawerOpen) return
-    
-    const container = vipTabsContainerRef.current
-    if (!container) return
-    
-    // Initial check
-    checkScroll()
-    
-    // Check on scroll
-    const handleScroll = () => {
-      checkScroll()
-    }
-    
-    // Check on resize
-    const handleResize = () => {
-      checkScroll()
-    }
-    
-    container.addEventListener('scroll', handleScroll, { passive: true })
-    window.addEventListener('resize', handleResize)
-    
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [vipDrawerOpen, checkScroll, vipTabsContainerRef])
-
-  // Scroll to active tab when it changes
-  useEffect(() => {
-    if (!vipDrawerOpen) return
-    
-    const container = vipTabsContainerRef.current
-    if (!container) return
-
-    const tabs = ['Overview', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop']
-    const activeIndex = tabs.indexOf(vipActiveTab)
-    
-    if (activeIndex === -1) return
-
-    // Find the active tab button
-    const tabButtons = container.querySelectorAll('button')
-    const activeButton = tabButtons[activeIndex]
-    
-    if (activeButton) {
-      // Calculate scroll position to center the active tab
-      const containerRect = container.getBoundingClientRect()
-      const buttonRect = activeButton.getBoundingClientRect()
-      const scrollLeft = container.scrollLeft
-      const buttonLeft = buttonRect.left - containerRect.left + scrollLeft
-      const buttonWidth = buttonRect.width
-      const containerWidth = containerRect.width
-      
-      // Center the button in the container
-      const targetScroll = buttonLeft - (containerWidth / 2) + (buttonWidth / 2)
-      
-      container.scrollTo({
-        left: targetScroll,
-        behavior: 'smooth'
-      })
-      
-      // Update scroll state after animation
-      setTimeout(() => {
-        checkScroll()
-      }, 500)
-    }
-  }, [vipActiveTab, vipDrawerOpen, checkScroll, vipTabsContainerRef])
-
-  return (
-    <>
-      <DrawerHeader className="relative px-4 pt-4 pb-3 flex-shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <DrawerTitle className="text-white text-lg font-semibold">My Rewards</DrawerTitle>
-            <DrawerDescription className="text-white/70 text-xs">
-              Gold Member
-            </DrawerDescription>
-          </div>
-          <DrawerClose asChild>
-            <button className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
-              <IconX className="h-4 w-4 text-white/70" />
-            </button>
-          </DrawerClose>
-        </div>
-      </DrawerHeader>
-      
-      {/* Tab Carousel */}
-      <div className="px-0 pt-4 pb-3 relative z-20">
-        <div className="relative px-4 py-2">
-          {/* Left Arrow */}
-          {canScrollVipLeft && (
-            <button
-              onClick={() => {
-                if (vipTabsContainerRef.current) {
-                  vipTabsContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' })
-                }
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/20 hover:bg-white/10 text-white flex items-center justify-center transition-all cursor-pointer z-20"
-            >
-              <IconChevronLeft className="h-4 w-4" strokeWidth={2} />
-            </button>
-          )}
-          
-          {/* Scrollable Tabs Container */}
-          <div 
-            ref={vipTabsContainerRef}
-            className="flex items-center gap-2 overflow-x-auto scrollbar-hide pl-0 pr-8"
-            style={{ 
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x'
-            }}
-            onScroll={checkScroll}
-          >
-            {['Overview', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setVipActiveTab(tab)}
-                className={cn(
-                  "relative px-4 py-1.5 h-9 text-xs font-medium rounded-2xl transition-all duration-300 whitespace-nowrap flex-shrink-0",
-                  vipActiveTab === tab
-                    ? "text-black"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
-                )}
-              >
-                {vipActiveTab === tab && (
-                  <motion.div
-                    layoutId="activeVipTab"
-                    className="absolute inset-0 rounded-2xl -z-10"
-                    style={{ backgroundColor: '#fef3c7' }}
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 40
-                    }}
-                  />
-                )}
-                <span className="relative z-10">{tab}</span>
-              </button>
-            ))}
-          </div>
-          
-          {/* Right Arrow */}
-          {canScrollVipRight && (
-            <button
-              onClick={() => {
-                if (vipTabsContainerRef.current) {
-                  vipTabsContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' })
-                }
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer z-30"
-            >
-              <IconChevronRight className="h-4 w-4" strokeWidth={2} />
-            </button>
-          )}
-        </div>
-      </div>
-      
-      <div className="px-4 pt-4 pb-4 overflow-y-auto flex-1 min-h-0 relative -mt-3 pt-7">
-        {vipActiveTab === 'Overview' && (
-          <div className="space-y-6">
-            <Card className="bg-white/5 border-white/10">
-              <CardContent className="p-4">
-                <CardTitle className="text-sm text-white/70 mb-2">Gold To Platinum I</CardTitle>
-                <VIPProgressBar value={45} />
-                <div className="text-xs text-white/50 mt-2">Updated 24/25/2024, 8:00 PM ET</div>
-              </CardContent>
-            </Card>
-            
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Benefits</h3>
-              <Accordion type="single" defaultValue="Gold" collapsible className="w-full">
-                <AccordionItem value="Bronze" className={cn("border-white/10", "opacity-50")}>
-                  <AccordionTrigger value="Bronze" className="text-white/50 hover:text-white/70">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-amber-600" />
-                      <span className="line-through">Bronze</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Bronze">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white/50">$0</div>
-                      <div className="text-sm text-white/50">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white/50">
-                          <div className="h-4 w-4 rounded-full bg-white/10 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Daily Cash Race</span>
-                        </div>
-                      </div>
-                      <div className="pt-2">
-                        <div className="text-xs text-white/50 font-medium">Complete</div>
-                        <Button variant="ghost" className="mt-2 text-white/70 hover:text-white hover:bg-white/5">
-                          VIP Rewards
-                        </Button>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Silver" className={cn("border-white/10", "opacity-50")}>
-                  <AccordionTrigger value="Silver" className="text-white/50 hover:text-white/70">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-gray-400" />
-                      <span className="line-through">Silver</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Silver">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white/50">$10K</div>
-                      <div className="text-sm text-white/50">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white/50">
-                          <div className="h-4 w-4 rounded-full bg-white/10 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Daily Cash Race</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white/50">
-                          <div className="h-4 w-4 rounded-full bg-white/10 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Birthday Rewards</span>
-                        </div>
-                      </div>
-                      <div className="pt-2">
-                        <div className="text-xs text-white/50 font-medium">Complete</div>
-                        <Button variant="ghost" className="mt-2 text-white/70 hover:text-white hover:bg-white/5">
-                          VIP Rewards
-                        </Button>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Gold" className="border-white/10 relative">
-                  <motion.div
-                    className="absolute inset-0 bg-white/5 pointer-events-none"
-                    animate={{
-                      opacity: [0, 0.3, 0],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  <AccordionTrigger value="Gold" className="text-white hover:text-white relative z-10">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-yellow-400" />
-                      <span>Gold</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Gold">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$50K</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Daily Cash Race</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Birthday Rewards</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Weekly Cash Boost</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Monthly Cash Boost</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Level Up Bonuses</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Platinum" className="border-white/10">
-                  <AccordionTrigger value="Platinum" className="text-white hover:text-white">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-cyan-400" />
-                      <span>Platinum I - III</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Platinum">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$100K - 500K</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Daily Cash Race</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Birthday Rewards</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Weekly Cash Boost</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Monthly Cash Boost</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Level Up Bonuses</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Diamond" className="border-white/10">
-                  <AccordionTrigger value="Diamond" className="text-white hover:text-white">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-emerald-400" />
-                      <span>Diamond I - III</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Diamond">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$1M - 5M</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>All Platinum I - III Benefits</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Monthly Cash Boost</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Level Up Bonuses</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Prioritized Withdrawals</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Dedicated VIP Team</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Elite" className="border-white/10">
-                  <AccordionTrigger value="Elite" className="text-white hover:text-white">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-purple-400" />
-                      <span>Elite I - III</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Elite">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$100M - 500M</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>All Diamond I - III Benefits</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Free Crypto Withdrawals</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Reduced Deposit Fees</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Exclusive Refer-A-Friend</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Dedicated VIP Team</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Black" className="border-white/10">
-                  <AccordionTrigger value="Black" className="text-white hover:text-white">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-gray-800" />
-                      <span>Black I - III</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Black">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$100M+</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>All Elite I - III Benefits</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Reduced Deposit Fees</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Exclusive Refer-A-Friend</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Tailored Gifts & Rewards</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Dedicated VIP Team</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="Obsidian" className="border-white/10">
-                  <AccordionTrigger value="Obsidian" className="text-white hover:text-white">
-                    <div className="flex items-center gap-3">
-                      <IconCrown className="w-5 h-5 text-purple-900" />
-                      <span>Obsidian I - III</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent value="Obsidian">
-                    <div className="space-y-3 pt-2">
-                      <div className="text-lg font-semibold text-white">$1B+</div>
-                      <div className="text-sm text-white/70">Wager Amount</div>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>All Black I - III Benefits</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Reduced Deposit Fees</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Exclusive Refer-A-Friend</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Tailored Gifts & Rewards</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <div className="h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                            <IconCheck className="h-3 w-3" />
-                          </div>
-                          <span>Dedicated VIP Team</span>
-                        </div>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </div>
-        )}
-        
-        {vipActiveTab === 'Cash Boost' && (
-          <div className="space-y-3">
-            {boostClaimMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 flex items-center gap-3"
-              >
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <IconCheck className="w-5 h-5 text-green-400" strokeWidth={2} />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold text-white">
-                    ${boostClaimMessage.amount.toFixed(2)} have been claimed and added to your balance
-                  </div>
-                </div>
-              </motion.div>
-            )}
-            {claimedBoosts.has('weekly') && claimedBoosts.has('monthly') ? (
-              <Card className="bg-white/3 border-white/5">
-                <CardContent className="p-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
-                      <IconCrown className="w-10 h-10 text-white/40" strokeWidth={1.5} />
-                    </div>
-                    <div className="text-center space-y-2">
-                      <p className="text-white/70 text-sm leading-relaxed">
-                        Keep on playing and check back for any cash<br />
-                        boost rewards.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {!claimedBoosts.has('weekly') && (
-                  <div className="bg-white/5 rounded-small p-4 border border-white/10 flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <IconCoins className="w-5 h-5 text-white" strokeWidth={1.5} />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-lg font-semibold text-white">$15.00</div>
-                      <div className="text-sm text-white/70">Weekly Cash Boost</div>
-                    </div>
-                    <Button 
-                      variant="ghost"
-                      className="text-white/70 hover:text-white hover:bg-white/5 text-xs px-4 py-2 h-8 border border-white/20"
-                      onClick={() => {
-                        setBoostProcessing('weekly')
-                        setTimeout(() => {
-                          setClaimedBoosts(prev => new Set([...prev, 'weekly']))
-                          setBoostProcessing(null)
-                          setBoostClaimMessage({ amount: 15 })
-                          onBoostClaimed(15)
-                          setTimeout(() => {
-                            setBoostClaimMessage(null)
-                          }, 3000)
-                        }, 1500)
-                      }}
-                      disabled={boostProcessing !== null}
-                    >
-                      {boostProcessing === 'weekly' ? (
-                        <div className="flex items-center gap-2">
-                          <IconLoader2 className="w-3 h-3 animate-spin" />
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        'CLAIM'
-                      )}
-                    </Button>
-                  </div>
-                )}
-                {!claimedBoosts.has('monthly') && (
-                  <div className="bg-white/5 rounded-small p-4 border border-white/10 flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <IconCoins className="w-5 h-5 text-white" strokeWidth={1.5} />
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-lg font-semibold text-white">$20.00</div>
-                      <div className="text-sm text-white/70">Monthly Cash Boost</div>
-                    </div>
-                    <Button 
-                      variant="ghost"
-                      className="text-white/70 hover:text-white hover:bg-white/5 text-xs px-4 py-2 h-8 border border-white/20"
-                      onClick={() => {
-                        setBoostProcessing('monthly')
-                        setTimeout(() => {
-                          setClaimedBoosts(prev => new Set([...prev, 'monthly']))
-                          setBoostProcessing(null)
-                          setBoostClaimMessage({ amount: 20 })
-                          onBoostClaimed(20)
-                          setTimeout(() => {
-                            setBoostClaimMessage(null)
-                          }, 3000)
-                        }, 1500)
-                      }}
-                      disabled={boostProcessing !== null}
-                    >
-                      {boostProcessing === 'monthly' ? (
-                        <div className="flex items-center gap-2">
-                          <IconLoader2 className="w-3 h-3 animate-spin" />
-                          <span>Processing...</span>
-                        </div>
-                      ) : (
-                        'CLAIM'
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
-        
-        {vipActiveTab === 'Bet & Get' && (
-          <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center justify-center">
-                <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
-                  <IconGift className="w-10 h-10 text-white/40" strokeWidth={1.5} />
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    Bet & Get promotions will appear here
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {vipActiveTab === 'Reloads' && (
-          <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center justify-center">
-                <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
-                  <IconCreditCard className="w-10 h-10 text-white/40" strokeWidth={1.5} />
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    Reload bonuses will appear here
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-        
-        {vipActiveTab === 'Cash Drop' && (
-          <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
-              <div className="flex flex-col items-center justify-center">
-                <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
-                  <IconCurrencyDollar className="w-10 h-10 text-white/40" strokeWidth={1.5} />
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    Cash Drop rewards will appear here
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </>
   )
 }
 
@@ -5274,9 +2925,6 @@ function NavTestPageContent() {
   const [isDepositLoading, setIsDepositLoading] = useState(false)
   const [balance, setBalance] = useState(10)
   const [displayBalance, setDisplayBalance] = useState(10)
-  const [claimedBoosts, setClaimedBoosts] = useState<Set<string>>(new Set())
-  const [boostProcessing, setBoostProcessing] = useState<string | null>(null)
-  const [boostClaimMessage, setBoostClaimMessage] = useState<{ amount: number } | null>(null)
   const [stepLoading, setStepLoading] = useState<{started: boolean, processing: boolean, almost: boolean, complete: boolean}>({
     started: false,
     processing: false,
@@ -5285,20 +2933,13 @@ function NavTestPageContent() {
   })
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [toastAction, setToastAction] = useState<{ label: string; onClick: () => void } | null>(null)
   
   const [accountDrawerOpen, setAccountDrawerOpen] = useState(false)
   const [vipDrawerOpen, setVipDrawerOpen] = useState(false)
-  const [accountDrawerView, setAccountDrawerView] = useState<'account' | 'notifications'>('account')
-  const [vipActiveTab, setVipActiveTab] = useState('Overview')
-  const vipTabsContainerRef = useRef<HTMLDivElement>(null)
-  const [canScrollVipLeft, setCanScrollVipLeft] = useState(false)
-  const [canScrollVipRight, setCanScrollVipRight] = useState(true)
   const [currentTime, setCurrentTime] = useState<string>('')
   const [showAllGames, setShowAllGames] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [showSports, setShowSports] = useState(false)
-  const [showVipRewards, setShowVipRewards] = useState(false)
   const [sportsActiveTab, setSportsActiveTab] = useState('Events')
   const [isPageTransitioning, setIsPageTransitioning] = useState(false)
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
@@ -5335,57 +2976,6 @@ function NavTestPageContent() {
       setDepositDrawerOpen(open)
     }
   }, [depositDrawerOpen])
-
-  const handleBoostClaimed = React.useCallback((amount: number) => {
-    // Balance will be updated and animated when drawer closes
-    // This callback is just for tracking purposes
-  }, [])
-
-  const handleVipDrawerOpenChange = React.useCallback((open: boolean) => {
-    if (!open) {
-      // Drawer is closing, check if there are claimed boosts to process
-      const claimedAmount = Array.from(claimedBoosts).reduce((total, boostId) => {
-        if (boostId === 'weekly') return total + 15
-        if (boostId === 'monthly') return total + 20
-        return total
-      }, 0)
-      
-      if (claimedAmount > 0) {
-        // Wait a bit for drawer to close, then update and animate balance
-        setTimeout(() => {
-          // Update the actual balance
-          const newBalance = balance + claimedAmount
-          setBalance(newBalance)
-          
-          // Animate the balance roll-up
-          const startBalance = displayBalance
-          const endBalance = newBalance
-          const duration = 1000
-          const startTime = Date.now()
-          
-          const animate = () => {
-            const elapsed = Date.now() - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            const easeOutCubic = 1 - Math.pow(1 - progress, 3)
-            const currentBalance = startBalance + (endBalance - startBalance) * easeOutCubic
-            setDisplayBalance(currentBalance)
-            
-            if (progress < 1) {
-              requestAnimationFrame(animate)
-            } else {
-              setDisplayBalance(endBalance)
-            }
-          }
-          requestAnimationFrame(animate)
-        }, 300)
-      }
-      
-      // Reset boost states
-      setBoostProcessing(null)
-      setBoostClaimMessage(null)
-    }
-    setVipDrawerOpen(open)
-  }, [claimedBoosts, balance, displayBalance])
 
   // Brand configurations using design system tokens
   const brands = {
@@ -5548,7 +3138,6 @@ function NavTestPageContent() {
                       // Start showing skeleton immediately, then show content after a brief delay
                       setTimeout(() => {
                       setShowSports(true)
-                      setShowVipRewards(false)
                         // Hide skeleton slightly before content fully fades in for smoother transition
                         setTimeout(() => {
                           setIsPageTransitioning(false)
@@ -5587,15 +3176,15 @@ function NavTestPageContent() {
                       "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
                       "hover:bg-white/5 hover:text-white transition-colors",
                       "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav !== 'Live'
+                      !showSports 
                         ? "!bg-[#ee3536] !text-white" 
                         : "bg-transparent"
                     )}
                     style={{ 
                       pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav !== 'Live' ? (brandPrimary || '#ee3536') : undefined
+                      backgroundColor: !showSports ? (brandPrimary || '#ee3536') : undefined
                     } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav !== 'Live'}
+                    data-active={!showSports}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -5603,7 +3192,6 @@ function NavTestPageContent() {
                       // Start showing skeleton immediately, then show content after a brief delay
                       setTimeout(() => {
                       setShowSports(false)
-                      setShowVipRewards(false)
                         // Hide skeleton slightly before content fully fades in for smoother transition
                         setTimeout(() => {
                           setIsPageTransitioning(false)
@@ -5621,31 +3209,15 @@ function NavTestPageContent() {
                     className={cn(
                       "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
                       "hover:bg-white/5 hover:text-white transition-colors",
-                      "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav === 'Live'
-                        ? "!bg-[#ee3536] !text-white" 
-                        : "bg-transparent"
+                      "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                      "text-white/70 active:bg-white/10 cursor-pointer"
                     )}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav === 'Live' ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav === 'Live'}
+                    style={{ pointerEvents: 'auto' }}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      setTimeout(() => {
-                        setShowSports(false)
-                        setShowVipRewards(false)
-                        setActiveSubNav('Live')
-                        setShowAllGames(false)
-                        setSelectedCategory('')
-                        setTimeout(() => {
-                          setIsPageTransitioning(false)
-                        }, 200)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }, 150)
+                      // Navigate to Live Casino - add your navigation logic here
+                      window.location.href = '/live-casino'
                     }}
                   >
                     Live Casino
@@ -5682,18 +3254,8 @@ function NavTestPageContent() {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      setTimeout(() => {
-                        setShowVipRewards(true)
-                        setShowSports(false)
-                        setIsPageTransitioning(false)
-                      }, 200)
+                      setVipDrawerOpen(true)
                     }}
-                    data-active={showVipRewards}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: showVipRewards ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
                   >
                     VIP Rewards
                   </SidebarMenuButton>
@@ -5788,15 +3350,11 @@ function NavTestPageContent() {
               )}
               style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
             >
-              <div className="relative">
               <Avatar className="h-6 w-6 border border-white/20 group-hover:border-white/40 transition-colors">
                 <AvatarFallback className="bg-white/10 text-white flex items-center justify-center text-[10px] font-semibold tracking-tight">
                   CH
                 </AvatarFallback>
               </Avatar>
-                {/* Red dot indicator for notifications */}
-                <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
-              </div>
               <span className="text-xs font-medium text-white inline-block min-w-[70px] text-right tabular-nums transition-all duration-300">
                 {currentBrand.symbol}
                 <NumberFlow value={displayBalance} format={{ notation: 'standard', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
@@ -5834,7 +3392,7 @@ function NavTestPageContent() {
             <DrawerHeader className="relative px-4 pt-4 pb-3">
               <div className="flex items-center justify-between gap-4">
                 {!showDepositConfirmation && (
-                  <DrawerTitle className="text-gray-900 text-lg font-semibold flex-1">Quick Deposit</DrawerTitle>
+                  <DrawerTitle className="text-gray-900 text-2xl font-bold flex-1">Quick Deposit</DrawerTitle>
                 )}
                 <DrawerClose asChild>
                   <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
@@ -6193,8 +3751,8 @@ function NavTestPageContent() {
 
         {/* Content area with sidebar and main content - starts below header */}
         <div className="flex relative" style={{ marginTop: '64px' }}>
-          {/* Sidebar using shadcn component - positioned under header - Hide on Sports and VIP Rewards */}
-          {!showSports && !showVipRewards && (
+          {/* Sidebar using shadcn component - positioned under header - Hide on Sports */}
+          {!showSports && (
           <Sidebar 
             collapsible="icon"
             variant="sidebar"
@@ -6325,8 +3883,8 @@ function NavTestPageContent() {
               viewTransitionName: 'content-area'
             }}
           >
-            {/* Icon Tabs (Left) and Text Tabs (Right) - Fixed Sub Nav - Hide on Sports and VIP Rewards */}
-            {!showSports && !showVipRewards && (
+            {/* Icon Tabs (Left) and Text Tabs (Right) - Fixed Sub Nav - Hide on Sports */}
+            {!showSports && (
             <div 
               data-sub-nav
               className="fixed z-[90] bg-white dark:bg-[#1a1a1a]/60 dark:backdrop-blur-xl border-b border-gray-200 dark:border-white/10 px-6 py-3 transition-all duration-200 ease-linear shadow-sm"
@@ -6400,8 +3958,8 @@ function NavTestPageContent() {
             </div>
             )}
             
-            {/* Spacer to account for fixed sub-nav height - Only show when not on Sports or VIP Rewards */}
-            {!showSports && !showVipRewards && <div className="h-[57px]"></div>}
+            {/* Spacer to account for fixed sub-nav height - Only show when not on Sports */}
+            {!showSports && <div className="h-[57px]"></div>}
             
             {/* Sports Page */}
             <AnimatePresence mode="wait" initial={false}>
@@ -6484,23 +4042,6 @@ function NavTestPageContent() {
                       </div>
                     </div>
                   </SidebarInset>
-                </motion.div>
-              ) : showVipRewards ? (
-                <motion.div
-                  key="vip-rewards-page"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                >
-                  <VIPRewardsPage 
-                    brandPrimary={brandPrimary || '#ee3536'} 
-                    setVipDrawerOpen={setVipDrawerOpen}
-                    setVipActiveTab={setVipActiveTab}
-                    setShowToast={setShowToast}
-                    setToastMessage={setToastMessage}
-                    setToastAction={setToastAction}
-                  />
                 </motion.div>
               ) : showSports ? (
                 <motion.div
@@ -7514,180 +5055,8 @@ function NavTestPageContent() {
               </div>
               </>
                 </motion.div>
-            )}
+              )}
             </AnimatePresence>
-              
-              {/* Footer - responsive to sidebar state */}
-              <footer className="bg-[#2d2d2d] border-t border-white/10 text-white mt-12 relative z-0">
-              <div className="w-full px-6 py-8">
-                  {/* Quick Links Section */}
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-8">
-                    <div>
-                      <h3 className="font-semibold mb-4">QUICK LINKS</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Refer A Friend</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Rules</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Banking</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Affiliates</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Terms & Conditions</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Responsible Gaming</a></li>
-                      </ul>
-                      <div className="mt-4">
-                        <Button 
-                          className="w-full rounded-small h-10 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-all"
-                          style={{ backgroundColor: brandPrimary }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = brandPrimaryHover
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = brandPrimary
-                          }}
-                        >
-                          <IconLifebuoy className="w-4 h-4 mr-2" />
-                          NEED HELP?
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold mb-4">Casino</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">Play Casino</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Blackjack</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Baccarat</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Craps</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Roulette</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Keno</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Slots</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Video Poker</a></li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold mb-4">Sports</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">Sportsbook</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">NFL Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">NBA Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">MLB Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">NHL Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">NCAAB Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Super Bowl Betting Odds</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Boxing Betting Odds</a></li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold mb-4">Poker</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">Play Poker</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Download</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Texas Holdem</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Omaha Poker</a></li>
-                      </ul>
-                      <h3 className="font-semibold mb-4 mt-6">Racebook</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">Horse Betting</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Kentucky Derby</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Preakness Stakes</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Belmont Stakes</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Breeders Cup</a></li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-semibold mb-4">Other</h3>
-                      <ul className="space-y-2 text-sm text-white/70">
-                        <li><a href="#" className="hover:text-white transition-colors">Promos</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">News Room</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Why BetOnline</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">BetOnline Vs Competition</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">VIP Rewards</a></li>
-                        <li><a href="#" className="hover:text-white transition-colors">Bet TV</a></li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-white/10 mb-8" />
-
-                  {/* Trust & Security Section */}
-                  <div className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
-                      <h3 className="font-semibold text-lg">A TRUSTED & SAFE EXPERIENCE</h3>
-                      <IconShield className="w-5 h-5" />
-                    </div>
-                    <p className="text-sm text-white/70 mb-6 max-w-3xl">
-                      At BetOnline, our company's guiding principle is to establish long-lasting, positive relationships with our customers and within the online gaming community for over 25 years.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/* Crypto payment method logos */}
-                      {['Bitcoin', 'Ethereum', 'Litecoin', 'USDT', 'USDC', 'Bitcoin Cash', 'Dogecoin'].map((method) => (
-                        <PaymentLogo key={method} method={method} />
-                      ))}
-                      {/* Traditional payment method logos */}
-                      {['VISA', 'Mastercard', 'AMEX', 'Discover', 'MoneyGram'].map((method) => (
-                        <PaymentLogo key={method} method={method} />
-                      ))}
-                      {/* Security badges */}
-                      <SecurityBadge name="Responsible Gaming" iconPath="/logos/security/responsible-gaming.png" />
-                      <SecurityBadge name="SSL Secure" iconPath="/logos/security/ssl-secure.png" />
-                      <Card className="border-2 border-white bg-red-500 p-2 rounded-full">
-                        <CardContent className="p-0">
-                          <div className="flex items-center justify-center w-8 h-8">
-                            <span className="text-xs font-bold text-white">18+</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-
-                  <Separator className="bg-white/10 mb-8" />
-
-                  {/* Partners & Social Media */}
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
-                    <div className="flex items-center gap-4">
-                      <h3 className="font-semibold">OFFICIAL PARTNERS</h3>
-                      <Separator orientation="vertical" className="h-6 bg-white/20" />
-                      <div className="flex items-center gap-4 text-white/70">
-                        <span>LALIGA</span>
-                        <span>LFA</span>
-                        <span>matchroom.</span>
-                        <span>GOLDEN BOY</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* Social media icons using Button components */}
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/5 rounded-small">
-                        <IconBrandFacebook className="w-5 h-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/5 rounded-small">
-                        <IconBrandInstagram className="w-5 h-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/5 rounded-small">
-                        <IconBrandX className="w-5 h-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/5 rounded-small">
-                        <IconBrandYoutube className="w-5 h-5" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:text-white hover:bg-white/5 rounded-small">
-                        <IconBrandTiktok className="w-5 h-5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Timestamp and Copyright */}
-                  <div className="text-center space-y-2">
-                    <div className="text-xs text-white/50">
-                      {typeof currentTime !== 'undefined' ? currentTime : ''}
-                    </div>
-                    <div className="text-sm text-white/50">
-                      <p>Copyright ©2024 BetOnline.ag. All rights reserved.</p>
-                    </div>
-                  </div>
-                </div>
-              </footer>
           </SidebarInset>
         </div>
 
@@ -7698,235 +5067,74 @@ function NavTestPageContent() {
           onOpenChange={(open) => {
             console.log('Account Drawer onOpenChange:', open, 'Current state:', accountDrawerOpen)
             setAccountDrawerOpen(open)
-            if (!open) {
-              // Reset to account view when drawer closes
-              setAccountDrawerView('account')
-            }
           }}
           direction="right"
           shouldScaleBackground={false}
         >
           <DrawerContent 
-            className="w-full sm:max-w-md bg-white border-l border-gray-200 text-gray-900 overflow-hidden"
+            className="w-full sm:max-w-md bg-white border-l border-gray-200 text-gray-900"
           >
-            <DrawerHeader className="relative px-4 pt-4 pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between gap-4">
-                {accountDrawerView === 'notifications' ? (
-                  <div className="flex items-center gap-3 flex-1">
-                    <Button 
-                      variant="ghost"
-                      onClick={() => setAccountDrawerView('account')}
-                      className="h-8 w-8 p-0 hover:bg-gray-100 -ml-2"
-                    >
-                      <IconChevronLeft className="h-5 w-5 text-gray-600" />
-                    </Button>
-                    <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 flex-1">
-                    <Avatar className="h-10 w-10 border border-gray-200">
-                      <AvatarFallback className="bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-semibold">
-                        ch
+            <DrawerHeader>
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12 border border-gray-200">
+                  <AvatarFallback className="bg-gray-100 text-gray-600 flex items-center justify-center">
+                    <IconUserCircle className="w-7 h-7" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                      <div className="text-sm font-medium text-gray-900">ch</div>
-                      <div className="text-xs text-gray-500">b1767721</div>
-                </div>
-              </div>
-                )}
-                <div className="flex items-center gap-2">
-                  {accountDrawerView === 'notifications' ? null : (
-                    <button 
-                      onClick={() => setAccountDrawerView('notifications')}
-                      className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0",
-                        "bg-gray-100 hover:bg-gray-200 relative"
-                      )}
-                    >
-                      <IconBell className="h-4 w-4 text-gray-600" />
-                      <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
-                    </button>
-                  )}
-                  <DrawerClose asChild>
-                    <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
-                      <IconX className="h-4 w-4 text-gray-600" />
-                    </button>
-                  </DrawerClose>
+                  <DrawerTitle className="text-gray-900 text-xl">Christopher Hunt</DrawerTitle>
+                  <DrawerDescription className="text-gray-600">
+                    Gold Member
+                  </DrawerDescription>
                 </div>
               </div>
             </DrawerHeader>
-            
-            <div className="px-4 pt-6 pb-8 overflow-y-auto flex-1 min-h-0">
-              {accountDrawerView === 'account' ? (
-                <>
-                  {/* Balance Information */}
-                  <div className="mb-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Available Balance</span>
-                        <span className="text-sm font-semibold text-gray-900">
+            <div className="mt-6 space-y-4 px-4">
+              <div className="bg-gray-50 rounded-small p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">Account Balance</span>
+                  <IconCrown className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">
                   {currentBrand.symbol}
                   <NumberFlow value={displayBalance} format={{ notation: 'standard', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
-                        </span>
                 </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Free Bet</span>
-                        <span className="text-sm font-semibold text-gray-900">$0.00</span>
-                      </div>
-                    </div>
+                <div className="text-xs text-gray-500 mt-1">{currentBrand.token}</div>
               </div>
               
-                  <Separator className="bg-gray-200 mb-6" />
-                  
-                  {/* Navigation List */}
-                  <div className="space-y-1 w-full mb-8">
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3 min-w-0"
-                    >
-                      <IconUser className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">My Account</span>
+              <Separator className="bg-gray-200" />
+              
+              <div className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconUser className="w-4 h-4 mr-2" />
+                  Profile Settings
                 </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3 min-w-0"
-                    >
-                      <IconFileText className="w-5 h-5 mr-3 text-gray-700 flex-shrink-0" />
-                      <span className="flex-1 text-left text-gray-900">Pending Bets</span>
-                      <span className="text-sm text-gray-600 ml-auto">$0.00</span>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconSettings className="w-4 h-4 mr-2" />
+                  Account Settings
                 </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconGift className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">My Bonus</span>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconCrown className="w-4 h-4 mr-2" />
+                  VIP Rewards
                 </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconCurrencyDollar className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">Transactions History</span>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconBuilding className="w-4 h-4 mr-2" />
+                  Banking
                 </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconTicket className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">Bet History</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconUserPlus className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">Refer a Friend</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconCrown className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">VIP Rewards</span>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconFileText className="w-4 h-4 mr-2" />
+                  Transaction History
                 </Button>
               </div>
               
-                  <Separator className="bg-gray-200 my-4" />
+              <Separator className="bg-gray-200" />
               
-                  {/* Deposit and Withdraw */}
-                  <div className="space-y-1 w-full">
               <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconCreditCard className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">Deposit</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconArrowRight className="w-5 h-5 mr-3 text-gray-700 rotate-180" />
-                      <span className="flex-1 text-left text-gray-900">Withdraw</span>
+                variant="outline" 
+                className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+              >
+                Logout
               </Button>
-            </div>
-                  
-                  <Separator className="bg-gray-200 my-4" />
-                  
-                  {/* Logout Button */}
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-600 h-10 px-2 min-w-0"
-                  >
-                    <span className="text-sm">Log out</span>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  {/* Notifications Page */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <Button 
-                        variant="ghost" 
-                        className="h-8 px-2 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                      >
-                        View All
-                      </Button>
-                </div>
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-3 p-3 rounded-small bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">New Promotion Available!</p>
-                          <p className="text-xs text-gray-500 mt-1">Claim your free spins now!</p>
-                          <p className="text-xs text-gray-400 mt-1">2 hours ago</p>
-                </div>
-              </div>
-                      <div className="flex items-start gap-3 p-3 rounded-small bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
-                        <div className="h-2 w-2 rounded-full bg-red-500 mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">Your Bet has been settled!</p>
-                          <p className="text-xs text-gray-500 mt-1">Check your winnings now!</p>
-                          <p className="text-xs text-gray-400 mt-1">5 hours ago</p>
-                </div>
-                </div>
-                      <div className="flex items-start gap-3 p-3 rounded-small hover:bg-gray-100 cursor-pointer transition-colors">
-                        <div className="h-2 w-2 rounded-full bg-transparent mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">Weekly summary</p>
-                          <p className="text-xs text-gray-500 mt-1">View your weekly betting activity</p>
-                          <p className="text-xs text-gray-400 mt-1">1 day ago</p>
-              </div>
-              </div>
-                      <div className="flex items-start gap-3 p-3 rounded-small hover:bg-gray-100 cursor-pointer transition-colors">
-                        <div className="h-2 w-2 rounded-full bg-transparent mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">Bet settled</p>
-                          <p className="text-xs text-gray-500 mt-1">Your bet on Liverpool has been settled</p>
-                          <p className="text-xs text-gray-400 mt-1">2 days ago</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3 p-3 rounded-small hover:bg-gray-100 cursor-pointer transition-colors">
-                        <div className="h-2 w-2 rounded-full bg-transparent mt-2 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 font-medium">New bonus code available</p>
-                          <p className="text-xs text-gray-500 mt-1">Use code BONUS50 for 50% match</p>
-                          <p className="text-xs text-gray-400 mt-1">3 days ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           </DrawerContent>
         </Drawer>
@@ -7934,31 +5142,63 @@ function NavTestPageContent() {
         {/* VIP Rewards Drawer */}
         <Drawer 
           open={vipDrawerOpen} 
-          onOpenChange={handleVipDrawerOpenChange}
+          onOpenChange={(open) => {
+            console.log('VIP Drawer onOpenChange:', open, 'Current state:', vipDrawerOpen)
+            setVipDrawerOpen(open)
+          }}
           direction="right"
           shouldScaleBackground={false}
         >
           <DrawerContent 
-            className="w-full sm:max-w-md bg-[#1a1a1a] border-l border-white/10 text-white overflow-hidden"
+            className="w-full sm:max-w-md bg-white border-l border-gray-200 text-gray-900"
           >
-            <VipDrawerContent 
-              vipActiveTab={vipActiveTab}
-              setVipActiveTab={setVipActiveTab}
-              canScrollVipLeft={canScrollVipLeft}
-              setCanScrollVipLeft={setCanScrollVipLeft}
-              canScrollVipRight={canScrollVipRight}
-              setCanScrollVipRight={setCanScrollVipRight}
-              vipTabsContainerRef={vipTabsContainerRef}
-              vipDrawerOpen={vipDrawerOpen}
-              brandPrimary={brandPrimary}
-              claimedBoosts={claimedBoosts}
-              setClaimedBoosts={setClaimedBoosts}
-              boostProcessing={boostProcessing}
-              setBoostProcessing={setBoostProcessing}
-              boostClaimMessage={boostClaimMessage}
-              setBoostClaimMessage={setBoostClaimMessage}
-              onBoostClaimed={handleBoostClaimed}
-            />
+            <DrawerHeader>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-yellow-100 border border-yellow-300 flex items-center justify-center">
+                  <IconCrown className="w-7 h-7 text-yellow-600" />
+                </div>
+                <div>
+                  <DrawerTitle className="text-gray-900 text-xl">VIP Rewards</DrawerTitle>
+                  <DrawerDescription className="text-gray-600">
+                    Gold Member
+                  </DrawerDescription>
+                </div>
+              </div>
+            </DrawerHeader>
+            <div className="mt-6 space-y-4 px-4">
+              <div className="bg-gray-50 rounded-small p-4 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">VIP Level</span>
+                  <IconCrown className="w-5 h-5 text-yellow-500" />
+                </div>
+                <div className="text-2xl font-bold text-gray-900">Gold</div>
+                <div className="text-xs text-gray-500 mt-1">Progress to Platinum I: 45%</div>
+                <div className="mt-3">
+                  <Progress value={45} className="h-2" />
+                </div>
+              </div>
+              
+              <Separator className="bg-gray-200" />
+              
+              <div className="space-y-2">
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconTrophy className="w-4 h-4 mr-2" />
+                  Daily Races
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconCrown className="w-4 h-4 mr-2" />
+                  Loyalty Hub
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconGift className="w-4 h-4 mr-2" />
+                  Exclusive Promotions
+                </Button>
+                <Button variant="ghost" className="w-full justify-start text-gray-900 hover:bg-gray-100">
+                  <IconStar className="w-4 h-4 mr-2" />
+                  VIP Benefits
+                </Button>
+              </div>
+            </div>
           </DrawerContent>
         </Drawer>
 
@@ -8486,22 +5726,20 @@ function NavTestPageContent() {
                 maxWidth: '384px'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                <IconGift className="w-4 h-4 text-white flex-shrink-0" />
-                <span style={{ fontSize: '14px', fontWeight: '500', color: 'white', flex: 1 }}>{toastMessage}</span>
-                {toastAction && (
-                  <Button
-                    onClick={() => {
-                      toastAction.onClick()
-                      setShowToast(false)
-                    }}
-                    className="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-2 h-8 ml-2 flex items-center gap-1.5"
-                    size="sm"
-                  >
-                    <IconGift className="w-3 h-3" />
-                    View
-                  </Button>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#8BC34A', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <IconCheck className="w-3 h-3 text-white" />
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>{toastMessage}</span>
               </div>
             </motion.div>
           )}

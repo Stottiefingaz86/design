@@ -69,7 +69,7 @@ export const ASSETS: Asset[] = [
 ]
 
 export function Playlist() {
-  const currentItem = useMediaStore((state) => state.currentItem)
+  const currentItem = useMediaStore((state: any) => (state as any).currentItem ?? null)
   const player = useMediaStore((state) => state.player)
 
   const { getCurrentItem, isPreloaded, loadPlaylist, preloadAsset, skipToId } =
@@ -94,7 +94,7 @@ export function Playlist() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button aria-label="Open Playlist" size="icon" variant="glass">
+        <Button aria-label="Open Playlist" size="icon" variant="ghost">
           <CardsThreeIcon weight="fill" />
         </Button>
       </DropdownMenuTrigger>

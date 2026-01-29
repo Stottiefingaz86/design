@@ -1,40 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import React from 'react'
 import { createPortal } from 'react-dom'
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  FilterFn,
-  flexRender,
-  getCoreRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  PaginationState,
-  Row,
-  SortingState,
-  useReactTable,
-  VisibilityState
-} from "@tanstack/react-table"
-import {
-  ChevronDownIcon,
-  ChevronFirstIcon,
-  ChevronLastIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
-  CircleAlertIcon,
-  CircleXIcon,
-  Columns3Icon,
-  EllipsisIcon,
-  FilterIcon,
-  ListFilterIcon,
-  PlusIcon,
-  TrashIcon
-} from "lucide-react"
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import Image from 'next/image'
 import { 
@@ -106,10 +74,7 @@ import {
   IconFilter,
   IconBell,
   IconTicket,
-  IconClock,
-  IconCoins,
-  IconDownload,
-  IconExternalLink
+  IconClock
 } from '@tabler/icons-react'
 import { colorTokenMap } from '@/lib/agent/designSystem'
 import { Button } from '@/components/ui/button'
@@ -121,7 +86,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
@@ -160,21 +124,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination'
 import { LinearMediaPlayer } from '@/components/linear-player/components/media-player'
 import {
   Accordion,
@@ -220,6 +169,7 @@ import {
   useFamilyDrawer,
   type ViewsRegistry,
 } from '@/components/ui/family-drawer'
+import { Input } from '@/components/ui/input'
 
 // Available square tile images
 const squareTileImages = [
@@ -623,8 +573,9 @@ function TotalRewardsCard() {
           <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">Total Rewards Claimed</CardTitle>
           <div className="text-5xl font-bold text-white dark:text-white text-gray-900 dark:text-white transition-colors duration-300">
             $<NumberFlow 
-              value={shouldAnimate ? targetValue : 0}
+              value={shouldAnimate ? targetValue : 0} 
               format={{ notation: 'standard', minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+              duration={2000}
             />
           </div>
         </CardContent>
@@ -1169,687 +1120,10 @@ function DailyRacesTimer() {
   )
 }
 
-// Bonus data type
-type BonusItem = {
-  id: string;
-  code: string;
-  amount: string;
-  rollover: string;
-  date: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED' | 'COMPLETE';
-  statusColor: string;
-};
-
-// Custom filter function for multi-column searching
-const multiColumnFilterFn: FilterFn<BonusItem> = (row, columnId, filterValue) => {
-  const searchableRowContent = `${row.original.code} ${row.original.amount}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
-};
-
-const statusFilterFn: FilterFn<BonusItem> = (row, columnId, filterValue: string[]) => {
-  if (!filterValue?.length) return true;
-  const status = row.getValue(columnId) as string;
-  return filterValue.includes(status);
-};
-
-// Promos Page Component
-function PromosPage({ brandPrimary }: { brandPrimary: string }) {
-  const [activeTab, setActiveTab] = useState('Deposit Bonus')
-
-  const promoData = [
-    { id: '1', title: '50 Free Spins', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '2', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '3', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '4', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '5', title: '50 Free Spins', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '6', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '7', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-    { id: '8', title: 'Tittle', description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod temp.' },
-  ]
-
-  return (
-    <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
-      <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
-        {/* Banner Carousel - Reusing Casino Banner with Arrows */}
-        <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
-            <CarouselContent className="ml-6 -mr-2 md:-mr-4">
-              {/* VIP Rewards Card */}
-              <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
-                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
-                    <VIPProgressBar value={45} />
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Daily Races Card */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                      <div className="text-right">
-                        <DailyRacesTimer />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Weekly Game Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/weekly.png"
-                    alt="Weekly Game Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-              
-              {/* Originals Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/orginals.png"
-                    alt="Originals Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-          </Carousel>
-        </div>
-
-        {/* Promos Section */}
-        <div className="w-full">
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-white mb-6">Promos</h1>
-
-          {/* Tabs - Using AnimateTabs like Casino */}
-          <div className="mb-6">
-            <AnimateTabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <AnimateTabsList className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300">
-                {['Deposit Bonus', 'Sports', 'Casino', 'Poker'].map((tab) => (
-                  <TabsTab 
-                    key={tab}
-                    value={tab} 
-                    className="relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5"
-                  >
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="activePromosTab"
-                        className="absolute inset-0 rounded-2xl -z-10"
-                        style={{ backgroundColor: brandPrimary }}
-                        initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 40
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab}</span>
-                  </TabsTab>
-                ))}
-              </AnimateTabsList>
-            </AnimateTabs>
-          </div>
-
-          {/* Promo Cards Grid */}
-          <div className="grid grid-cols-4 gap-4">
-            {promoData.map((promo) => (
-              <Card key={promo.id} className="bg-white/5 border-white/10 overflow-hidden">
-                {/* Image Placeholder with Glare Animation */}
-                <div className="w-full h-48 bg-white/5 relative overflow-hidden">
-                  <div className="absolute inset-0 tile-shimmer"></div>
-                </div>
-                <CardContent className="p-4">
-                  <CardTitle className="text-lg font-semibold text-white mb-2">{promo.title}</CardTitle>
-                  <p className="text-sm text-white/70 mb-4 line-clamp-3">{promo.description}</p>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full bg-red-500 hover:bg-red-600 text-white"
-                    style={{ backgroundColor: brandPrimary }}
-                  >
-                    MORE INFO
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    </SidebarInset>
-  )
-}
-
-// My Bonus Page Component
-function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
-  const id = useId()
-  const [activeTab, setActiveTab] = useState('Sports')
-  const [expandedRow, setExpandedRow] = useState<string | null>(null)
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [sorting, setSorting] = useState<SortingState>([])
-
-  // Bonus data
-  const [data, setData] = useState<BonusItem[]>([
-    { id: '1', code: '1000Happy', amount: '$4.00', rollover: '$0.00', date: '11/04/2014', status: 'ACTIVE', statusColor: 'bg-green-500' },
-    { id: '2', code: 'No Promo Code', amount: '$5.00', rollover: '$0.00', date: '11/04/2014', status: 'EXPIRED', statusColor: 'bg-orange-500' },
-    { id: '3', code: 'No Promo Code', amount: '$5.00', rollover: '$0.00', date: '11/04/2014', status: 'EXPIRED', statusColor: 'bg-orange-500' },
-    { id: '4', code: 'Sports2025', amount: '$10.00', rollover: '$8.00', date: '11/04/2014', status: 'CANCELLED', statusColor: 'bg-gray-400' },
-    { id: '5', code: '1000Happy', amount: '$4.00', rollover: '$0.00', date: '11/04/2014', status: 'COMPLETE', statusColor: 'bg-blue-500' },
-  ])
-
-  const columns: ColumnDef<BonusItem>[] = useMemo(() => [
-    {
-      header: "Code",
-      accessorKey: "code",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("code")}</div>,
-      size: 180,
-      filterFn: multiColumnFilterFn,
-      enableHiding: false
-    },
-    {
-      header: "Amount",
-      accessorKey: "amount",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("amount")}</div>,
-      size: 120
-    },
-    {
-      header: "Rollover",
-      accessorKey: "rollover",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("rollover")}</div>,
-      size: 120
-    },
-    {
-      header: "Date",
-      accessorKey: "date",
-      cell: ({ row }) => <div className="text-white/80 text-sm">{row.getValue("date")}</div>,
-      size: 120
-    },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string
-        const statusColors: Record<string, { text: string; border: string; bg: string }> = {
-          'ACTIVE': { text: 'text-green-400/70', border: 'border-green-400/30', bg: 'bg-green-500/5' },
-          'EXPIRED': { text: 'text-orange-400/70', border: 'border-orange-400/30', bg: 'bg-orange-500/5' },
-          'CANCELLED': { text: 'text-gray-400/70', border: 'border-gray-400/30', bg: 'bg-gray-400/5' },
-          'COMPLETE': { text: 'text-blue-400/70', border: 'border-blue-400/30', bg: 'bg-blue-500/5' },
-        }
-        const colors = statusColors[status] || statusColors['ACTIVE']
-        return (
-          <span className={cn("px-2 py-0.5 rounded text-[11px] font-normal border", colors.text, colors.border, colors.bg)}>
-            {status}
-          </span>
-        )
-      },
-      size: 120,
-      filterFn: statusFilterFn
-    },
-    {
-      id: "actions",
-      header: () => <span className="sr-only">More</span>,
-      cell: () => null,
-      size: 60,
-      enableHiding: false
-    }
-  ], [])
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    onSortingChange: setSorting,
-    enableSortingRemoval: false,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility
-    }
-  })
-
-  // Get unique status values
-  const uniqueStatusValues = useMemo(() => {
-    const statusColumn = table.getColumn("status");
-    if (!statusColumn) return [];
-    const values = Array.from(statusColumn.getFacetedUniqueValues().keys());
-    return values.sort();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  // Get counts for each status
-  const statusCounts = useMemo(() => {
-    const statusColumn = table.getColumn("status");
-    if (!statusColumn) return new Map();
-    return statusColumn.getFacetedUniqueValues();
-  }, [table.getColumn("status")?.getFacetedUniqueValues()]);
-
-  const selectedStatuses = useMemo(() => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
-    return filterValue ?? [];
-  }, [table.getColumn("status")?.getFilterValue()]);
-
-  const handleStatusChange = (checked: boolean, value: string) => {
-    const filterValue = table.getColumn("status")?.getFilterValue() as string[];
-    const newFilterValue = filterValue ? [...filterValue] : [];
-
-    if (checked) {
-      newFilterValue.push(value);
-    } else {
-      const index = newFilterValue.indexOf(value);
-      if (index > -1) {
-        newFilterValue.splice(index, 1);
-      }
-    }
-
-    table.getColumn("status")?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
-  };
-
-  return (
-    <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
-      <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
-        {/* Banner Carousel - Reusing Casino Banner with Arrows */}
-        <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
-            <CarouselContent className="ml-6 -mr-2 md:-mr-4">
-              {/* VIP Rewards Card */}
-              <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
-                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
-                    <VIPProgressBar value={45} />
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Daily Races Card */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-4">
-                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                      <div className="text-right">
-                        <DailyRacesTimer />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                      </div>
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-              
-              {/* Weekly Game Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/weekly.png"
-                    alt="Weekly Game Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-              
-              {/* Originals Banner */}
-              <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                  <Image
-                    src="/banners/orginals.png"
-                    alt="Originals Banner"
-                    width={320}
-                    height={140}
-                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                    priority
-                    unoptimized
-                    quality={100}
-                    style={{ imageRendering: 'crisp-edges' }}
-                  />
-                </Card>
-              </CarouselItem>
-            </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-          </Carousel>
-        </div>
-
-        {/* My Bonus Section */}
-        <div className="w-full">
-          {/* Title */}
-          <h1 className="text-3xl font-bold text-white mb-6">My Bonus</h1>
-
-          {/* Tabs - Using AnimateTabs like Casino */}
-          <div className="mb-6">
-            <AnimateTabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <AnimateTabsList className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300">
-                {['Sports', 'Casino'].map((tab) => (
-                  <TabsTab 
-                    key={tab}
-                    value={tab} 
-                    className="relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5"
-                  >
-                    {activeTab === tab && (
-                      <motion.div
-                        layoutId="activeBonusTab"
-                        className="absolute inset-0 rounded-2xl -z-10"
-                        style={{ backgroundColor: brandPrimary }}
-                        initial={false}
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 40
-                        }}
-                      />
-                    )}
-                    <span className="relative z-10">{tab}</span>
-                  </TabsTab>
-                ))}
-              </AnimateTabsList>
-            </AnimateTabs>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div className="flex items-center gap-3">
-              {/* Filter by code or amount */}
-              <div className="relative">
-                <Input
-                  id={`${id}-input`}
-                  ref={inputRef}
-                  className={cn(
-                    "peer min-w-60 ps-9 bg-white/5 border-white/10 text-white placeholder:text-white/50",
-                    Boolean(table.getColumn("code")?.getFilterValue()) && "pe-9"
-                  )}
-                  value={(table.getColumn("code")?.getFilterValue() ?? "") as string}
-                  onChange={(e) => table.getColumn("code")?.setFilterValue(e.target.value)}
-                  placeholder="Filter by code or amount..."
-                  type="text"
-                  aria-label="Filter by code or amount"
-                />
-                <div className="text-white/50 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <ListFilterIcon size={16} aria-hidden="true" />
-                </div>
-                {Boolean(table.getColumn("code")?.getFilterValue()) && (
-                  <button
-                    className="text-white/50 hover:text-white focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Clear filter"
-                    onClick={() => {
-                      table.getColumn("code")?.setFilterValue("");
-                      if (inputRef.current) {
-                        inputRef.current.focus();
-                      }
-                    }}>
-                    <CircleXIcon size={16} aria-hidden="true" />
-                  </button>
-                )}
-              </div>
-              {/* Filter by status */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                    <FilterIcon className="-ms-1 opacity-60" size={16} aria-hidden="true" />
-                    Status
-                    {selectedStatuses.length > 0 && (
-                      <span className="bg-white/10 text-white/70 -me-1 inline-flex h-5 max-h-full items-center rounded border border-white/20 px-1 font-[inherit] text-[0.625rem] font-medium">
-                        {selectedStatuses.length}
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto min-w-36 p-3 bg-[#2d2d2d] border-white/10" align="start">
-                  <div className="space-y-3">
-                    <div className="text-white/70 text-xs font-medium">Filters</div>
-                    <div className="space-y-3">
-                      {uniqueStatusValues.map((value, i) => (
-                        <div key={value} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`${id}-${i}`}
-                            checked={selectedStatuses.includes(value)}
-                            onCheckedChange={(checked: boolean) => handleStatusChange(checked, value)}
-                            className="border-white/20"
-                          />
-                          <Label
-                            htmlFor={`${id}-${i}`}
-                            className="flex grow justify-between gap-2 font-normal text-white">
-                            {value}{" "}
-                            <span className="text-white/50 ms-2 text-xs">
-                              {statusCounts.get(value)}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-              {/* Toggle columns visibility */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="bg-white/5 border-white/10 text-white hover:bg-white/10">
-                    <Columns3Icon className="-ms-1 opacity-60" size={16} aria-hidden="true" />
-                    View
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-[#2d2d2d] border-white/10">
-                  <DropdownMenuLabel className="text-white">Toggle columns</DropdownMenuLabel>
-                  {table
-                    .getAllColumns()
-                    .filter((column) => column.getCanHide())
-                    .map((column) => {
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={column.id}
-                          className="capitalize text-white"
-                          checked={column.getIsVisible()}
-                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                          onSelect={(event) => event.preventDefault()}>
-                          {column.id}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden mb-4">
-            <Table className="table-fixed">
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="hover:bg-transparent border-white/10">
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead
-                          key={header.id}
-                          style={{ width: `${header.getSize()}px` }}
-                          className="h-11 text-white/60 text-xs font-normal">
-                          {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                            <div
-                              className={cn(
-                                header.column.getCanSort() &&
-                                  "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
-                              )}
-                              onClick={header.column.getToggleSortingHandler()}
-                              onKeyDown={(e) => {
-                                if (
-                                  header.column.getCanSort() &&
-                                  (e.key === "Enter" || e.key === " ")
-                                ) {
-                                  e.preventDefault();
-                                  header.column.getToggleSortingHandler()?.(e);
-                                }
-                              }}
-                              tabIndex={header.column.getCanSort() ? 0 : undefined}>
-                              {flexRender(header.column.columnDef.header, header.getContext())}
-                              {{
-                                asc: (
-                                  <ChevronUpIcon
-                                    className="shrink-0 opacity-60 text-white"
-                                    size={16}
-                                    aria-hidden="true"
-                                  />
-                                ),
-                                desc: (
-                                  <ChevronDownIcon
-                                    className="shrink-0 opacity-60 text-white"
-                                    size={16}
-                                    aria-hidden="true"
-                                  />
-                                )
-                              }[header.column.getIsSorted() as string] ?? null}
-                            </div>
-                          ) : (
-                            flexRender(header.column.columnDef.header, header.getContext())
-                          )}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <React.Fragment key={row.id}>
-                      <TableRow className="border-white/10 hover:bg-white/5">
-                        {row.getVisibleCells().map((cell) => {
-                          // Skip rendering the actions cell in the main row
-                          if (cell.column.id === "actions") {
-                            return null
-                          }
-                          return (
-                            <TableCell key={cell.id}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          )
-                        })}
-                        <TableCell className="w-[60px]">
-                          <button
-                            onClick={() => setExpandedRow(expandedRow === row.id ? null : row.id)}
-                            className="flex items-center justify-center w-full h-full"
-                          >
-                            <IconChevronDown 
-                              className={cn(
-                                "w-4 h-4 text-white/70 transition-transform",
-                                expandedRow === row.id && "rotate-180"
-                              )} 
-                            />
-                          </button>
-                        </TableCell>
-                      </TableRow>
-                      {expandedRow === row.id && (
-                        <TableRow className="border-white/10">
-                          <TableCell colSpan={columns.length} className="py-4 bg-white/5">
-                            <div className="space-y-2 pl-4">
-                              <div className="text-sm text-white/70">
-                                <strong className="text-white">Bonus Details:</strong> Additional information about this bonus will appear here.
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center text-white/70">
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
-      </div>
-    </SidebarInset>
-  )
-}
-
 // VIP Rewards Page Component
-function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setShowToast, setToastMessage, setToastAction }: { brandPrimary: string; setVipDrawerOpen: (open: boolean) => void; setVipActiveTab: (tab: string) => void; setShowToast: (show: boolean) => void; setToastMessage: (message: string) => void; setToastAction: (action: { label: string; onClick: () => void } | null) => void }) {
+function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab }: { brandPrimary: string; setVipDrawerOpen: (open: boolean) => void; setVipActiveTab: (tab: string) => void }) {
   const { state: sidebarState } = useSidebar()
   const [vipActiveSidebarItem, setVipActiveSidebarItem] = useState('Overview')
-  const [hasShownToast, setHasShownToast] = useState(false)
-  
-  // Show toast when VIP Rewards page is first shown
-  useEffect(() => {
-    if (!hasShownToast) {
-      setToastMessage('You have a cash boost available')
-      setToastAction({
-        label: 'View',
-        onClick: () => {
-          setVipDrawerOpen(true)
-          setVipActiveTab('Overview')
-        }
-      })
-      setShowToast(true)
-      setTimeout(() => {
-        setShowToast(false)
-        setToastAction(null)
-      }, 5000)
-      setHasShownToast(true)
-    }
-  }, [hasShownToast, setShowToast, setToastMessage, setToastAction, setVipDrawerOpen, setVipActiveTab])
   
   return (
     <div className="flex w-full min-h-screen bg-[#1a1a1a]">
@@ -1873,11 +1147,11 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
               { id: 'Contests', icon: IconTrophy, label: 'Contests' },
               { id: 'Refer A Friend', icon: IconUserPlus, label: 'Refer A Friend' },
               { type: 'separator' },
-              { id: 'Reloads', icon: IconCoins, label: 'Reloads', linkTo: 'reloads' },
-              { id: 'Cash Drop', icon: IconCoins, label: 'Cash Drop', linkTo: 'draw' },
-              { id: 'Bet & Get', icon: IconCoins, label: 'Bet & Get', linkTo: 'draw' },
+              { id: 'Reloads', icon: IconCreditCard, label: 'Reloads', linkTo: 'reloads' },
+              { id: 'Cash Drop', icon: IconCreditCard, label: 'Cash Drop', linkTo: 'draw' },
+              { id: 'Bet & Get', icon: IconCreditCard, label: 'Bet & Get', linkTo: 'draw' },
               { type: 'separator' },
-              { id: 'Get Telegram', icon: IconDownload, label: 'Get Telegram' },
+              { id: 'Get Telegram', icon: IconPlayerPlay, label: 'Get Telegram' },
             ].map((item, index) => {
               if (item.type === 'separator') {
                 return (
@@ -1886,19 +1160,10 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
                   </React.Fragment>
                 )
               }
-              if (item.type === 'title') {
-                return (
-                  <div key={`title-${index}`} className="px-3 py-2 mb-1">
-                    <div className="text-white/60 text-xs font-medium">{item.label}</div>
-                  </div>
-                )
-              }
-              if (!item.icon || !item.id) return null
               const Icon = item.icon
-              const itemId = item.id
-              const isActive = vipActiveSidebarItem === itemId
+              const isActive = vipActiveSidebarItem === item.id
               return (
-                <SidebarMenuItem key={itemId}>
+                <SidebarMenuItem key={item.id}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <SidebarMenuButton
@@ -1913,14 +1178,14 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
                               setVipActiveTab('Reloads')
                             } else if (item.linkTo === 'draw') {
                               setVipDrawerOpen(true)
-                              if (itemId === 'Cash Drop') {
+                              if (item.id === 'Cash Drop') {
                                 setVipActiveTab('Cash Drop')
-                              } else if (itemId === 'Bet & Get') {
+                              } else if (item.id === 'Bet & Get') {
                                 setVipActiveTab('Bet & Get')
                               }
                             }
                           } else {
-                            setVipActiveSidebarItem(itemId)
+                            setVipActiveSidebarItem(item.id)
                           }
                         }}
                         className={cn(
@@ -1931,10 +1196,7 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
                         style={isActive ? { backgroundColor: brandPrimary } : undefined}
                       >
                         <Icon strokeWidth={1.5} className="w-5 h-5" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.linkTo && (
-                          <IconExternalLink className="w-4 h-4 text-white/50" />
-                        )}
+                        <span>{item.label}</span>
                       </SidebarMenuButton>
                     </TooltipTrigger>
                     {sidebarState === 'collapsed' && (
@@ -1953,12 +1215,7 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
         </SidebarContent>
       </Sidebar>
       
-      {vipActiveSidebarItem === 'My Bonus' ? (
-        <MyBonusPage brandPrimary={brandPrimary} />
-      ) : vipActiveSidebarItem === 'Promos' ? (
-        <PromosPage brandPrimary={brandPrimary} />
-      ) : (
-        <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
+      <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
         {/* Hero Image */}
         <div className="w-full relative">
           <img 
@@ -2016,141 +1273,100 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
           <LevelsCarousel />
 
           {/* The Rewards Section */}
-          <div className="w-full mb-12">
-            {/* Header with Image */}
-            <div className="flex flex-col items-center mb-4">
-              {/* Rewards Image */}
-              <div className="mb-4 inline-block">
-                <img 
-                  src="/banners/sports_league/rewrds image.png" 
-                  alt="Rewards" 
-                  className="h-auto"
-                  style={{ width: '240px' }}
-                />
-              </div>
-              {/* Title */}
+          <div className="w-full text-center mb-12">
+            {/* Rewards Image */}
+            <div className="mb-6 flex justify-center">
+              <img 
+                src="/banners/sports_league/rewrds image.png" 
+                alt="Rewards" 
+                className="h-auto max-w-md"
+              />
+            </div>
+            {/* Header */}
+            <div className="flex items-center justify-center mb-4">
               <h2 className="text-3xl font-bold text-white">The Rewards</h2>
             </div>
-            <p className="text-white/70 mb-12 max-w-3xl mx-auto text-center">
+            <p className="text-white/70 mb-12 max-w-3xl mx-auto">
               At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
             </p>
             
-            {/* Reward Cards - Single Card with Separators */}
-            <div className="max-w-4xl mx-auto">
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  {/* Reloads */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Reloads</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Reloads')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
+            {/* Reward Cards - Vertical Stack */}
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {/* Reloads */}
+              <div className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-lg p-6">
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-semibold text-white mb-2">Reloads</h3>
+                  <p className="text-white/70 text-sm mb-4">
+                    At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Open
+                    </Button>
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Learn More
+                    </Button>
                   </div>
+                </div>
+              </div>
 
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Cash Drop Codes */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Cash Drop Codes</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Cash Drop')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
+              {/* Cash Drop Codes */}
+              <div className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-lg p-6">
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-semibold text-white mb-2">Cash Drop Codes</h3>
+                  <p className="text-white/70 text-sm mb-4">
+                    At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Open
+                    </Button>
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Learn More
+                    </Button>
                   </div>
+                </div>
+              </div>
 
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Bet & Get */}
-                  <div className="pb-6">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Bet & Get</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Bet & Get')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
+              {/* Bet & Get */}
+              <div className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-lg p-6">
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-semibold text-white mb-2">Bet & Get</h3>
+                  <p className="text-white/70 text-sm mb-4">
+                    At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Open
+                    </Button>
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Learn More
+                    </Button>
                   </div>
+                </div>
+              </div>
 
-                  <Separator className="bg-white/10 my-6" />
-
-                  {/* Cash Boosts */}
-                  <div>
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-white">Cash Boosts</h3>
-                    </div>
-                    <p className="text-white/70 text-sm mb-4">
-                      At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        className="bg-white/10 text-white hover:bg-white/20"
-                        onClick={() => {
-                          setVipDrawerOpen(true)
-                          setVipActiveTab('Overview')
-                        }}
-                      >
-                        Open
-                      </Button>
-                      <Button variant="ghost" className="bg-white/10 text-white hover:bg-white/20">
-                        Learn More
-                      </Button>
-                    </div>
+              {/* Cash Boosts */}
+              <div className="flex items-center gap-6 bg-white/5 border border-white/10 rounded-lg p-6">
+                <div className="flex-1 text-left">
+                  <h3 className="text-xl font-semibold text-white mb-2">Cash Boosts</h3>
+                  <p className="text-white/70 text-sm mb-4">
+                    At BetOnline, you can start raking in the rewards as soon as you sign up. Through leveling up, your gaming experience will only get better with bigger rewards and benefits.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Open
+                    </Button>
+                    <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/5">
+                      Learn More
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </SidebarInset>
-      )}
     </div>
   )
 }
@@ -4489,7 +3705,7 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
           }
         }}
       >
-        <FamilyDrawerContent className="bg-white">
+        <FamilyDrawerContent className="bg-white" style={{ backgroundColor: '#ffffff' }}>
           <FamilyDrawerAnimatedWrapper 
             key={`betslip-wrapper-${bets.length}-${betslipCollapsed}`}
             className={betslipCollapsed ? "px-3 py-1.5" : "px-2 pb-2 pt-2.5"}
@@ -4621,7 +3837,7 @@ function VipDrawerContent({
       <DrawerHeader className="relative px-4 pt-4 pb-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
-            <DrawerTitle className="text-white text-lg font-semibold">My Rewards</DrawerTitle>
+            <DrawerTitle className="text-white text-lg font-semibold">VIP Hub</DrawerTitle>
             <DrawerDescription className="text-white/70 text-xs">
               Gold Member
             </DrawerDescription>
@@ -5124,9 +4340,7 @@ function VipDrawerContent({
                 {!claimedBoosts.has('weekly') && (
                   <div className="bg-white/5 rounded-small p-4 border border-white/10 flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <IconCoins className="w-5 h-5 text-white" strokeWidth={1.5} />
-                      </div>
+                      <IconCurrencyDollar className="w-5 h-5 text-white/60" strokeWidth={1.5} />
                     </div>
                     <div className="flex-1">
                       <div className="text-lg font-semibold text-white">$15.00</div>
@@ -5163,9 +4377,7 @@ function VipDrawerContent({
                 {!claimedBoosts.has('monthly') && (
                   <div className="bg-white/5 rounded-small p-4 border border-white/10 flex items-center gap-3">
                     <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                        <IconCoins className="w-5 h-5 text-white" strokeWidth={1.5} />
-                      </div>
+                      <IconGift className="w-5 h-5 text-white/60" strokeWidth={1.5} />
                     </div>
                     <div className="flex-1">
                       <div className="text-lg font-semibold text-white">$20.00</div>
@@ -5285,7 +4497,6 @@ function NavTestPageContent() {
   })
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
-  const [toastAction, setToastAction] = useState<{ label: string; onClick: () => void } | null>(null)
   
   const [accountDrawerOpen, setAccountDrawerOpen] = useState(false)
   const [vipDrawerOpen, setVipDrawerOpen] = useState(false)
@@ -5587,15 +4798,15 @@ function NavTestPageContent() {
                       "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
                       "hover:bg-white/5 hover:text-white transition-colors",
                       "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav !== 'Live'
+                      !showSports && !showVipRewards
                         ? "!bg-[#ee3536] !text-white" 
                         : "bg-transparent"
                     )}
                     style={{ 
                       pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav !== 'Live' ? (brandPrimary || '#ee3536') : undefined
+                      backgroundColor: !showSports && !showVipRewards ? (brandPrimary || '#ee3536') : undefined
                     } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav !== 'Live'}
+                    data-active={!showSports && !showVipRewards}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -5621,31 +4832,15 @@ function NavTestPageContent() {
                     className={cn(
                       "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
                       "hover:bg-white/5 hover:text-white transition-colors",
-                      "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav === 'Live'
-                        ? "!bg-[#ee3536] !text-white" 
-                        : "bg-transparent"
+                      "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                      "text-white/70 active:bg-white/10 cursor-pointer"
                     )}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav === 'Live' ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav === 'Live'}
+                    style={{ pointerEvents: 'auto' }}
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      setTimeout(() => {
-                        setShowSports(false)
-                        setShowVipRewards(false)
-                        setActiveSubNav('Live')
-                        setShowAllGames(false)
-                        setSelectedCategory('')
-                        setTimeout(() => {
-                          setIsPageTransitioning(false)
-                        }, 200)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }, 150)
+                      // Navigate to Live Casino - add your navigation logic here
+                      window.location.href = '/live-casino'
                     }}
                   >
                     Live Casino
@@ -6497,9 +5692,6 @@ function NavTestPageContent() {
                     brandPrimary={brandPrimary || '#ee3536'} 
                     setVipDrawerOpen={setVipDrawerOpen}
                     setVipActiveTab={setVipActiveTab}
-                    setShowToast={setShowToast}
-                    setToastMessage={setToastMessage}
-                    setToastAction={setToastAction}
                   />
                 </motion.div>
               ) : showSports ? (
@@ -8486,22 +7678,20 @@ function NavTestPageContent() {
                 maxWidth: '384px'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                <IconGift className="w-4 h-4 text-white flex-shrink-0" />
-                <span style={{ fontSize: '14px', fontWeight: '500', color: 'white', flex: 1 }}>{toastMessage}</span>
-                {toastAction && (
-                  <Button
-                    onClick={() => {
-                      toastAction.onClick()
-                      setShowToast(false)
-                    }}
-                    className="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-2 h-8 ml-2 flex items-center gap-1.5"
-                    size="sm"
-                  >
-                    <IconGift className="w-3 h-3" />
-                    View
-                  </Button>
-                )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#8BC34A', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <IconCheck className="w-3 h-3 text-white" />
+                </div>
+                <span style={{ fontSize: '14px', fontWeight: '500', color: 'white' }}>{toastMessage}</span>
               </div>
             </motion.div>
           )}

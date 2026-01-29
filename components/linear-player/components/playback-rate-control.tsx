@@ -12,7 +12,6 @@ export function PlaybackRateControl() {
           hover:bg-foreground/10
           dark:bg-transparent dark:shadow-none
         `}
-        size="sm"
       >
         <Select.SelectValue />
       </Select.SelectTrigger>

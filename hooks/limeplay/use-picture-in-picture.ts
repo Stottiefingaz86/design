@@ -76,7 +76,7 @@ export function usePictureInPicture(): UsePictureInPictureReturn {
   }
 
   async function togglePictureInPicture() {
-    const isPictureInPictureActive = store.getState().isPictureInPictureActive
+    const isPictureInPictureActive = (store.getState() as any).isPictureInPictureActive ?? false
 
     if (isPictureInPictureActive) {
       await exitPictureInPicture()
@@ -106,16 +106,16 @@ export function usePictureInPictureStates() {
 
     store.setState({
       isPictureInPictureSupported,
-    })
+    } as any)
 
     const enterPictureInPictureHandler = () => {
-      store.setState({ isPictureInPictureActive: true })
-      store.getState().onEnterPictureInPicture?.()
+      store.setState({ isPictureInPictureActive: true } as any)
+      ;(store.getState() as any).onEnterPictureInPicture?.()
     }
 
     const leavePictureInPictureHandler = () => {
-      store.setState({ isPictureInPictureActive: false })
-      store.getState().onLeavePictureInPicture?.()
+      store.setState({ isPictureInPictureActive: false } as any)
+      ;(store.getState() as any).onLeavePictureInPicture?.()
     }
 
     const webkitPresentationModeHandler = () => {

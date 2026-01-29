@@ -16,7 +16,7 @@ export function PlaybackStateControl() {
 
   return (
     <PlaybackControl asChild>
-      <Button className="cursor-pointer" size="icon" variant="glass">
+      <Button className="cursor-pointer" size="icon" variant="ghost">
         {status === "playing" ? (
           <PauseIcon weight="fill" />
         ) : status === "ended" ? (

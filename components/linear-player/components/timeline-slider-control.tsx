@@ -68,7 +68,7 @@ export function TimelineSliderControl() {
             setShowRemaining(!showRemaining)
           }}
           size="sm"
-          variant="glass"
+          variant="ghost"
         >
           {showRemaining ? (
             <Remaining className="text-xs font-medium" />
@@ -85,7 +85,7 @@ export function TimelineSliderControl() {
             className="h-6 w-fit cursor-pointer"
             onClick={() => void player.goToLive()}
             size="icon"
-            variant="glass"
+            variant="ghost"
           >
             <span className="text-xs font-medium text-primary">Go to live</span>
           </Button>

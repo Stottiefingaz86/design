@@ -27,7 +27,7 @@ export const Root = React.forwardRef<
 
   const disabled = props.disabled || readyState < MediaReadyState.HAVE_METADATA
 
-  useImperativeHandle(ref, () => internalRef.current)
+  useImperativeHandle(ref, () => internalRef.current!)
   const { setVolume } = useVolume()
 
   const getVolumeFromEvent = (event: React.PointerEvent) => {
