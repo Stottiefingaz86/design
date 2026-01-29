@@ -1970,11 +1970,15 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
       ) : (
         <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
         {/* Hero Image */}
-        <div className="w-full relative">
-          <img 
+        <div className="w-full relative" style={{ height: 'auto' }}>
+          <Image 
             src="/banners/sports_league/Hero.png" 
             alt="VIP Rewards Hero" 
+            width={1920}
+            height={600}
             className="w-full h-auto object-cover"
+            priority
+            unoptimized
           />
         </div>
         
@@ -2031,11 +2035,14 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
             <div className="flex flex-col items-center mb-4">
               {/* Rewards Image */}
               <div className="mb-4 inline-block">
-                <img 
+                <Image 
                   src="/banners/sports_league/rewrds image.png" 
                   alt="Rewards" 
+                  width={240}
+                  height={100}
                   className="h-auto"
                   style={{ width: '240px' }}
+                  unoptimized
                 />
               </div>
               {/* Title */}
