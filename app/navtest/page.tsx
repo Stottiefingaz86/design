@@ -1827,7 +1827,7 @@ function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
 }
 
 // VIP Rewards Page Component
-function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setShowToast, setToastMessage, setToastAction }: { brandPrimary: string; setVipDrawerOpen: (open: boolean) => void; setVipActiveTab: (tab: string) => void; setShowToast: (show: boolean) => void; setToastMessage: (message: string) => void; setToastAction: (action: { label: string; onClick: () => void } | null) => void }) {
+function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setShowToast, setToastMessage, setToastAction, setShowVipRewards, setIsPageTransitioning }: { brandPrimary: string; setVipDrawerOpen: (open: boolean) => void; setVipActiveTab: (tab: string) => void; setShowToast: (show: boolean) => void; setToastMessage: (message: string) => void; setToastAction: (action: { label: string; onClick: () => void } | null) => void; setShowVipRewards: (show: boolean) => void; setIsPageTransitioning: (transitioning: boolean) => void }) {
   const { state: sidebarState } = useSidebar()
   const [vipActiveSidebarItem, setVipActiveSidebarItem] = useState('Overview')
   const [hasShownToast, setHasShownToast] = useState(false)
@@ -1921,7 +1921,16 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
                               }
                             }
                           } else {
-                            setVipActiveSidebarItem(itemId)
+                            // Navigate to appropriate page based on item
+                            if (itemId === 'Overview') {
+                              // VIP Dashboard links to main VIP Rewards page
+                              setVipActiveSidebarItem('Overview')
+                            } else if (itemId === 'My Bonus') {
+                              // My Bonus links to My Bonus page
+                              setVipActiveSidebarItem('My Bonus')
+                            } else {
+                              setVipActiveSidebarItem(itemId)
+                            }
                           }
                         }}
                         className={cn(
@@ -6501,6 +6510,8 @@ function NavTestPageContent() {
                     setShowToast={setShowToast}
                     setToastMessage={setToastMessage}
                     setToastAction={setToastAction}
+                    setShowVipRewards={setShowVipRewards}
+                    setIsPageTransitioning={setIsPageTransitioning}
                   />
                 </motion.div>
               ) : showSports ? (
