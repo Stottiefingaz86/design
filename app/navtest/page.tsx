@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
 import React from 'react'
 import { createPortal } from 'react-dom'
+import { useIsMobile } from '@/hooks/use-mobile'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -8495,10 +8496,9 @@ function NavTestPageContent() {
                       toastAction.onClick()
                       setShowToast(false)
                     }}
-                    className="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-2 h-8 ml-2 flex items-center gap-1.5"
+                    className="bg-white/10 hover:bg-white/20 text-white text-xs px-3 py-2 h-8 ml-2"
                     size="sm"
                   >
-                    <IconGift className="w-3 h-3" />
                     View
                   </Button>
                 )}
@@ -8566,6 +8566,27 @@ function ViewTab({
 }
 
 export default function NavTestPage() {
+  const isMobile = useIsMobile()
+
+  if (isMobile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a] text-white p-6">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-4">Not Available on Mobile</h1>
+          <p className="text-white/70 mb-6">
+            This page is currently only available on desktop devices. Please visit us on a desktop or tablet to access this feature.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/'}
+            className="bg-red-500 hover:bg-red-600 text-white"
+          >
+            Go to Homepage
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <SidebarProvider>
       <NavTestPageContent />
