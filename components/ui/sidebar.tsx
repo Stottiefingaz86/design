@@ -17,6 +17,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -28,7 +35,7 @@ import {
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+const SIDEBAR_WIDTH_MOBILE = "20rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -75,6 +82,28 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
+
+    // Lock body scroll when mobile drawer is open
+    React.useEffect(() => {
+      if (isMobile && openMobile) {
+        // Lock body scroll
+        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.width = '100%'
+      } else {
+        // Unlock body scroll
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.width = ''
+      }
+      
+      return () => {
+        // Cleanup on unmount
+        document.body.style.overflow = ''
+        document.body.style.position = ''
+        document.body.style.width = ''
+      }
+    }, [isMobile, openMobile])
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -199,26 +228,73 @@ const Sidebar = React.forwardRef<
     }
 
     if (isMobile) {
+      // Use Drawer component (same as balance sidebar) for mobile sidebar
+      // This ensures consistent behavior and appearance
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-          <SheetContent
+        <Drawer 
+          open={openMobile} 
+          onOpenChange={setOpenMobile}
+          direction="left"
+          shouldScaleBackground={false}
+          {...props}
+        >
+          <DrawerContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            direction="left"
+            className={cn(
+              "w-[320px] sm:max-w-[320px] bg-[#2d2d2d] dark:bg-[#2d2d2d] border-r border-white/10 text-white p-0 [&>button]:hidden",
+              "[&_*]:text-white [&_*]:text-inherit",
+              "shadow-2xl",
+              className
+            )}
             style={
               {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                backgroundColor: '#2d2d2d',
+                color: 'white',
+                maxWidth: '320px',
+                width: '320px',
+                zIndex: 10001,
+                backdropFilter: 'none',
+                WebkitBackdropFilter: 'none',
+                filter: 'none',
+                position: 'fixed',
+                visibility: 'visible',
+                opacity: 1,
+                display: 'flex',
+                boxShadow: '4px 0 24px rgba(0, 0, 0, 0.5)',
+                WebkitBoxShadow: '4px 0 24px rgba(0, 0, 0, 0.5)',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
+                willChange: 'transform',
               } as React.CSSProperties
             }
-            side={side}
           >
-            <SheetHeader className="sr-only">
-              <SheetTitle>Sidebar</SheetTitle>
-              <SheetDescription>Displays the mobile sidebar.</SheetDescription>
-            </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
-          </SheetContent>
-        </Sheet>
+            <DrawerHeader className="sr-only">
+              <DrawerTitle>Navigation Menu</DrawerTitle>
+              <DrawerDescription>Main navigation sidebar menu</DrawerDescription>
+            </DrawerHeader>
+            {/* Render children directly - same structure as desktop, no extra wrapper */}
+            <div 
+              className="flex h-full w-full flex-col bg-[#2d2d2d] dark:bg-[#2d2d2d] overflow-y-auto text-white [&_*]:text-white [&_*]:text-inherit py-2"
+              style={{
+                color: 'white',
+                backgroundColor: '#2d2d2d',
+                visibility: 'visible',
+                opacity: 1,
+                display: 'flex',
+                WebkitOverflowScrolling: 'touch',
+                overscrollBehavior: 'contain',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)',
+                paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
+                paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
+              }}
+            >
+              {children}
+            </div>
+          </DrawerContent>
+        </Drawer>
       )
     }
 
@@ -522,7 +598,7 @@ const SidebarMenuItem = React.forwardRef<
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+  "peer/menu-button flex flex-row w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:flex-shrink-0 [&>span]:flex-1 [&>span]:min-w-0 whitespace-nowrap",
   {
     variants: {
       variant: {

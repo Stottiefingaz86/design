@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react'
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { usePathname } from 'next/navigation'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -202,6 +203,7 @@ import {
 import { InteractiveGridBackground } from '@/components/interactive-grid-background'
 import { RainBackground } from '@/components/rain-background'
 import { cn } from '@/lib/utils'
+import DynamicIsland from '@/components/dynamic-island'
 import {
   IconButton,
   type IconButtonProps,
@@ -918,7 +920,7 @@ function LevelsCarousel() {
 
       {/* Carousel */}
       <div className="relative w-full overflow-visible px-0 flex justify-center">
-        <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', loop: false }}>
+        <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', loop: false, dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
           <CarouselContent className="!ml-0 -mr-0">
             {allLevels.map((level, index) => {
               const isFirst = index === 0
@@ -1214,7 +1216,7 @@ function PromosPage({ brandPrimary }: { brandPrimary: string }) {
       <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
         {/* Banner Carousel - Reusing Casino Banner with Arrows */}
         <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
+          <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
             <CarouselContent className="ml-6 -mr-2 md:-mr-4">
               {/* VIP Rewards Card */}
               <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
@@ -1289,8 +1291,6 @@ function PromosPage({ brandPrimary }: { brandPrimary: string }) {
                 </Card>
               </CarouselItem>
             </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
           </Carousel>
         </div>
 
@@ -1492,7 +1492,7 @@ function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
       <div className="px-6 pt-8 pb-8 max-w-7xl mx-auto w-full">
         {/* Banner Carousel - Reusing Casino Banner with Arrows */}
         <div className="mb-8 -mx-6">
-          <Carousel className="w-full relative overflow-visible">
+          <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
             <CarouselContent className="ml-6 -mr-2 md:-mr-4">
               {/* VIP Rewards Card */}
               <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
@@ -1567,8 +1567,6 @@ function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
                 </Card>
               </CarouselItem>
             </CarouselContent>
-            <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-            <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
           </Carousel>
         </div>
 
@@ -3365,7 +3363,7 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
               </Button>
             </div>
             <div className="relative -mx-6" style={{ overflow: 'visible', position: 'relative', width: 'calc(100% + 3rem)', maxWidth: 'none', boxSizing: 'border-box', minWidth: 0 }}>
-              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                 <CarouselContent className="ml-6 mr-0">
                   {/* First event - Manchester City vs Liverpool (Live) */}
                   <CarouselItem className="pl-0 pr-0 basis-auto flex-shrink-0">
@@ -3671,8 +3669,6 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
                     </CarouselItem>
                   ))}
                 </CarouselContent>
-                <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
               </Carousel>
             </div>
           </div>
@@ -3980,7 +3976,7 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
               </Button>
             </div>
             <div className="relative -mx-6" style={{ overflow: 'visible', position: 'relative', width: 'calc(100% + 3rem)', maxWidth: 'none', boxSizing: 'border-box', minWidth: 0 }}>
-              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                 <CarouselContent className="ml-6 mr-0">
                   {/* Bet Boost Cards */}
                   {[
@@ -4058,8 +4054,6 @@ function SportsPage({ activeTab, onTabChange, onBack, brandPrimary, brandPrimary
                     </CarouselItem>
               ))}
                 </CarouselContent>
-                <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
               </Carousel>
             </div>
           </div>
@@ -5271,10 +5265,13 @@ function VipDrawerContent({
 }
 
 function NavTestPageContent() {
+  const isMobile = useIsMobile()
   const [mounted, setMounted] = useState(false)
   const [activeFilter, setActiveFilter] = useState('For You')
   const [activeSubNav, setActiveSubNav] = useState('For You')
   const [activeIconTab, setActiveIconTab] = useState('search')
+  const [quickLinksOpen, setQuickLinksOpen] = useState(false)
+  const [lastScrollY, setLastScrollY] = useState(0)
   const [depositDrawerOpen, setDepositDrawerOpen] = useState(false)
   const [depositAmount, setDepositAmount] = useState(25)
   const [selectedCard, setSelectedCard] = useState('Mastercard **** 0740')
@@ -5321,8 +5318,9 @@ function NavTestPageContent() {
   const [selectedBrand, setSelectedBrand] = useState<'betonline' | 'wildcasino' | 'superslots'>('betonline')
   const bannerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const subNavScrollRef = useRef<HTMLDivElement>(null)
   const [isContentUnderNav, setIsContentUnderNav] = useState(false)
-  const { state: sidebarState, open: sidebarOpen, openMobile, toggleSidebar } = useSidebar()
+  const { state: sidebarState, open: sidebarOpen, openMobile, setOpenMobile, toggleSidebar } = useSidebar()
 
   // Debug: Log drawer state changes
   useEffect(() => {
@@ -5463,6 +5461,31 @@ function NavTestPageContent() {
   // Remove blur effect from content items - rely only on sub-nav's backdrop-blur for glass effect
   // The backdrop-blur on the sub-nav will naturally blur content behind it
 
+  // Mobile: Quick links scroll handler - show when scrolling up, hide when scrolling down
+  useEffect(() => {
+    if (!isMobile) return
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      if (currentScrollY < 10) {
+        // Show at top
+        setQuickLinksOpen(true)
+      } else if (currentScrollY < lastScrollY) {
+        // Show when scrolling up
+        setQuickLinksOpen(true)
+      } else if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        // Hide when scrolling down (after 50px)
+        setQuickLinksOpen(false)
+      }
+      
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [isMobile, lastScrollY])
+
   // Ensure component is mounted before showing animations
   useEffect(() => {
     setMounted(true)
@@ -5515,271 +5538,360 @@ function NavTestPageContent() {
         '--brand-primary-hover': brandPrimaryHover,
       } as React.CSSProperties}
     >
+      {/* Mobile: Quick Links - Above main menu, pushes it down when open */}
+      {isMobile && (
+        <motion.div
+          initial={false}
+          animate={{
+            height: quickLinksOpen ? 40 : 0
+          }}
+              transition={isMobile ? {
+                type: "tween",
+                ease: "linear",
+                duration: 0.3
+              } : {
+                type: "tween",
+                ease: "easeOut",
+                duration: 0.2
+              }}
+          className="fixed left-0 right-0 bg-[#2d2d2d] overflow-hidden z-[100]"
+          style={{ 
+            top: 0, 
+            pointerEvents: quickLinksOpen ? 'auto' : 'none',
+            opacity: 1,
+            visibility: 'visible'
+          }}
+        >
+          <div className="px-3 py-2 flex items-center gap-2 overflow-x-auto scrollbar-hide border-b border-white/10">
+                {[
+                  { label: 'Home', onClick: () => { setShowSports(false); setShowVipRewards(false); setQuickLinksOpen(false); } },
+                  { label: 'Sports', onClick: () => { setShowSports(true); setShowVipRewards(false); setQuickLinksOpen(false); } },
+                  { label: 'Live Betting', onClick: () => { window.location.href = '/live-betting'; setQuickLinksOpen(false); } },
+                  { label: 'Casino', onClick: () => { setShowSports(false); setShowVipRewards(false); setActiveSubNav('For You'); setQuickLinksOpen(false); } },
+                  { label: 'Live Casino', onClick: () => { setShowSports(false); setShowVipRewards(false); setActiveSubNav('Live'); setQuickLinksOpen(false); } },
+                  { label: 'Poker', onClick: () => { window.location.href = '/poker'; setQuickLinksOpen(false); } },
+                  { label: 'VIP Rewards', onClick: () => { setShowVipRewards(true); setShowSports(false); setQuickLinksOpen(false); } },
+                  { label: 'Other', onClick: () => { setQuickLinksOpen(false); } },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      item.onClick()
+                    }}
+                    className={cn(
+                      "flex-shrink-0 px-3 py-1.5 rounded-small text-xs font-medium transition-colors",
+                      (item.label === 'Casino' && !showSports && !showVipRewards) ||
+                      (item.label === 'Sports' && showSports) ||
+                      (item.label === 'VIP Rewards' && showVipRewards)
+                        ? "text-white"
+                        : "text-white/70 hover:text-white"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Header - Sticky at top, always visible - Always grey in both themes */}
-      <header className="bg-[#2d2d2d] dark:bg-[#2d2d2d] border-b border-white/10 h-16 flex items-center justify-between px-6 z-[100] fixed top-0 left-0 right-0" style={{ pointerEvents: 'auto' }}>
+      <motion.header 
+        className={cn(
+          "bg-[#2d2d2d] dark:bg-[#2d2d2d] border-b border-white/10 h-16 flex items-center justify-between z-[101] fixed left-0 right-0",
+          isMobile ? "px-3" : "px-6",
+          isMobile && quickLinksOpen && "border-t-0"
+        )}
+        initial={false}
+        animate={{
+          top: isMobile ? (quickLinksOpen ? 40 : 0) : 0
+        }}
+        transition={isMobile ? {
+          type: "tween",
+          ease: "linear",
+          duration: 0.3
+        } : {}}
+        style={{ 
+          pointerEvents: 'auto',
+          top: isMobile ? (quickLinksOpen ? 40 : 0) : 0,
+          zIndex: 101,
+          position: 'fixed'
+        }}
+      >
           <div className="flex items-center gap-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-white hover:bg-white/5"
-              onClick={toggleSidebar}
+            {isMobile ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/5"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setOpenMobile(!openMobile)
+                }}
+              >
+                {openMobile ? (
+                  <IconX className="h-4 w-4" strokeWidth={1.5} />
+                ) : (
+                  <IconMenu2 className="h-4 w-4" strokeWidth={1.5} />
+                )}
+                <span className="sr-only">Toggle Sidebar</span>
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-white hover:bg-white/5"
+                onClick={toggleSidebar}
+              >
+                {sidebarOpen ? (
+                  <IconX className="h-4 w-4" strokeWidth={1.5} />
+                ) : (
+                  <IconMenu2 className="h-4 w-4" strokeWidth={1.5} />
+                )}
+                <span className="sr-only">Toggle Sidebar</span>
+              </Button>
+            )}
+            <div 
+              className="relative h-8 w-[120px] flex items-center cursor-pointer"
+              onClick={() => {
+                if (isMobile) {
+                  setQuickLinksOpen(!quickLinksOpen)
+                }
+              }}
             >
-              {(sidebarOpen || openMobile) ? (
-                <IconX className="h-4 w-4" strokeWidth={1.5} />
-              ) : (
-                <IconMenu2 className="h-4 w-4" strokeWidth={1.5} />
-              )}
-              <span className="sr-only">Toggle Sidebar</span>
-            </Button>
-            <div className="relative h-8 w-[120px] flex items-center">
               {currentBrand.logo}
             </div>
             
-            {/* Navigation Menu - Using SidebarMenu components horizontally with better spacing */}
-            <nav className="flex-1 flex items-center z-[110]" style={{ pointerEvents: 'auto' }}>
-              <SidebarMenu className="flex flex-row items-center gap-2">
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "text-white/70 cursor-pointer",
-                      showSports 
-                        ? "!bg-[#ee3536] !text-white" 
-                        : "bg-transparent"
-                    )}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: showSports ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      // Start showing skeleton immediately, then show content after a brief delay
-                      setTimeout(() => {
-                      setShowSports(true)
-                      setShowVipRewards(false)
-                        // Hide skeleton slightly before content fully fades in for smoother transition
+            {/* Navigation Menu - Desktop only */}
+            {!isMobile && (
+              <nav className="flex-1 flex items-center z-[110]" style={{ pointerEvents: 'auto' }}>
+                <SidebarMenu className="flex flex-row items-center gap-2">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "text-white/70 cursor-pointer",
+                        showSports 
+                          ? "!bg-[#ee3536] !text-white" 
+                          : "bg-transparent"
+                      )}
+                      style={{ 
+                        pointerEvents: 'auto',
+                        backgroundColor: showSports ? (brandPrimary || '#ee3536') : undefined
+                      } as React.CSSProperties}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setIsPageTransitioning(true)
                         setTimeout(() => {
-                          setIsPageTransitioning(false)
-                        }, 200)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }, 150)
-                    }}
-                    data-active={showSports}
-                  >
-                    Sports
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "data-[active=true]:bg-white/10 data-[active=true]:text-white",
-                      "text-white/70 active:bg-white/10 cursor-pointer"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      // Navigate to Live Betting - add your navigation logic here
-                      window.location.href = '/live-betting'
-                    }}
-                  >
-                    Live Betting
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav !== 'Live'
-                        ? "!bg-[#ee3536] !text-white" 
-                        : "bg-transparent"
-                    )}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav !== 'Live' ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav !== 'Live'}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      // Start showing skeleton immediately, then show content after a brief delay
-                      setTimeout(() => {
-                      setShowSports(false)
-                      setShowVipRewards(false)
-                        // Hide skeleton slightly before content fully fades in for smoother transition
+                        setShowSports(true)
+                        setShowVipRewards(false)
+                          setTimeout(() => {
+                            setIsPageTransitioning(false)
+                          }, 200)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }, 150)
+                      }}
+                      data-active={showSports}
+                    >
+                      Sports
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                        "text-white/70 active:bg-white/10 cursor-pointer"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        window.location.href = '/live-betting'
+                      }}
+                    >
+                      Live Betting
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "text-white/70 cursor-pointer",
+                        !showSports && !showVipRewards && activeSubNav !== 'Live'
+                          ? "!bg-[#ee3536] !text-white" 
+                          : "bg-transparent"
+                      )}
+                      style={{ 
+                        pointerEvents: 'auto',
+                        backgroundColor: !showSports && !showVipRewards && activeSubNav !== 'Live' ? (brandPrimary || '#ee3536') : undefined
+                      } as React.CSSProperties}
+                      data-active={!showSports && !showVipRewards && activeSubNav !== 'Live'}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setIsPageTransitioning(true)
                         setTimeout(() => {
-                          setIsPageTransitioning(false)
-                        }, 200)
-                      window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }, 150)
-                    }}
-                  >
-                    Casino
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "text-white/70 cursor-pointer",
-                      !showSports && !showVipRewards && activeSubNav === 'Live'
-                        ? "!bg-[#ee3536] !text-white" 
-                        : "bg-transparent"
-                    )}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: !showSports && !showVipRewards && activeSubNav === 'Live' ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                    data-active={!showSports && !showVipRewards && activeSubNav === 'Live'}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      setTimeout(() => {
                         setShowSports(false)
                         setShowVipRewards(false)
-                        setActiveSubNav('Live')
-                        setShowAllGames(false)
-                        setSelectedCategory('')
+                          setTimeout(() => {
+                            setIsPageTransitioning(false)
+                          }, 200)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }, 150)
+                      }}
+                    >
+                      Casino
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "text-white/70 cursor-pointer",
+                        !showSports && !showVipRewards && activeSubNav === 'Live'
+                          ? "!bg-[#ee3536] !text-white" 
+                          : "bg-transparent"
+                      )}
+                      style={{ 
+                        pointerEvents: 'auto',
+                        backgroundColor: !showSports && !showVipRewards && activeSubNav === 'Live' ? (brandPrimary || '#ee3536') : undefined
+                      } as React.CSSProperties}
+                      data-active={!showSports && !showVipRewards && activeSubNav === 'Live'}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setIsPageTransitioning(true)
                         setTimeout(() => {
+                          setShowSports(false)
+                          setShowVipRewards(false)
+                          setActiveSubNav('Live')
+                          setShowAllGames(false)
+                          setSelectedCategory('')
+                          setTimeout(() => {
+                            setIsPageTransitioning(false)
+                          }, 200)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }, 150)
+                      }}
+                    >
+                      Live Casino
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                        "text-white/70 active:bg-white/10 cursor-pointer"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        window.location.href = '/poker'
+                      }}
+                    >
+                      Poker
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      className={cn(
+                        "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                        "hover:bg-white/5 hover:text-white transition-colors",
+                        "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                        "text-white/70 active:bg-white/10 cursor-pointer"
+                      )}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setIsPageTransitioning(true)
+                        setTimeout(() => {
+                          setShowVipRewards(true)
+                          setShowSports(false)
                           setIsPageTransitioning(false)
                         }, 200)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }, 150)
-                    }}
-                  >
-                    Live Casino
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "data-[active=true]:bg-white/10 data-[active=true]:text-white",
-                      "text-white/70 active:bg-white/10 cursor-pointer"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      // Navigate to Poker - add your navigation logic here
-                      window.location.href = '/poker'
-                    }}
-                  >
-                    Poker
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    className={cn(
-                      "h-10 min-w-[100px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                      "hover:bg-white/5 hover:text-white transition-colors",
-                      "data-[active=true]:bg-white/10 data-[active=true]:text-white",
-                      "text-white/70 active:bg-white/10 cursor-pointer"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setIsPageTransitioning(true)
-                      setTimeout(() => {
-                        setShowVipRewards(true)
-                        setShowSports(false)
-                        setIsPageTransitioning(false)
-                      }, 200)
-                    }}
-                    data-active={showVipRewards}
-                    style={{ 
-                      pointerEvents: 'auto',
-                      backgroundColor: showVipRewards ? (brandPrimary || '#ee3536') : undefined
-                    } as React.CSSProperties}
-                  >
-                    VIP Rewards
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuButton
-                        className={cn(
-                          "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
-                          "hover:bg-white/5 hover:text-white transition-colors",
-                          "data-[active=true]:bg-white/10 data-[active=true]:text-white",
-                          "text-white/70 data-[state=open]:text-white data-[state=open]:bg-white/10"
-                        )}
-                        style={{ pointerEvents: 'auto' }}
-                      >
-                        <span className="flex items-center gap-1">
-                          Other
-                          <IconChevronDown className="h-3 w-3" />
-                        </span>
-                      </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent 
-                      align="end" 
-                      sideOffset={5}
-                      className="w-[200px] bg-[#2d2d2d] border-white/10 z-[120]"
-                      style={{ zIndex: 120 }}
+                      }}
+                      data-active={showVipRewards}
+                      style={{ 
+                        pointerEvents: 'auto',
+                        backgroundColor: showVipRewards ? (brandPrimary || '#ee3536') : undefined
+                      } as React.CSSProperties}
                     >
-                      <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
-                        <a href="#" className="w-full">Esports</a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
-                        <a href="#" className="w-full">Racebook</a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
-                        <a href="#" className="w-full">Contests</a>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
-                        <a href="#" className="w-full">Virtuals</a>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </nav>
+                      VIP Rewards
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  
+                  <SidebarMenuItem>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                          className={cn(
+                            "h-10 min-w-[80px] px-4 py-2 rounded-small text-sm font-medium justify-center",
+                            "hover:bg-white/5 hover:text-white transition-colors",
+                            "data-[active=true]:bg-white/10 data-[active=true]:text-white",
+                            "text-white/70 data-[state=open]:text-white data-[state=open]:bg-white/10"
+                          )}
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <span className="flex items-center gap-1">
+                            Other
+                            <IconChevronDown className="h-3 w-3" />
+                          </span>
+                        </SidebarMenuButton>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align="end" 
+                        sideOffset={5}
+                        className="w-[200px] bg-[#2d2d2d] border-white/10 z-[120]"
+                        style={{ zIndex: 120 }}
+                      >
+                        <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
+                          <a href="#" className="w-full">Esports</a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
+                          <a href="#" className="w-full">Racebook</a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
+                          <a href="#" className="w-full">Contests</a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-white/70 hover:text-white hover:bg-white/5">
+                          <a href="#" className="w-full">Virtuals</a>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </nav>
+            )}
           </div>
           
-          <div className="flex items-center gap-3" style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative' }}>
-            {/* VIP Crown Button */}
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('VIP button clicked')
-                setVipDrawerOpen(true)
-              }}
-              className={cn(
-                "h-8 w-8 rounded-full bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center transition-colors",
-                "hover:bg-yellow-400/30 hover:border-yellow-400/40",
-                "active:bg-gray-500/20",
-                vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40"
-              )}
-              style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
-            >
-              <IconCrown className="w-4 h-4 text-yellow-400" />
-            </button>
+          <div className={cn(
+            "flex items-center",
+            isMobile ? "gap-2" : "gap-3"
+          )} style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative' }}>
+            {/* Theme Toggle Button - Hide on mobile */}
+            {!isMobile && (
+              <div style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative' }}>
+                <ModeToggle />
+              </div>
+            )}
             
-            {/* Theme Toggle Button */}
-            <div style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative' }}>
-              <ModeToggle />
-            </div>
-            
-            {/* Separator */}
-            <div className="h-6 w-px bg-white/20" />
+            {/* Separator - Hide on mobile */}
+            {!isMobile && (
+              <div className="h-6 w-px bg-white/20" />
+            )}
             
             {/* Balance and Avatar Button */}
             <Button
@@ -5791,51 +5903,80 @@ function NavTestPageContent() {
                 setAccountDrawerOpen(true)
               }}
               className={cn(
-                "flex items-center gap-1.5 px-2 py-1 rounded-small transition-colors group",
+                "flex items-center rounded-small transition-colors group",
                 "bg-white/5 hover:bg-white/10",
                 "active:bg-gray-500/20",
                 accountDrawerOpen && "text-white",
-                accountDrawerOpen && { backgroundColor: brandPrimary }
+                accountDrawerOpen && { backgroundColor: brandPrimary },
+                isMobile ? "gap-1 px-1.5 py-1" : "gap-1.5 px-2 py-1"
               )}
               style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
             >
               <div className="relative">
-              <Avatar className="h-6 w-6 border border-white/20 group-hover:border-white/40 transition-colors">
-                <AvatarFallback className="bg-white/10 text-white flex items-center justify-center text-[10px] font-semibold tracking-tight">
+              <Avatar className={cn(
+                "border border-white/20 group-hover:border-white/40 transition-colors",
+                isMobile ? "h-5 w-5" : "h-6 w-6"
+              )}>
+                <AvatarFallback className="bg-white/10 text-white flex items-center justify-center font-semibold tracking-tight" style={{ fontSize: isMobile ? '9px' : '10px' }}>
                   CH
                 </AvatarFallback>
               </Avatar>
                 {/* Red dot indicator for notifications */}
                 <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
               </div>
-              <span className="text-xs font-medium text-white inline-block min-w-[70px] text-right tabular-nums transition-all duration-300">
+              <span className={cn(
+                "font-medium text-white text-right tabular-nums transition-all duration-300",
+                isMobile ? "text-[10px] min-w-[60px]" : "text-xs min-w-[70px]"
+              )}>
                 {currentBrand.symbol}
                 <NumberFlow value={displayBalance} format={{ notation: 'standard', minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
               </span>
             </Button>
             
-            {/* Deposit Button */}
-            <Button
-              variant="ghost"
+            {/* VIP Crown Button - After balance */}
+            <button
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                console.log('Deposit button clicked, setting state to true')
-                setDepositDrawerOpen(true)
+                console.log('VIP button clicked')
+                setVipDrawerOpen(true)
               }}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-small transition-colors group",
-                "bg-white/5 hover:bg-white/10",
+                "rounded-full bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center transition-colors",
+                "hover:bg-yellow-400/30 hover:border-yellow-400/40",
                 "active:bg-gray-500/20",
-                "text-xs font-semibold text-white cursor-pointer"
+                vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40",
+                isMobile ? "h-7 w-7" : "h-8 w-8"
               )}
               style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
             >
-              <IconWallet className="w-3.5 h-3.5 text-white" />
-              <span className="text-white">DEPOSIT</span>
-            </Button>
+              <IconCrown className={cn("text-yellow-400", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
+            </button>
+            
+            {/* Deposit Button - Desktop only */}
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Deposit button clicked, setting state to true')
+                  setDepositDrawerOpen(true)
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-small transition-colors group",
+                  "bg-white/5 hover:bg-white/10",
+                  "active:bg-gray-500/20",
+                  "text-xs font-semibold text-white cursor-pointer"
+                )}
+                style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
+              >
+                <IconWallet className="w-3.5 h-3.5 text-white" />
+                <span className="text-white">DEPOSIT</span>
+              </Button>
+            )}
           </div>
-        </header>
+        </motion.header>
 
         {/* Deposit Drawer - Rendered outside header to avoid conflicts */}
         <Drawer open={depositDrawerOpen} onOpenChange={handleDepositDrawerOpenChange} direction="right" shouldScaleBackground={false}>
@@ -6338,39 +6479,69 @@ function NavTestPageContent() {
           >
             {/* Icon Tabs (Left) and Text Tabs (Right) - Fixed Sub Nav - Hide on Sports and VIP Rewards */}
             {!showSports && !showVipRewards && (
-            <div 
+            <motion.div 
               data-sub-nav
-              className="fixed z-[90] bg-white dark:bg-[#1a1a1a]/60 dark:backdrop-blur-xl border-b border-gray-200 dark:border-white/10 px-6 py-3 transition-all duration-200 ease-linear shadow-sm"
-              style={{ 
-                top: '64px', 
-                left: sidebarState === 'collapsed' ? '3rem' : '16rem', 
-                right: '0' 
+              className={cn(
+                "fixed z-[90] bg-white dark:bg-[#1a1a1a]/60 dark:backdrop-blur-xl border-b border-gray-200 dark:border-white/10 py-3 shadow-sm",
+                isMobile ? "left-0 right-0 overflow-hidden" : "px-6"
+              )}
+              initial={false}
+              animate={{
+                top: isMobile ? (quickLinksOpen ? 104 : 64) : 64
+              }}
+              transition={isMobile ? {
+                type: "tween",
+                ease: "linear",
+                duration: 0.3
+              } : {
+                type: "tween",
+                ease: "easeOut",
+                duration: 0.2
+              }}
+              style={isMobile ? { 
+                top: quickLinksOpen ? 104 : 64,
+                left: 0,
+                right: 0,
+                width: '100vw',
+                marginLeft: 0,
+                marginRight: 0,
+                paddingLeft: 0,
+                paddingRight: 0,
+                borderTop: 'none'
+              } : {
+                top: 64,
+                left: sidebarState === 'collapsed' ? '3rem' : '16rem',
+                right: 0
               }}
             >
-                <div className="flex items-center gap-1.5">
-                    {/* Icon Tabs - Left Side */}
-                    <div className="flex-shrink-0">
-                      <div className="bg-white/5 dark:bg-white/5 bg-gray-200/60 dark:bg-white/5 p-0.5 h-auto gap-0.5 rounded-3xl border-0 flex items-center transition-colors duration-300">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setSearchOverlayOpen(true)
-                          }}
-                          className="bg-transparent text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out"
-                        >
-                          <IconSearch className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setActiveIconTab('favorite')}
-                          className="bg-transparent text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out"
-                        >
-                          <IconHeart className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Text Tabs - Right Side */}
+                <div 
+                  ref={subNavScrollRef}
+                  className={cn(
+                    "flex items-center gap-1.5",
+                    isMobile && "overflow-x-auto scrollbar-hide"
+                  )}
+                  style={isMobile ? {
+                    scrollBehavior: 'smooth',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-x',
+                    overscrollBehaviorX: 'auto',
+                    scrollSnapType: 'x mandatory',
+                    width: '100vw',
+                    minWidth: '100vw',
+                    maxWidth: '100vw',
+                    paddingLeft: 0,
+                    paddingRight: 0,
+                    marginLeft: 0,
+                    marginRight: 0,
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    left: 0,
+                    transform: 'translateX(0)',
+                    overflowX: 'auto',
+                    overflowY: 'hidden'
+                  } : {}}
+                >
+                    {/* Text Tabs - Full Width */}
                     <AnimateTabs value={activeSubNav} onValueChange={(value) => { 
                       setActiveSubNav(value)
                       if (value === 'For You' || value === 'Live') {
@@ -6381,13 +6552,48 @@ function NavTestPageContent() {
                         setShowAllGames(true)
                         setActiveSubNav(value)
                       }
-                    }} className="flex-1">
-                      <AnimateTabsList className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300">
-                        {['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab) => (
+                      
+                      // Scroll the clicked tab into view on mobile
+                      if (isMobile && subNavScrollRef.current) {
+                        const tabIndex = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].indexOf(value)
+                        if (tabIndex !== -1) {
+                          const tabs = subNavScrollRef.current.querySelectorAll('[data-tab-item]')
+                          const targetTab = tabs[tabIndex] as HTMLElement
+                          if (targetTab) {
+                            setTimeout(() => {
+                              targetTab.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'nearest',
+                                inline: 'center'
+                              })
+                            }, 100)
+                          }
+                        }
+                      }
+                    }} className="w-full">
+                      <AnimateTabsList className={cn(
+                        "bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300",
+                        isMobile && "flex-nowrap"
+                      )}
+                      style={isMobile ? {
+                        minWidth: 'max-content',
+                        width: 'max-content',
+                        flexShrink: 0,
+                        marginLeft: '12px',
+                        paddingLeft: 0,
+                        paddingRight: 0
+                      } : {}}
+                      >
+                        {['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab, index) => (
                           <TabsTab 
                             key={tab}
-                            value={tab} 
-                            className="relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5"
+                            value={tab}
+                            data-tab-item
+                            className={cn(
+                              "relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5 flex-shrink-0",
+                              isMobile && index === 0 && "scroll-snap-start",
+                              isMobile && index === ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].length - 1 && "scroll-snap-end mr-12"
+                            )}
                           >
                             {activeSubNav === tab && (
                               <motion.div
@@ -6402,17 +6608,36 @@ function NavTestPageContent() {
                                 }}
                               />
                             )}
-                            <span className="relative z-10">{tab}</span>
+                            <span className="relative z-10 whitespace-nowrap">{tab}</span>
                           </TabsTab>
                         ))}
                       </AnimateTabsList>
                     </AnimateTabs>
                   </div>
-            </div>
+            </motion.div>
             )}
             
             {/* Spacer to account for fixed sub-nav height - Only show when not on Sports or VIP Rewards */}
-            {!showSports && !showVipRewards && <div className="h-[57px]"></div>}
+            {!showSports && !showVipRewards && (
+              <motion.div 
+                initial={false}
+                animate={isMobile ? {
+                  height: quickLinksOpen ? '155px' : '100px' // 64px header + 40px quick links (when open) + 57px sub nav - 6px = 155px, or 64px header + 57px sub nav - 21px = 100px (reduced gap for both states)
+                } : {
+                  height: '115px' // 64px header + 57px sub nav - 6px (reduced gap for desktop)
+                }}
+                transition={isMobile ? {
+                  type: "tween",
+                  ease: "linear",
+                  duration: 0.3
+                } : {
+                  type: "tween",
+                  ease: "easeOut",
+                  duration: 0.2
+                }}
+                style={{ overflow: 'hidden' }}
+              />
+            )}
             
             {/* Sports Page */}
             <AnimatePresence mode="wait" initial={false}>
@@ -6594,12 +6819,25 @@ function NavTestPageContent() {
               <div 
                 ref={bannerRef} 
                 data-content-item 
-                className="pl-0 pr-0 pt-6 pb-4 relative z-0 overflow-visible"
+                className={cn(
+                  "pl-0 pr-0 pb-4 relative z-0 overflow-visible",
+                  isMobile ? "pt-0" : "pt-0"
+                )}
+                style={isMobile ? { 
+                  marginTop: '-12px',
+                  paddingTop: 0
+                } : {
+                  marginTop: '-6px',
+                  paddingTop: 0
+                }}
               >
-                  <Carousel className="w-full relative overflow-visible">
+                  <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                     <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                       {/* VIP Rewards Card */}
-                      <CarouselItem className="pl-6 pr-0 basis-auto flex-shrink-0">
+                      <CarouselItem className={cn(
+                        "pr-0 basis-auto flex-shrink-0",
+                        isMobile ? "pl-3" : "pl-6"
+                      )}>
                         <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
                           <CardContent className="p-4">
                             <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
@@ -6688,8 +6926,6 @@ function NavTestPageContent() {
                         </Card>
                       </CarouselItem>
                     </CarouselContent>
-                    <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
-                    <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white dark:text-white text-gray-900 dark:text-white border-white/20 dark:border-white/20 border-gray-300 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/10 bg-[#1a1a1a]/80 dark:bg-[#1a1a1a]/80 bg-white/90 dark:bg-[#1a1a1a]/80 z-30 transition-colors duration-300" />
                   </Carousel>
                 </div>
               )}
@@ -6697,7 +6933,10 @@ function NavTestPageContent() {
               {/* Tab Panels */}
               <div 
                 ref={contentRef}
-                className="mt-6 relative z-0"
+                className={cn(
+                  "relative z-0",
+                  isMobile ? "mt-0" : "mt-6"
+                )}
                 style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}
               >
                   <AnimatePresence mode="wait" initial={false}>
@@ -6754,7 +6993,10 @@ function NavTestPageContent() {
                         <div className="space-y-8 relative" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, overflow: 'visible' }}>
                         {/* Blackjack Section */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '1rem' }}>Blackjack (52)</h2>
                             <Button
                               variant="ghost"
@@ -6770,12 +7012,15 @@ function NavTestPageContent() {
                             </Button>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 7 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[240px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -6820,15 +7065,16 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
                         
                         {/* Roulette Section */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Roulette (34)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -6846,7 +7092,7 @@ function NavTestPageContent() {
                             </div>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 8 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -6855,7 +7101,10 @@ function NavTestPageContent() {
                                   const bettingRange = isBaccarat ? '$1 - $12.500' : '$25 - $100'
                                   const gameInfo = isBaccarat ? 'B B B P P' : '8 20 13 0 10'
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[240px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -6897,15 +7146,16 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
                         
                         {/* Baccarat Section - Grid Layout with Large Tile */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Baccarat (23)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -7024,7 +7274,10 @@ function NavTestPageContent() {
                         
                         {/* Casino Poker Section */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Casino Poker (26)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -7042,12 +7295,15 @@ function NavTestPageContent() {
                             </div>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 8 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[160px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -7085,8 +7341,6 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
@@ -7109,7 +7363,10 @@ function NavTestPageContent() {
                         <div className="space-y-8 relative" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, overflow: 'visible' }}>
                         {/* BlackJack Section - Wide Rectangles (same height as squares) */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '1rem' }}>BlackJack (52)</h2>
                             <Button
                               variant="ghost"
@@ -7125,12 +7382,15 @@ function NavTestPageContent() {
                             </Button>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[240px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -7160,15 +7420,16 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
                         
                         {/* Originals Section - Tall Rectangles */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Originals (26)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -7186,12 +7447,15 @@ function NavTestPageContent() {
                             </div>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {originalsTileImages.map((imageSrc, index) => {
                                   const gameNames = ['Plinko', 'Blackjack', 'Dice', 'Diamonds', 'Mines', 'Keno', 'Limbo', 'Wheel', 'Hilo', 'Video Poker']
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[160px] h-[280px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -7226,15 +7490,16 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
                         
                         {/* Slots Section - Square Tiles */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Slots (128)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -7252,12 +7517,15 @@ function NavTestPageContent() {
                             </div>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className="w-[160px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"
@@ -7287,14 +7555,15 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
                         
                         {/* Feature Section - Rain Background */}
-                        <div className="relative w-full rounded-lg overflow-hidden mb-8 ml-6 mr-6 pr-6">
+                        <div className={cn(
+                          "relative w-full rounded-lg overflow-hidden mb-8",
+                          isMobile ? "mx-3" : "mx-auto max-w-[1200px]"
+                        )}>
                           <RainBackground 
                             className="rounded-lg min-h-[400px]"
                             count={150}
@@ -7387,7 +7656,10 @@ function NavTestPageContent() {
 
                         {/* Vendor Marquee */}
                         <div 
-                          className="relative w-full overflow-hidden mb-8"
+                          className={cn(
+                            "relative w-full overflow-hidden mb-8",
+                            isMobile ? "mx-3" : ""
+                          )}
                           onMouseEnter={() => setMarqueePaused(true)}
                           onMouseLeave={() => setMarqueePaused(false)}
                         >
@@ -7460,7 +7732,10 @@ function NavTestPageContent() {
                         
                         {/* Baccarat Section - Mixed: Rectangles and Squares */}
                         <div>
-                          <div className="flex items-center justify-between mb-4 px-6 relative z-10" style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
+                          <div className={cn(
+                            "flex items-center justify-between mb-4 relative z-10",
+                            isMobile ? "px-3" : "px-6"
+                          )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Baccarat (23)</h2>
                             <div className="flex items-center gap-2 relative z-10 flex-shrink-0 ml-2" style={{ visibility: 'visible', opacity: 1, display: 'flex', flexShrink: 0, marginLeft: 'auto' }}>
                               <Button
@@ -7478,14 +7753,17 @@ function NavTestPageContent() {
                             </div>
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }}>
+                            <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   // Only first tile is rectangle, rest are squares
                                   const isRectangle = index === 0
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
-                                    <CarouselItem key={index} className={index === 0 ? "pl-6 pr-0 basis-auto flex-shrink-0" : "pl-2 md:pl-4 basis-auto flex-shrink-0"}>
+                                    <CarouselItem key={index} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
                                       <div 
                                         data-content-item 
                                         className={isRectangle ? "w-[240px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0" : "w-[160px] h-[160px] rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group flex-shrink-0"}
@@ -7515,8 +7793,6 @@ function NavTestPageContent() {
                                   )
                                 })}
                               </CarouselContent>
-                              <CarouselPrevious className="!left-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
-                              <CarouselNext className="!right-2 !top-1/2 !-translate-y-1/2 text-white border-white/20 hover:bg-white/10 bg-[#1a1a1a]/80 z-30" />
                             </Carousel>
                           </div>
                         </div>
@@ -8520,6 +8796,19 @@ function NavTestPageContent() {
         </AnimatePresence>,
         document.body
       )}
+
+      {/* Mobile: Dynamic Island Search - Bottom of screen */}
+      {isMobile && (
+        <DynamicIsland
+          onSearchClick={() => setSearchOverlayOpen(true)}
+          onFavoriteClick={() => {
+            setActiveSubNav('For You')
+            setSelectedCategory('Favorites')
+            setShowAllGames(true)
+          }}
+          isSearchActive={searchOverlayOpen}
+        />
+      )}
     </div>
   )
 }
@@ -8579,8 +8868,12 @@ function ViewTab({
 
 export default function NavTestPage() {
   const isMobile = useIsMobile()
+  const pathname = usePathname()
+  
+  // Check if we're on the mobile route - if so, allow mobile access
+  const isMobileRoute = pathname?.startsWith('/mobile') || false
 
-  if (isMobile) {
+  if (isMobile && !isMobileRoute) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#1a1a1a] text-white p-6">
         <div className="text-center max-w-md">
@@ -8588,12 +8881,21 @@ export default function NavTestPage() {
           <p className="text-white/70 mb-6">
             This page is currently only available on desktop devices. Please visit us on a desktop or tablet to access this feature.
           </p>
-          <Button 
-            onClick={() => window.location.href = '/'}
-            className="bg-red-500 hover:bg-red-600 text-white"
-          >
-            Go to Homepage
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button 
+              onClick={() => window.location.href = '/mobile'}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Go to Mobile Version
+            </Button>
+            <Button 
+              onClick={() => window.location.href = '/'}
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+            >
+              Go to Homepage
+            </Button>
+          </div>
         </div>
       </div>
     )

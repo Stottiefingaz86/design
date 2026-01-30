@@ -837,13 +837,38 @@ main[data-sidebar="inset"] div.flex.items-center.justify-between.mb-4 > div:last
 /* Ensure sub nav is fixed - positioned right below the header at 64px, after sidebar */
 [data-sub-nav] {
   position: fixed !important;
-  top: 64px !important;
+  /* top is controlled by framer-motion, don't force it */
   right: 0 !important;
   z-index: 90 !important;
   display: block !important;
-  transition: left 0.2s ease-linear !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Desktop: Keep transition for sidebar movement */
+@media (min-width: 769px) {
+  [data-sub-nav] {
+    transition: left 0.2s ease-linear !important;
+  }
+}
+
+/* Mobile: Full width sub nav, no left clipping, swipeable */
+@media (max-width: 768px) {
+  [data-sub-nav] {
+    left: 0 !important;
+    right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  
+  [data-sub-nav] > div {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: auto !important;
+    padding-left: 0 !important;
+  }
 }
 
 /* Light mode: semi-transparent white background with blur */
@@ -991,6 +1016,37 @@ div.flex.w-full.min-h-screen.bg-\[#1a1a1a\] {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile Sidebar Improvements for Safari */
+[data-mobile="true"][data-sidebar="sidebar"] {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+[data-mobile="true"][data-sidebar="sidebar"] > div {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Improve menu button styling on mobile */
+[data-mobile="true"] [data-sidebar="menu-button"] {
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  -webkit-transition: background-color 0.15s ease, -webkit-transform 0.1s ease;
+}
+
+[data-mobile="true"] [data-sidebar="menu-button"]:active {
+  transform: scale(0.98);
+  -webkit-transform: scale(0.98);
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Betslip - Force white background and black text */
