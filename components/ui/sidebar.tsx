@@ -236,12 +236,10 @@ const Sidebar = React.forwardRef<
           onOpenChange={setOpenMobile}
           direction="left"
           shouldScaleBackground={false}
-          {...props}
         >
           <DrawerContent
             data-sidebar="sidebar"
             data-mobile="true"
-            direction="left"
             className={cn(
               "w-[320px] sm:max-w-[320px] bg-[#2d2d2d] dark:bg-[#2d2d2d] border-r border-white/10 text-white p-0 [&>button]:hidden",
               "[&_*]:text-white [&_*]:text-inherit",
