@@ -5888,6 +5888,28 @@ function NavTestPageContent() {
               </div>
             )}
             
+            {/* VIP Crown Button - After theme toggle on desktop, after balance on mobile */}
+            {!isMobile ? (
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('VIP button clicked')
+                  setVipDrawerOpen(true)
+                }}
+                className={cn(
+                  "rounded-full bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center transition-colors",
+                  "hover:bg-yellow-400/30 hover:border-yellow-400/40",
+                  "active:bg-gray-500/20",
+                  vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40",
+                  "h-8 w-8"
+                )}
+                style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
+              >
+                <IconCrown className="text-yellow-400 w-4 h-4" />
+              </button>
+            ) : null}
+            
             {/* Separator - Hide on mobile */}
             {!isMobile && (
               <div className="h-6 w-px bg-white/20" />
@@ -5933,25 +5955,27 @@ function NavTestPageContent() {
               </span>
             </Button>
             
-            {/* VIP Crown Button - After balance */}
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('VIP button clicked')
-                setVipDrawerOpen(true)
-              }}
-              className={cn(
-                "rounded-full bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center transition-colors",
-                "hover:bg-yellow-400/30 hover:border-yellow-400/40",
-                "active:bg-gray-500/20",
-                vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40",
-                isMobile ? "h-7 w-7" : "h-8 w-8"
-              )}
-              style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
-            >
-              <IconCrown className={cn("text-yellow-400", isMobile ? "w-3.5 h-3.5" : "w-4 h-4")} />
-            </button>
+            {/* VIP Crown Button - After balance on mobile only */}
+            {isMobile && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('VIP button clicked')
+                  setVipDrawerOpen(true)
+                }}
+                className={cn(
+                  "rounded-full bg-yellow-400/20 border border-yellow-400/30 flex items-center justify-center transition-colors",
+                  "hover:bg-yellow-400/30 hover:border-yellow-400/40",
+                  "active:bg-gray-500/20",
+                  vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40",
+                  "h-7 w-7"
+                )}
+                style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
+              >
+                <IconCrown className="text-yellow-400 w-3.5 h-3.5" />
+              </button>
+            )}
             
             {/* Deposit Button - Desktop only */}
             {!isMobile && (
