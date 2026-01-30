@@ -6541,6 +6541,35 @@ function NavTestPageContent() {
                     overflowY: 'hidden'
                   } : {}}
                 >
+                    {/* Icon Tabs - Left Side (Desktop Only) */}
+                    {!isMobile && (
+                      <div className="flex-shrink-0">
+                        <div className="bg-white/5 dark:bg-white/5 bg-gray-200/60 dark:bg-white/5 p-0.5 h-auto gap-0.5 rounded-3xl border-0 flex items-center transition-colors duration-300">
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setSearchOverlayOpen(true)
+                            }}
+                            className="bg-transparent text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out"
+                          >
+                            <IconSearch className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setActiveIconTab('favorite')}
+                            className={cn(
+                              "bg-transparent rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out",
+                              activeIconTab === 'favorite'
+                                ? "text-black dark:text-white bg-gray-200 dark:bg-white/10"
+                                : "text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5"
+                            )}
+                          >
+                            <IconHeart className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Text Tabs - Full Width */}
                     <AnimateTabs value={activeSubNav} onValueChange={(value) => { 
                       setActiveSubNav(value)
