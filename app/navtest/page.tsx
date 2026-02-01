@@ -1838,7 +1838,7 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
         label: 'View',
         onClick: () => {
           setVipDrawerOpen(true)
-          setVipActiveTab('Overview')
+          setVipActiveTab('VIP Hub')
         }
       })
       setShowToast(true)
@@ -2143,7 +2143,7 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
                         className="bg-white/10 text-white hover:bg-white/20"
                         onClick={() => {
                           setVipDrawerOpen(true)
-                          setVipActiveTab('Overview')
+                          setVipActiveTab('VIP Hub')
                         }}
                       >
                         Open
@@ -4588,7 +4588,7 @@ function VipDrawerContent({
     const container = vipTabsContainerRef.current
     if (!container) return
 
-    const tabs = ['Overview', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop']
+    const tabs = ['VIP Hub', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop']
     const activeIndex = tabs.indexOf(vipActiveTab)
     
     if (activeIndex === -1) return
@@ -4623,97 +4623,78 @@ function VipDrawerContent({
 
   return (
     <>
-      <DrawerHeader className="relative px-4 pt-4 pb-3 flex-shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <DrawerTitle className="text-white text-lg font-semibold">My Rewards</DrawerTitle>
-            <DrawerDescription className="text-white/70 text-xs">
-              Gold Member
-            </DrawerDescription>
-          </div>
-          <DrawerClose asChild>
-            <button className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
-              <IconX className="h-4 w-4 text-white/70" />
-            </button>
-          </DrawerClose>
-        </div>
-      </DrawerHeader>
+      {/* Drag handle indicator - shows users they can swipe to close */}
+      <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2 flex-shrink-0" />
       
-      {/* Tab Carousel */}
-      <div className="px-0 pt-4 pb-3 relative z-20">
-        <div className="relative px-4 py-2">
-          {/* Left Arrow */}
-          {canScrollVipLeft && (
-            <button
-              onClick={() => {
-                if (vipTabsContainerRef.current) {
-                  vipTabsContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' })
-                }
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-[#1a1a1a]/80 backdrop-blur-sm border border-white/20 hover:bg-white/10 text-white flex items-center justify-center transition-all cursor-pointer z-20"
-            >
-              <IconChevronLeft className="h-4 w-4" strokeWidth={2} />
-            </button>
-          )}
-          
-          {/* Scrollable Tabs Container */}
+      {/* Close button only - no title */}
+      <div className="relative px-4 pt-2 pb-2 flex-shrink-0 flex items-center justify-end">
+        <DrawerClose asChild>
+          <button className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
+            <IconX className="h-4 w-4 text-white/70" />
+          </button>
+        </DrawerClose>
+      </div>
+      
+      {/* Tab Carousel with background like casino sub nav */}
+      <div className="px-0 pt-2 pb-3 relative z-20 flex-shrink-0 overflow-hidden">
+        <div 
+          ref={vipTabsContainerRef}
+          className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide"
+          style={{
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-x',
+            overscrollBehaviorX: 'auto',
+            scrollSnapType: 'x mandatory',
+            width: '100%',
+            minWidth: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            paddingLeft: '16px',
+            paddingRight: 0,
+            marginLeft: 0,
+            marginRight: 0,
+            position: 'relative',
+            left: 0,
+            transform: 'translateX(0)',
+            overflowX: 'auto',
+            overflowY: 'hidden'
+          }}
+          onScroll={checkScroll}
+        >
           <div 
-            ref={vipTabsContainerRef}
-            className="flex items-center gap-2 overflow-x-auto scrollbar-hide pl-0 pr-8"
-            style={{ 
-              scrollBehavior: 'smooth',
-              WebkitOverflowScrolling: 'touch',
-              touchAction: 'pan-x'
+            className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-1 rounded-3xl border-0 relative transition-colors duration-300 backdrop-blur-xl flex items-center"
+            style={{
+              minWidth: 'max-content',
+              width: 'max-content',
+              flexShrink: 0,
+              marginLeft: 0,
+              paddingLeft: 0,
+              paddingRight: 0
             }}
-            onScroll={checkScroll}
           >
-            {['Overview', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].map((tab) => (
+            {['VIP Hub', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].map((tab, index) => (
               <button
                 key={tab}
                 onClick={() => setVipActiveTab(tab)}
                 className={cn(
-                  "relative px-4 py-1.5 h-9 text-xs font-medium rounded-2xl transition-all duration-300 whitespace-nowrap flex-shrink-0",
+                  "relative px-4 py-1 h-9 text-xs font-medium rounded-2xl transition-all duration-300 whitespace-nowrap flex-shrink-0",
                   vipActiveTab === tab
-                    ? "text-black"
-                    : "text-white/70 hover:text-white hover:bg-white/5"
+                    ? "text-black bg-[#fef3c7]"
+                    : "text-white/70 hover:text-white hover:bg-white/5 dark:hover:bg-white/5 bg-transparent",
+                  index === 0 && "scroll-snap-start",
+                  index === ['VIP Hub', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].length - 1 && "scroll-snap-end mr-12"
                 )}
               >
-                {vipActiveTab === tab && (
-                  <motion.div
-                    layoutId="activeVipTab"
-                    className="absolute inset-0 rounded-2xl -z-10"
-                    style={{ backgroundColor: '#fef3c7' }}
-                    initial={false}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 40
-                    }}
-                  />
-                )}
                 <span className="relative z-10">{tab}</span>
               </button>
             ))}
           </div>
-          
-          {/* Right Arrow */}
-          {canScrollVipRight && (
-            <button
-              onClick={() => {
-                if (vipTabsContainerRef.current) {
-                  vipTabsContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' })
-                }
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer z-30"
-            >
-              <IconChevronRight className="h-4 w-4" strokeWidth={2} />
-            </button>
-          )}
         </div>
       </div>
       
-      <div className="px-4 pt-4 pb-4 overflow-y-auto flex-1 min-h-0 relative -mt-3 pt-7">
-        {vipActiveTab === 'Overview' && (
+      <div className="px-4 pt-4 pb-4 overflow-y-auto flex-1 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {vipActiveTab === 'VIP Hub' && (
           <div className="space-y-6">
             <Card className="bg-white/5 border-white/10">
               <CardContent className="p-4">
@@ -5298,7 +5279,7 @@ function NavTestPageContent() {
   const [accountDrawerOpen, setAccountDrawerOpen] = useState(false)
   const [vipDrawerOpen, setVipDrawerOpen] = useState(false)
   const [accountDrawerView, setAccountDrawerView] = useState<'account' | 'notifications'>('account')
-  const [vipActiveTab, setVipActiveTab] = useState('Overview')
+  const [vipActiveTab, setVipActiveTab] = useState('VIP Hub')
   const vipTabsContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollVipLeft, setCanScrollVipLeft] = useState(false)
   const [canScrollVipRight, setCanScrollVipRight] = useState(true)
@@ -5338,12 +5319,16 @@ function NavTestPageContent() {
       setTransactionId('')
       setIsDepositLoading(false)
       setStepLoading({started: false, processing: false, almost: false, complete: false})
+    } else {
+      // Close other drawers when deposit drawer opens
+      if (isMobile) {
+        setAccountDrawerOpen(false)
+        setVipDrawerOpen(false)
+      }
     }
-    // Only update if the state is actually changing
-    if (open !== depositDrawerOpen) {
-      setDepositDrawerOpen(open)
-    }
-  }, [depositDrawerOpen])
+    // Always update the state
+    setDepositDrawerOpen(open)
+  }, [depositDrawerOpen, isMobile])
 
   const handleBoostClaimed = React.useCallback((amount: number) => {
     // Balance will be updated and animated when drawer closes
@@ -5392,9 +5377,15 @@ function NavTestPageContent() {
       // Reset boost states
       setBoostProcessing(null)
       setBoostClaimMessage(null)
+    } else {
+      // Close other drawers when VIP drawer opens
+      if (isMobile) {
+        setAccountDrawerOpen(false)
+        setDepositDrawerOpen(false)
+      }
     }
     setVipDrawerOpen(open)
-  }, [claimedBoosts, balance, displayBalance])
+  }, [claimedBoosts, balance, displayBalance, isMobile])
 
   // Brand configurations using design system tokens
   const brands = {
@@ -5969,11 +5960,11 @@ function NavTestPageContent() {
                   "hover:bg-yellow-400/30 hover:border-yellow-400/40",
                   "active:bg-gray-500/20",
                   vipDrawerOpen && "bg-yellow-400/30 border-yellow-400/40",
-                  "h-7 w-7"
+                  "h-8 w-8"
                 )}
                 style={{ pointerEvents: 'auto', zIndex: 101, position: 'relative', cursor: 'pointer' }}
               >
-                <IconCrown className="text-yellow-400 w-3.5 h-3.5" />
+                <IconCrown className="text-yellow-400 w-4 h-4" />
               </button>
             )}
             
@@ -6003,11 +5994,28 @@ function NavTestPageContent() {
         </motion.header>
 
         {/* Deposit Drawer - Rendered outside header to avoid conflicts */}
-        <Drawer open={depositDrawerOpen} onOpenChange={handleDepositDrawerOpenChange} direction="right" shouldScaleBackground={false}>
+        <Drawer open={depositDrawerOpen} onOpenChange={handleDepositDrawerOpenChange} direction={isMobile ? "bottom" : "right"} shouldScaleBackground={false}>
           <DrawerContent 
-                className="w-full sm:max-w-md bg-white border-l border-gray-200 text-gray-900"
+                className={cn(
+                  "bg-white text-gray-900 flex flex-col",
+                  isMobile 
+                    ? "w-full border-t border-gray-200 rounded-t-[10px] !mt-0 !top-[10vh] !h-[90vh] !max-h-[90vh] overflow-hidden"
+                    : "w-full sm:max-w-md border-l border-gray-200 overflow-hidden"
+                )}
+                style={isMobile ? {
+                  maxHeight: '90vh',
+                  height: '90vh',
+                  top: '10vh',
+                  bottom: 'auto',
+                  marginTop: 0,
+                } : undefined}
               >
-            <DrawerHeader className="relative px-4 pt-4 pb-3">
+            {/* Drag handle indicator - shows users they can swipe to close (mobile only) */}
+            {isMobile && (
+              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2 flex-shrink-0" />
+            )}
+            
+            <DrawerHeader className={cn("relative flex-shrink-0", isMobile ? "px-4 pt-2 pb-3" : "px-4 pt-4 pb-3")}>
               <div className="flex items-center justify-between gap-4">
                 {!showDepositConfirmation && (
                   <DrawerTitle className="text-gray-900 text-lg font-semibold flex-1">Quick Deposit</DrawerTitle>
@@ -6019,7 +6027,7 @@ function NavTestPageContent() {
                 </DrawerClose>
               </div>
             </DrawerHeader>
-            <div className="w-full p-4 overflow-y-auto">
+            <div className={cn("w-full overflow-y-auto flex-1 min-h-0", isMobile ? "px-4 pb-4" : "p-4")} style={{ WebkitOverflowScrolling: 'touch' }}>
               {!showDepositConfirmation ? (
               <>
               <Card className="bg-white border border-gray-200 shadow-sm">
@@ -8043,6 +8051,12 @@ function NavTestPageContent() {
             if (!open) {
               // Reset to account view when drawer closes
               setAccountDrawerView('account')
+            } else {
+              // Close other drawers when account drawer opens
+              if (isMobile) {
+                setDepositDrawerOpen(false)
+                setVipDrawerOpen(false)
+              }
             }
           }}
           direction="right"
@@ -8188,6 +8202,22 @@ function NavTestPageContent() {
               <Button 
                       variant="ghost" 
                       className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('Deposit button clicked in account drawer, isMobile:', isMobile)
+                        if (isMobile) {
+                          // Close account drawer first, then open deposit drawer
+                          console.log('Closing account drawer, will open deposit drawer')
+                          setAccountDrawerOpen(false)
+                          setTimeout(() => {
+                            console.log('Opening deposit drawer')
+                            setDepositDrawerOpen(true)
+                          }, 300) // Increased delay to ensure account drawer closes first
+                        } else {
+                          setDepositDrawerOpen(true)
+                        }
+                      }}
                     >
                       <IconCreditCard className="w-5 h-5 mr-3 text-gray-700" />
                       <span className="flex-1 text-left text-gray-900">Deposit</span>
@@ -8277,11 +8307,23 @@ function NavTestPageContent() {
         <Drawer 
           open={vipDrawerOpen} 
           onOpenChange={handleVipDrawerOpenChange}
-          direction="right"
+          direction={isMobile ? "bottom" : "right"}
           shouldScaleBackground={false}
         >
           <DrawerContent 
-            className="w-full sm:max-w-md bg-[#1a1a1a] border-l border-white/10 text-white overflow-hidden"
+            className={cn(
+              "bg-[#1a1a1a] text-white flex flex-col",
+              isMobile 
+                ? "w-full border-t border-white/10 rounded-t-[10px] !mt-0 !top-[10vh] !h-[90vh] !max-h-[90vh] overflow-hidden"
+                : "w-full sm:max-w-md border-l border-white/10 overflow-hidden"
+            )}
+            style={isMobile ? {
+              maxHeight: '90vh',
+              height: '90vh',
+              top: '10vh',
+              bottom: 'auto',
+              marginTop: 0,
+            } : undefined}
           >
             <VipDrawerContent 
               vipActiveTab={vipActiveTab}
