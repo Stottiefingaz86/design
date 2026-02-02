@@ -124,6 +124,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from '@/components/ui/dropdown-menu'
 import {
   Sidebar,
@@ -6940,7 +6943,7 @@ function NavTestPageContent() {
               width: 'auto', 
               flex: '1 1 0%', 
               minWidth: 0, 
-              maxWidth: '100%',
+              maxWidth: 'none',
               viewTransitionName: 'content-area'
             }}
           >
@@ -7040,7 +7043,7 @@ function NavTestPageContent() {
                     {/* Text Tabs - Full Width */}
                     <AnimateTabs value={(() => {
                       // Don't highlight any tab if viewing vendor or category not in sub nav menu
-                      const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                      const subNavItems = ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
                       if (selectedVendor) return ''
                       if (selectedCategory && !subNavItems.includes(selectedCategory)) return ''
                       return activeSubNav
@@ -7060,7 +7063,7 @@ function NavTestPageContent() {
                       
                       // Scroll the clicked tab into view on mobile
                       if (isMobile && subNavScrollRef.current) {
-                        const tabIndex = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].indexOf(value)
+                        const tabIndex = ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].indexOf(value)
                         if (tabIndex !== -1) {
                           const tabs = subNavScrollRef.current.querySelectorAll('[data-tab-item]')
                           const targetTab = tabs[tabIndex] as HTMLElement
@@ -7089,7 +7092,7 @@ function NavTestPageContent() {
                         paddingRight: 0
                       } : {}}
                       >
-                        {['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab, index) => (
+                        {['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab, index) => (
                           <TabsTab 
                             key={tab}
                             value={tab}
@@ -7097,12 +7100,12 @@ function NavTestPageContent() {
                             className={cn(
                               "relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5 flex-shrink-0",
                               isMobile && index === 0 && "scroll-snap-start",
-                              isMobile && index === ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].length - 1 && "scroll-snap-end mr-12"
+                              isMobile && index === ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].length - 1 && "scroll-snap-end mr-12"
                             )}
                           >
                             {(() => {
                               // Don't highlight if viewing vendor or category not in sub nav menu
-                              const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                              const subNavItems = ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
                               if (selectedVendor) return false
                               if (selectedCategory && !subNavItems.includes(selectedCategory)) return false
                               return activeSubNav === tab
@@ -7442,6 +7445,15 @@ function NavTestPageContent() {
                           />
                         </Card>
                       </CarouselItem>
+                      
+                      {/* Placeholder Banners to fill gaps on large screens */}
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <CarouselItem key={`banner-placeholder-${index}`} className="pl-2 md:pl-4 basis-auto flex-shrink-0">
+                          <Card className="border-0 relative overflow-hidden flex-shrink-0" style={{ width: '320px', height: '140px' }}>
+                            <Skeleton className="w-full h-full rounded-small bg-white/10 dark:bg-white/10" />
+                          </Card>
+                        </CarouselItem>
+                      ))}
                     </CarouselContent>
                   </Carousel>
                 </div>
@@ -7452,136 +7464,18 @@ function NavTestPageContent() {
                 ref={contentRef}
                 className={cn(
                   "relative z-0",
-                  isMobile ? "mt-0" : "mt-6"
+                  isMobile ? "-mt-2" : "mt-0"
                 )}
                 style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}
               >
                   <AnimatePresence mode="wait" initial={false}>
                     {showAllGames ? (
                       <div className="">
-                        {/* Banner Carousel - Show on all casino pages, above title */}
-                        <div 
-                          className={cn(
-                            "pl-0 pr-0 relative z-0 overflow-visible",
-                            isMobile ? "pt-0 pb-8" : "pt-0 pb-10"
-                          )}
-                          style={isMobile ? { 
-                            marginTop: '0px',
-                            paddingTop: '3px'
-                          } : {
-                            marginTop: '-36px',
-                            paddingTop: 0
-                          }}
-                        >
-                          <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
-                            {!isMobile && (
-                              <>
-                                <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
-                                <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
-                              </>
-                            )}
-                            <CarouselContent className="ml-0 -mr-2 md:-mr-4">
-                              {/* VIP Rewards Card */}
-                              <CarouselItem className={cn(
-                                "pr-0 basis-auto flex-shrink-0",
-                                isMobile ? "pl-3" : "pl-6"
-                              )}>
-                                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                                  <CardContent className="p-4">
-                                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
-                                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
-                                    <VIPProgressBar value={45} />
-                                  </CardContent>
-                                </Card>
-                              </CarouselItem>
-                              
-                              {/* Daily Races Card */}
-                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
-                                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                                  <CardContent className="p-4">
-                                    <div className="flex items-start justify-between mb-4">
-                                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
-                                      <div className="text-right">
-                                        <DailyRacesTimer />
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-2 text-xs">
-                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
-                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
-                                      </div>
-                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
-                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
-                                      </div>
-                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
-                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
-                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              </CarouselItem>
-                              
-                              {/* Weekly Game Banner */}
-                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
-                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                                  <Image
-                                    src="/banners/weekly.png"
-                                    alt="Weekly Game Banner"
-                                    width={320}
-                                    height={140}
-                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                                    priority
-                                    unoptimized
-                                    quality={100}
-                                    style={{ imageRendering: 'crisp-edges' }}
-                                  />
-                                </Card>
-                              </CarouselItem>
-                              
-                              {/* Originals Banner */}
-                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
-                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                                  <Image
-                                    src="/banners/orginals.png"
-                                    alt="Originals Banner"
-                                    width={320}
-                                    height={140}
-                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                                    priority
-                                    unoptimized
-                                    quality={100}
-                                    style={{ imageRendering: 'crisp-edges' }}
-                                  />
-                                </Card>
-                              </CarouselItem>
-                              
-                              {/* Free Spins Banner */}
-                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
-                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
-                                  <Image
-                                    src="/banners/freespins.png"
-                                    alt="Free Spins Banner"
-                                    width={320}
-                                    height={140}
-                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
-                                    priority
-                                    unoptimized
-                                    quality={100}
-                                    style={{ imageRendering: 'crisp-edges' }}
-                                  />
-                                </Card>
-                              </CarouselItem>
-                            </CarouselContent>
-                          </Carousel>
-                        </div>
-                        
-                        <div className="flex items-center justify-between mb-8 px-6">
+                        <div className="flex items-center justify-between mb-6 px-6">
                           <div className="flex items-center gap-3">
                             {/* Back button - show when viewing vendor or category not in sub nav menu */}
                             {(() => {
-                              const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                              const subNavItems = ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
                               const isVendorPage = !!selectedVendor
                               const isCategoryNotInMenu = selectedCategory && !subNavItems.includes(selectedCategory)
                               const showBackButton = isVendorPage || isCategoryNotInMenu
@@ -7690,16 +7584,149 @@ function NavTestPageContent() {
                                 >
                                   Z-A
                                 </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger className="cursor-pointer">
+                                    Vendors
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-56 bg-[#2d2d2d] border-white/10 text-white max-h-[400px] overflow-y-auto">
+                                    {[
+                                      'Dragon Gaming',
+                                      'BetSoft',
+                                      '5 Clover',
+                                      '777Jacks',
+                                      'Arrow\'s Edge',
+                                      'Blaze',
+                                      'DeckFresh',
+                                      'DGS Casino Solutions',
+                                      'Emerald Gate',
+                                      'FDBJ',
+                                      'FDRL',
+                                      'Felix',
+                                      'FreshDeck',
+                                      'GLS',
+                                      'i3 Soft',
+                                      'KA Gaming',
+                                      'Lucky',
+                                      'Mascot Gaming',
+                                      'Nucleus',
+                                      'Onlyplay',
+                                      'Originals',
+                                      'Popiplay',
+                                      'Qora',
+                                      'Red Sparrow',
+                                      'Revolver Gaming',
+                                      'Rival',
+                                      'Spinthron',
+                                      'Twain',
+                                      'VIG',
+                                      'Wingo',
+                                    ].map((vendor) => (
+                                      <DropdownMenuItem
+                                        key={vendor}
+                                        onClick={() => {
+                                          setSelectedVendor(vendor)
+                                          setSelectedCategory('')
+                                          setShowAllGames(true)
+                                          setActiveSubNav('')
+                                          setGameSortFilter('popular')
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }}
+                                        className={cn(
+                                          "cursor-pointer",
+                                          selectedVendor === vendor && "bg-white/10"
+                                        )}
+                                      >
+                                        {vendor}
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           )}
                         </div>
-                        
+
+                        {/* Vendors Carousel - Under Title on Slots Page */}
+                        {(activeSubNav === 'Slots' || selectedCategory === 'Slots') && showAllGames && (
+                          <div 
+                            className="relative w-full mt-6 mb-10 overflow-visible"
+                            style={{ overflow: 'visible' }}
+                          >
+                            <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+                              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                                {!isMobile && (
+                                  <>
+                                    <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                    <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  </>
+                                )}
+                                <CarouselContent className="ml-0 -mr-2 md:-mr-4" style={{ overflow: 'visible' }}>
+                                    {[
+                                      'Dragon Gaming',
+                                      'BetSoft',
+                                      '5 Clover',
+                                      '777Jacks',
+                                      'Arrow\'s Edge',
+                                      'Blaze',
+                                      'DeckFresh',
+                                      'DGS Casino Solutions',
+                                      'Emerald Gate',
+                                      'FDBJ',
+                                      'FDRL',
+                                      'Felix',
+                                      'FreshDeck',
+                                      'GLS',
+                                      'i3 Soft',
+                                      'KA Gaming',
+                                      'Lucky',
+                                      'Mascot Gaming',
+                                      'Nucleus',
+                                      'Onlyplay',
+                                      'Originals',
+                                      'Popiplay',
+                                      'Qora',
+                                      'Red Sparrow',
+                                      'Revolver Gaming',
+                                      'Rival',
+                                      'Spinthron',
+                                      'Twain',
+                                      'VIG',
+                                      'Wingo',
+                                    ].map((vendor, index) => (
+                                    <CarouselItem key={vendor} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
+                                      <button
+                                        className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
+                                        onClick={() => {
+                                          setSelectedVendor(vendor)
+                                          setSelectedCategory('')
+                                          setShowAllGames(true)
+                                          setActiveSubNav('')
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }}
+                                      >
+                                        {/* Placeholder/Skeleton Icon */}
+                                        <Skeleton className="w-5 h-5 rounded-full bg-white/10 dark:bg-white/10 flex-shrink-0" />
+                                        <span className="relative z-10">{vendor}</span>
+                                        {/* Sweep effect */}
+                                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
+                                      </button>
+                                    </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                              </Carousel>
+                            </div>
+                          </div>
+                        )}
                         
                         {(() => {
                           // Generate game data with sortable properties - memoized to prevent regeneration on scroll
                           const gameNames = ['Gold Nugget Rush', 'Mega Fortune', 'Starburst', 'Book of Dead', 'Gonzo\'s Quest', 'Dead or Alive', 'Immortal Romance', 'Thunderstruck', 'Avalon', 'Blood Suckers', 'Mega Moolah', 'Bonanza', 'Razor Shark', 'Sweet Bonanza', 'Gates of Olympus', 'Big Bass Bonanza', 'The Dog House', 'Wolf Gold', 'Fire Strike', 'Chilli Heat']
-                          const totalGames = 200
+                          // Increase total games to ensure we always have enough tiles to fill the grid (8 columns max, so generate enough for many full rows)
+                          const totalGames = 240
                           
                           // Seeded random function for consistent values
                           const seededRandom = (seed: number) => {
@@ -7746,8 +7773,8 @@ function NavTestPageContent() {
                           }
                           
                           const categoryKey = selectedCategory || activeSubNav
+                          const maxCols = 8 // Maximum columns for largest screens
                           const gameTiles = sortedGames.map((game, displayIndex) => {
-                            const maxCols = 6
                             const columnIndex = displayIndex % maxCols
                             // Use stable key that doesn't change during scroll
                             const stableKey = `${categoryKey}-${game.index}`
@@ -7763,20 +7790,35 @@ function NavTestPageContent() {
                             )
                           })
 
+                          // Calculate how many skeleton boxes needed to fill the last row
+                          // Add skeletons to fill incomplete rows and prevent gaps
+                          const totalTiles = gameTiles.length
+                          const itemsInLastRow = totalTiles % maxCols
+                          const skeletonCount = itemsInLastRow > 0 ? maxCols - itemsInLastRow : 0
+                          const skeletonBoxes = Array.from({ length: skeletonCount }).map((_, index) => (
+                            <div key={`skeleton-${categoryKey}-${index}`} className="w-full aspect-square">
+                              <Skeleton 
+                                className="w-full h-full rounded-small bg-white/10 dark:bg-white/10" 
+                              />
+                        </div>
+                          ))
+
                           // On mobile, use memoized static div to prevent re-renders during scroll
                           if (isMobile) {
                             return (
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-6" style={{ willChange: 'auto' }}>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 px-6" style={{ willChange: 'auto' }}>
                                 {gameTiles}
+                                {skeletonBoxes}
                         </div>
                             )
                           }
                           
                           return (
                             <div 
-                              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-6"
+                              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-4 px-6"
                             >
                               {gameTiles}
+                              {skeletonBoxes}
                             </div>
                           )
                         })()}
@@ -7799,7 +7841,7 @@ function NavTestPageContent() {
                         {/* Blackjack Section */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '1rem' }}>Blackjack (52)</h2>
@@ -7885,7 +7927,7 @@ function NavTestPageContent() {
                         {/* Roulette Section */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Roulette (34)</h2>
@@ -7972,7 +8014,7 @@ function NavTestPageContent() {
                         {/* Baccarat Section - Grid Layout with Large Tile */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Baccarat (23)</h2>
@@ -8094,7 +8136,7 @@ function NavTestPageContent() {
                         {/* Casino Poker Section */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Casino Poker (26)</h2>
@@ -8189,7 +8231,7 @@ function NavTestPageContent() {
                         {/* BlackJack Section - Wide Rectangles (same height as squares) */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ width: '100%', maxWidth: '100%', overflow: 'visible', boxSizing: 'border-box', display: 'flex', minWidth: 0 }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '1rem' }}>BlackJack (52)</h2>
@@ -8250,6 +8292,18 @@ function NavTestPageContent() {
                                     </CarouselItem>
                                   )
                                 })}
+                                
+                                {/* Placeholder Blackjack tiles to fill gaps on large screens */}
+                                {Array.from({ length: 8 }).map((_, index) => (
+                                  <CarouselItem key={`blackjack-placeholder-${index}`} className={cn(
+                                    "pr-0 basis-auto flex-shrink-0",
+                                    "pl-2 md:pl-4"
+                                  )}>
+                                    <div className="w-[240px] h-[160px] rounded-small flex-shrink-0">
+                                      <Skeleton className="w-full h-full rounded-small bg-white/10 dark:bg-white/10" />
+                                    </div>
+                                  </CarouselItem>
+                                ))}
                               </CarouselContent>
                             </Carousel>
                           </div>
@@ -8258,7 +8312,7 @@ function NavTestPageContent() {
                         {/* Originals Section - Tall Rectangles */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Originals (26)</h2>
@@ -8326,6 +8380,18 @@ function NavTestPageContent() {
                                     </CarouselItem>
                                   )
                                 })}
+                                
+                                {/* Placeholder Originals to fill gaps on large screens */}
+                                {Array.from({ length: 8 }).map((_, index) => (
+                                  <CarouselItem key={`originals-placeholder-${index}`} className={cn(
+                                    "pr-0 basis-auto flex-shrink-0",
+                                    originalsTileImages.length === 0 && index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                  )}>
+                                    <div className="w-[160px] h-[280px] rounded-small flex-shrink-0">
+                                      <Skeleton className="w-full h-full rounded-small bg-white/10 dark:bg-white/10" />
+                                    </div>
+                                  </CarouselItem>
+                                ))}
                               </CarouselContent>
                             </Carousel>
                           </div>
@@ -8334,7 +8400,7 @@ function NavTestPageContent() {
                         {/* Slots Section - Square Tiles */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Slots (128)</h2>
@@ -8399,15 +8465,102 @@ function NavTestPageContent() {
                                     </CarouselItem>
                                   )
                                 })}
+                                
+                                {/* Placeholder Slots tiles to fill gaps on large screens */}
+                                {Array.from({ length: 20 }).map((_, index) => (
+                                  <CarouselItem key={`slots-placeholder-${index}`} className={cn(
+                                    "pr-0 basis-auto flex-shrink-0",
+                                    "pl-2 md:pl-4"
+                                  )}>
+                                    <div className="w-[160px] h-[160px] rounded-small flex-shrink-0">
+                                      <Skeleton className="w-full h-full rounded-small bg-white/10 dark:bg-white/10" />
+                                    </div>
+                                  </CarouselItem>
+                                ))}
                               </CarouselContent>
                             </Carousel>
                           </div>
                         </div>
+
+                        {/* Vendors Carousel - Under Slots Title */}
+                        {activeSubNav === 'For You' && !showAllGames && (
+                          <div 
+                            className="relative w-full mt-6 mb-10 overflow-visible"
+                            style={{ overflow: 'visible' }}
+                          >
+                            <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+                              <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                                {!isMobile && (
+                                  <>
+                                    <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                    <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  </>
+                                )}
+                                <CarouselContent className="ml-0 -mr-2 md:-mr-4" style={{ overflow: 'visible' }}>
+                                    {[
+                                      'Dragon Gaming',
+                                      'BetSoft',
+                                      '5 Clover',
+                                      '777Jacks',
+                                      'Arrow\'s Edge',
+                                      'Blaze',
+                                      'DeckFresh',
+                                      'DGS Casino Solutions',
+                                      'Emerald Gate',
+                                      'FDBJ',
+                                      'FDRL',
+                                      'Felix',
+                                      'FreshDeck',
+                                      'GLS',
+                                      'i3 Soft',
+                                      'KA Gaming',
+                                      'Lucky',
+                                      'Mascot Gaming',
+                                      'Nucleus',
+                                      'Onlyplay',
+                                      'Originals',
+                                      'Popiplay',
+                                      'Qora',
+                                      'Red Sparrow',
+                                      'Revolver Gaming',
+                                      'Rival',
+                                      'Spinthron',
+                                      'Twain',
+                                      'VIG',
+                                      'Wingo',
+                                    ].map((vendor, index) => (
+                                    <CarouselItem key={vendor} className={cn(
+                                      "pr-0 basis-auto flex-shrink-0",
+                                      index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
+                                    )}>
+                                      <button
+                                        className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
+                                        onClick={() => {
+                                          setSelectedVendor(vendor)
+                                          setSelectedCategory('')
+                                          setShowAllGames(true)
+                                          setActiveSubNav('')
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }}
+                                      >
+                                        {/* Placeholder/Skeleton Icon */}
+                                        <Skeleton className="w-5 h-5 rounded-full bg-white/10 dark:bg-white/10 flex-shrink-0" />
+                                        <span className="relative z-10">{vendor}</span>
+                                        {/* Sweep effect */}
+                                        <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
+                                      </button>
+                                    </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                              </Carousel>
+                            </div>
+                          </div>
+                        )}
                         
                         {/* Feature Section - Rain Background */}
                         <div className={cn(
                           "relative w-full rounded-lg overflow-hidden mb-8",
-                          isMobile ? "mx-3" : "mx-auto max-w-[1200px]"
+                          isMobile ? "mx-3" : "-mx-6"
                         )}>
                           <RainBackground 
                             className="rounded-lg min-h-[400px]"
@@ -8417,7 +8570,10 @@ function NavTestPageContent() {
                             color="rgba(174, 194, 224, 0.5)"
                             lightning={true}
                           >
-                            <div className="relative z-10 p-8">
+                            <div className={cn(
+                              "relative z-10",
+                              isMobile ? "p-8" : "pt-8 pb-8 pr-8 pl-14"
+                            )}>
                               {/* Tag */}
                               <div className="mb-2">
                                 <span className="inline-block bg-orange-600/80 text-white text-xs font-semibold px-3 py-1 rounded-small">
@@ -8453,7 +8609,7 @@ function NavTestPageContent() {
                               
                               {/* Game Tiles */}
                               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-6 px-6 pointer-events-auto">
-                                {Array.from({ length: 6 }).map((_, index) => {
+                                {Array.from({ length: 15 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
                                   return (
                                     <div key={index} className="flex-shrink-0">
@@ -8498,86 +8654,11 @@ function NavTestPageContent() {
                             </div>
                           </RainBackground>
                         </div>
-
-                        {/* Vendors Carousel */}
-                        <div 
-                          className={cn(
-                            "relative w-full mb-8 overflow-visible",
-                            isMobile ? "px-3" : "px-6"
-                          )}
-                          style={{ overflow: 'visible' }}
-                        >
-                          <h2 className="text-xl font-bold text-black dark:text-white mb-4">Vendors</h2>
-                          <div className="overflow-visible" style={{ overflow: 'visible' }}>
-                            <Carousel className="w-full relative" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }} style={{ overflow: 'visible' }}>
-                              {!isMobile && (
-                                <>
-                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
-                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
-                                </>
-                              )}
-                              <CarouselContent className="ml-0 -mr-2 md:-mr-4" style={{ overflow: 'visible' }}>
-                                  {[
-                                    'Dragon Gaming',
-                                    'BetSoft',
-                                    '5 Clover',
-                                    '777Jacks',
-                                    'Arrow\'s Edge',
-                                    'Blaze',
-                                    'DeckFresh',
-                                    'DGS Casino Solutions',
-                                    'Emerald Gate',
-                                    'FDBJ',
-                                    'FDRL',
-                                    'Felix',
-                                    'FreshDeck',
-                                    'GLS',
-                                    'i3 Soft',
-                                    'KA Gaming',
-                                    'Lucky',
-                                    'Mascot Gaming',
-                                    'Nucleus',
-                                    'Onlyplay',
-                                    'Originals',
-                                    'Popiplay',
-                                    'Qora',
-                                    'Red Sparrow',
-                                    'Revolver Gaming',
-                                    'Rival',
-                                    'Spinthron',
-                                    'Twain',
-                                    'VIG',
-                                    'Wingo',
-                                  ].map((vendor, index) => (
-                                  <CarouselItem key={vendor} className={cn(
-                                    "pr-2 basis-auto flex-shrink-0",
-                                    isMobile ? "pl-0" : "pl-0"
-                                  )}>
-                                    <button
-                                      className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-4 py-3.5 text-sm font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden"
-                                      onClick={() => {
-                                        setSelectedVendor(vendor)
-                                        setSelectedCategory('')
-                                        setShowAllGames(true)
-                                        // Don't change activeSubNav when vendor is selected - keep current or set to empty to avoid highlighting
-                                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                                      }}
-                                    >
-                                      <span className="relative z-10">{vendor}</span>
-                                      {/* Sweep effect */}
-                                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
-                                    </button>
-                                  </CarouselItem>
-                                  ))}
-                              </CarouselContent>
-                            </Carousel>
-                          </div>
-                        </div>
                         
                         {/* Baccarat Section - Mixed: Rectangles and Squares */}
                         <div>
                           <div className={cn(
-                            "flex items-center justify-between mb-4 relative z-10",
+                            "flex items-center justify-between mb-6 relative z-10",
                             isMobile ? "px-3" : "px-6"
                           )} style={{ maxWidth: '100%', width: '100%', overflow: 'visible', boxSizing: 'border-box' }}>
                             <h2 className="text-lg font-semibold text-black dark:text-white flex-shrink-0 min-w-0 transition-colors duration-300" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>Baccarat (23)</h2>
