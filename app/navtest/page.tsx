@@ -9810,6 +9810,7 @@ function NavTestPageContent() {
         <DynamicIsland
           onSearchClick={() => setSearchOverlayOpen(true)}
           onFavoriteClick={() => {
+            setActiveIconTab('favorite')
             setActiveSubNav('For You')
             setSelectedCategory('Favorites')
             setSelectedVendor('')
@@ -9817,6 +9818,7 @@ function NavTestPageContent() {
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
           isSearchActive={searchOverlayOpen}
+          isFavoriteActive={activeIconTab === 'favorite' || selectedCategory === 'Favorites'}
         />
       )}
     </div>

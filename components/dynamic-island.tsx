@@ -10,6 +10,7 @@ export type DynamicIslandProps = {
   onFavoriteClick?: () => void;
   className?: string;
   isSearchActive?: boolean;
+  isFavoriteActive?: boolean;
 };
 
 export default function DynamicIsland({
@@ -17,6 +18,7 @@ export default function DynamicIsland({
   onFavoriteClick,
   className = "",
   isSearchActive = false,
+  isFavoriteActive = false,
 }: DynamicIslandProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -86,10 +88,21 @@ export default function DynamicIsland({
             {/* Favorites Button */}
             <button
               onClick={onFavoriteClick}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/15 transition-colors relative"
+              className={cn(
+                "flex items-center justify-center w-9 h-9 rounded-full transition-colors relative",
+                isFavoriteActive
+                  ? "bg-pink-500/20 hover:bg-pink-500/30 active:bg-pink-500/40"
+                  : "bg-white/5 hover:bg-white/10 active:bg-white/15"
+              )}
               aria-label="Favorites"
             >
-              <IconHeart className="w-4 h-4 text-white relative z-10" strokeWidth={2} />
+              <IconHeart 
+                className={cn(
+                  "w-4 h-4 relative z-10 transition-colors",
+                  isFavoriteActive ? "text-pink-500 fill-pink-500" : "text-white"
+                )}
+                strokeWidth={2} 
+              />
             </button>
           </div>
         </motion.div>
