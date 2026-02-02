@@ -58,6 +58,33 @@ const DrawerOverlay = React.forwardRef<
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
+const DrawerHandle = ({ 
+  className,
+  variant = "default",
+  ...props 
+}: React.HTMLAttributes<HTMLDivElement> & {
+  variant?: "default" | "light" | "dark"
+}) => {
+  const bgColor = variant === "light" 
+    ? "bg-gray-400/60" 
+    : variant === "dark" 
+    ? "bg-white/60" 
+    : "bg-white/60"
+
+  return (
+    <div 
+      className={cn(
+        "w-12 h-1.5 rounded-full mx-auto mt-3 mb-2 flex-shrink-0",
+        bgColor,
+        className
+      )}
+      style={{ display: 'block', visibility: 'visible', opacity: 1, zIndex: 1000, position: 'relative', pointerEvents: 'auto' }}
+      {...props}
+    />
+  )
+}
+DrawerHandle.displayName = "DrawerHandle"
+
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
@@ -79,8 +106,8 @@ const DrawerContent = React.forwardRef<
           "fixed z-[9999] flex flex-col border bg-background",
           "[&[data-vaul-drawer-direction='right']]:inset-y-0 [&[data-vaul-drawer-direction='right']]:right-0 [&[data-vaul-drawer-direction='right']]:h-full [&[data-vaul-drawer-direction='right']]:w-3/4 [&[data-vaul-drawer-direction='right']]:sm:max-w-sm [&[data-vaul-drawer-direction='right']]:rounded-l-[10px] [&[data-vaul-drawer-direction='right']]:border-l",
           "[&[data-vaul-drawer-direction='left']]:inset-y-0 [&[data-vaul-drawer-direction='left']]:left-0 [&[data-vaul-drawer-direction='left']]:h-full [&[data-vaul-drawer-direction='left']]:w-3/4 [&[data-vaul-drawer-direction='left']]:sm:max-w-sm [&[data-vaul-drawer-direction='left']]:rounded-r-[10px] [&[data-vaul-drawer-direction='left']]:border-r",
-          "[&[data-vaul-drawer-direction='top']]:inset-x-0 [&[data-vaul-drawer-direction='top']]:top-0 [&[data-vaul-drawer-direction='top']]:rounded-b-[10px] [&[data-vaul-drawer-direction='top']]:border-b [&[data-vaul-drawer-direction='top']]:mb-24 [&[data-vaul-drawer-direction='top']]:h-auto",
-          "[&[data-vaul-drawer-direction='bottom']]:inset-x-0 [&[data-vaul-drawer-direction='bottom']]:bottom-0 [&[data-vaul-drawer-direction='bottom']]:rounded-t-[10px] [&[data-vaul-drawer-direction='bottom']]:border-t [&[data-vaul-drawer-direction='bottom']]:mt-24 [&[data-vaul-drawer-direction='bottom']]:h-auto",
+          "[&[data-vaul-drawer-direction='top']]:inset-x-0 [&[data-vaul-drawer-direction='top']]:top-0 [&[data-vaul-drawer-direction='top']]:rounded-b-[10px] [&[data-vaul-drawer-direction='top']]:border-b [&[data-vaul-drawer-direction='top']]:h-auto",
+          "[&[data-vaul-drawer-direction='bottom']]:inset-x-0 [&[data-vaul-drawer-direction='bottom']]:bottom-0 [&[data-vaul-drawer-direction='bottom']]:rounded-t-[10px] [&[data-vaul-drawer-direction='bottom']]:border-t [&[data-vaul-drawer-direction='bottom']]:h-auto",
           className
         )}
         style={{
@@ -156,6 +183,7 @@ export {
   DrawerTrigger,
   DrawerClose,
   DrawerContent,
+  DrawerHandle,
   DrawerHeader,
   DrawerFooter,
   DrawerTitle,

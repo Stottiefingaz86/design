@@ -268,10 +268,6 @@ const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
           >
-            <DrawerHeader className="sr-only">
-              <DrawerTitle>Navigation Menu</DrawerTitle>
-              <DrawerDescription>Main navigation sidebar menu</DrawerDescription>
-            </DrawerHeader>
             {/* Render children directly - same structure as desktop, no extra wrapper */}
             <div 
               className="flex h-full w-full flex-col bg-[#2d2d2d] dark:bg-[#2d2d2d] overflow-y-auto text-white [&_*]:text-white [&_*]:text-inherit py-2"
@@ -287,6 +283,8 @@ const Sidebar = React.forwardRef<
                 WebkitTransform: 'translateZ(0)',
                 paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
                 paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
+                pointerEvents: 'auto',
+                overflow: 'visible',
               }}
             >
               {children}

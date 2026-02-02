@@ -199,6 +199,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
   DrawerClose,
+  DrawerHandle,
 } from '@/components/ui/drawer'
 import { InteractiveGridBackground } from '@/components/interactive-grid-background'
 import { RainBackground } from '@/components/rain-background'
@@ -413,11 +414,17 @@ function GameSection({ title, games }: { title: string; games: typeof mostPlayed
 }
 
 // Lazy loaded game tile component with staggered animation
-function LazyGameTile({ index, columnIndex, rowIndex, onTileClick }: { index: number; columnIndex: number; rowIndex: number; onTileClick?: (game: { title: string; image: string; provider?: string; features?: string[] }) => void }) {
+function LazyGameTile({ index, columnIndex, rowIndex, onTileClick, isMobile = false }: { index: number; columnIndex: number; rowIndex: number; onTileClick?: (game: { title: string; image: string; provider?: string; features?: string[] }) => void; isMobile?: boolean }) {
   const [isVisible, setIsVisible] = useState(false)
   const tileRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // On mobile, set visible immediately to avoid observer issues
+    if (isMobile) {
+      setIsVisible(true)
+      return
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -440,7 +447,7 @@ function LazyGameTile({ index, columnIndex, rowIndex, onTileClick }: { index: nu
       }
       observer.disconnect()
     }
-  }, [])
+  }, [isMobile])
 
   // Calculate delay based on tile index (one by one)
   // Each tile gets a small delay, creating a sequential loading effect
@@ -465,6 +472,38 @@ function LazyGameTile({ index, columnIndex, rowIndex, onTileClick }: { index: nu
   ]
   const gameFeatures = features[index % features.length]
 
+  // Use regular div on mobile to avoid layout animation issues - no state, no animations
+  if (isMobile) {
+    return (
+      <div className="w-full aspect-square">
+        <div 
+          className="w-full h-full rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group"
+          onClick={() => {
+            if (onTileClick) {
+              onTileClick({
+                title: gameTitle,
+                image: imageSrc,
+                provider,
+                features: gameFeatures
+              })
+            }
+          }}
+        >
+          {imageSrc && (
+            <Image
+              src={imageSrc}
+              alt={`Game ${index + 1}`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
+              priority={index < 12} // Only prioritize first row
+            />
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <motion.div
       ref={tileRef}
@@ -472,9 +511,8 @@ function LazyGameTile({ index, columnIndex, rowIndex, onTileClick }: { index: nu
       initial={{ opacity: 0, scale: 0.85 }}
       animate={isVisible ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
       transition={{
-        duration: 0.3,
-        delay: delay,
-        ease: "easeOut"
+        opacity: { duration: 0.3, delay: delay },
+        scale: { duration: 0.3, delay: delay, ease: "easeOut" }
       }}
     >
       {isVisible ? (
@@ -4545,22 +4583,38 @@ function VipDrawerContent({
   setBoostClaimMessage: (message: { amount: number } | null) => void
   onBoostClaimed: (amount: number) => void
 }) {
+  const isMobile = useIsMobile()
   const checkScroll = useCallback(() => {
     const container = vipTabsContainerRef.current
-    if (!container) return
+    if (!container) {
+      setCanScrollVipLeft(false)
+      setCanScrollVipRight(false)
+      return
+    }
     const { scrollLeft, scrollWidth, clientWidth } = container
-    setCanScrollVipLeft(scrollLeft > 5)
-    setCanScrollVipRight(scrollLeft < scrollWidth - clientWidth - 5)
+    const canScroll = scrollWidth > clientWidth
+    setCanScrollVipLeft(canScroll && scrollLeft > 5)
+    setCanScrollVipRight(canScroll && scrollLeft < scrollWidth - clientWidth - 5)
   }, [vipTabsContainerRef, setCanScrollVipLeft, setCanScrollVipRight])
 
   useEffect(() => {
-    if (!vipDrawerOpen) return
+    if (!vipDrawerOpen) {
+      setCanScrollVipLeft(false)
+      setCanScrollVipRight(false)
+      return
+    }
     
     const container = vipTabsContainerRef.current
-    if (!container) return
+    if (!container) {
+      setCanScrollVipLeft(false)
+      setCanScrollVipRight(false)
+      return
+    }
     
-    // Initial check
+    // Initial check with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
     checkScroll()
+    }, 100)
     
     // Check on scroll
     const handleScroll = () => {
@@ -4576,6 +4630,7 @@ function VipDrawerContent({
     window.addEventListener('resize', handleResize)
     
     return () => {
+      clearTimeout(timeoutId)
       container.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleResize)
     }
@@ -4621,22 +4676,35 @@ function VipDrawerContent({
     }
   }, [vipActiveTab, vipDrawerOpen, checkScroll, vipTabsContainerRef])
 
+  const scrollVipLeft = () => {
+    if (vipTabsContainerRef.current) {
+      vipTabsContainerRef.current.scrollBy({ left: -200, behavior: 'smooth' })
+      setTimeout(() => checkScroll(), 300)
+    }
+  }
+
+  const scrollVipRight = () => {
+    if (vipTabsContainerRef.current) {
+      vipTabsContainerRef.current.scrollBy({ left: 200, behavior: 'smooth' })
+      setTimeout(() => checkScroll(), 300)
+    }
+  }
+
   return (
-    <>
-      {/* Drag handle indicator - shows users they can swipe to close */}
-      <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mt-3 mb-2 flex-shrink-0" />
-      
-      {/* Close button only - no title */}
-      <div className="relative px-4 pt-2 pb-2 flex-shrink-0 flex items-center justify-end">
-        <DrawerClose asChild>
-          <button className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
-            <IconX className="h-4 w-4 text-white/70" />
-          </button>
-        </DrawerClose>
-      </div>
-      
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Tab Carousel with background like casino sub nav */}
-      <div className="px-0 pt-2 pb-3 relative z-20 flex-shrink-0 overflow-hidden">
+      <div className={cn("pt-2 pb-3 relative z-10 flex-shrink-0 overflow-visible", isMobile ? "pl-3 pr-0" : "pl-4 pr-0")}>
+        {/* Left Arrow - Desktop Only */}
+        {!isMobile && canScrollVipLeft && (
+          <button
+            onClick={scrollVipLeft}
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white flex items-center justify-center transition-all cursor-pointer z-20 shadow-lg"
+            style={{ pointerEvents: 'auto', marginLeft: '12px' }}
+          >
+            <IconChevronLeft className="h-4 w-4" strokeWidth={2} />
+          </button>
+        )}
+        
         <div 
           ref={vipTabsContainerRef}
           className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide"
@@ -4650,7 +4718,7 @@ function VipDrawerContent({
             minWidth: '100%',
             maxWidth: '100%',
             boxSizing: 'border-box',
-            paddingLeft: '16px',
+            paddingLeft: 0,
             paddingRight: 0,
             marginLeft: 0,
             marginRight: 0,
@@ -4658,7 +4726,10 @@ function VipDrawerContent({
             left: 0,
             transform: 'translateX(0)',
             overflowX: 'auto',
-            overflowY: 'hidden'
+            overflowY: 'hidden',
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none'
           }}
           onScroll={checkScroll}
         >
@@ -4668,9 +4739,12 @@ function VipDrawerContent({
               minWidth: 'max-content',
               width: 'max-content',
               flexShrink: 0,
-              marginLeft: 0,
+              marginLeft: isMobile ? '0px' : '0px',
+              marginRight: '16px',
               paddingLeft: 0,
-              paddingRight: 0
+              paddingRight: 0,
+              touchAction: 'pan-x',
+              pointerEvents: 'auto'
             }}
           >
             {['VIP Hub', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].map((tab, index) => (
@@ -4681,19 +4755,32 @@ function VipDrawerContent({
                   "relative px-4 py-1 h-9 text-xs font-medium rounded-2xl transition-all duration-300 whitespace-nowrap flex-shrink-0",
                   vipActiveTab === tab
                     ? "text-black bg-[#fef3c7]"
-                    : "text-white/70 hover:text-white hover:bg-white/5 dark:hover:bg-white/5 bg-transparent",
-                  index === 0 && "scroll-snap-start",
-                  index === ['VIP Hub', 'Cash Boost', 'Bet & Get', 'Reloads', 'Cash Drop'].length - 1 && "scroll-snap-end mr-12"
+                    : "text-white/70 hover:text-white hover:bg-white/5 dark:hover:bg-white/5 bg-transparent"
                 )}
+                style={{
+                  scrollSnapAlign: 'start',
+                  touchAction: 'manipulation'
+                }}
               >
                 <span className="relative z-10">{tab}</span>
               </button>
             ))}
           </div>
         </div>
+        
+        {/* Right Arrow - Desktop Only */}
+        {!isMobile && canScrollVipRight && (
+          <button
+            onClick={scrollVipRight}
+            className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white flex items-center justify-center transition-all cursor-pointer z-20 shadow-lg"
+            style={{ pointerEvents: 'auto', marginRight: '8px' }}
+          >
+            <IconChevronRight className="h-4 w-4" strokeWidth={2} />
+          </button>
+        )}
       </div>
       
-      <div className="px-4 pt-4 pb-4 overflow-y-auto flex-1 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className={cn("px-4 pt-4 overflow-y-auto flex-1 min-h-0", isMobile ? "pb-6" : "pb-2")} style={{ WebkitOverflowScrolling: 'touch', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 24px)' : undefined }}>
         {vipActiveTab === 'VIP Hub' && (
           <div className="space-y-6">
             <Card className="bg-white/5 border-white/10">
@@ -5192,7 +5279,7 @@ function VipDrawerContent({
         
         {vipActiveTab === 'Bet & Get' && (
           <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
+            <CardContent className={cn(isMobile ? "p-4" : "p-8")}>
               <div className="flex flex-col items-center justify-center">
                 <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
                   <IconGift className="w-10 h-10 text-white/40" strokeWidth={1.5} />
@@ -5209,7 +5296,7 @@ function VipDrawerContent({
         
         {vipActiveTab === 'Reloads' && (
           <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
+            <CardContent className={cn(isMobile ? "p-4" : "p-8")}>
               <div className="flex flex-col items-center justify-center">
                 <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
                   <IconCreditCard className="w-10 h-10 text-white/40" strokeWidth={1.5} />
@@ -5226,7 +5313,7 @@ function VipDrawerContent({
         
         {vipActiveTab === 'Cash Drop' && (
           <Card className="bg-white/3 border-white/5">
-            <CardContent className="p-8">
+            <CardContent className={cn(isMobile ? "p-4" : "p-8")}>
               <div className="flex flex-col items-center justify-center">
                 <div className="w-20 h-20 rounded-2xl bg-white/3 border border-white/5 flex items-center justify-center mb-6">
                   <IconCurrencyDollar className="w-10 h-10 text-white/40" strokeWidth={1.5} />
@@ -5241,7 +5328,7 @@ function VipDrawerContent({
           </Card>
         )}
       </div>
-    </>
+    </div>
   )
 }
 
@@ -5250,11 +5337,13 @@ function NavTestPageContent() {
   const [mounted, setMounted] = useState(false)
   const [activeFilter, setActiveFilter] = useState('For You')
   const [activeSubNav, setActiveSubNav] = useState('For You')
+  const [gameSortFilter, setGameSortFilter] = useState<string>('popular')
   const [activeIconTab, setActiveIconTab] = useState('search')
   const [quickLinksOpen, setQuickLinksOpen] = useState(false)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [depositDrawerOpen, setDepositDrawerOpen] = useState(false)
   const [depositAmount, setDepositAmount] = useState(25)
+  const [useManualAmount, setUseManualAmount] = useState(false)
   const [selectedCard, setSelectedCard] = useState('Mastercard **** 0740')
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('bitcoin')
   const [showDepositConfirmation, setShowDepositConfirmation] = useState(false)
@@ -5282,10 +5371,11 @@ function NavTestPageContent() {
   const [vipActiveTab, setVipActiveTab] = useState('VIP Hub')
   const vipTabsContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollVipLeft, setCanScrollVipLeft] = useState(false)
-  const [canScrollVipRight, setCanScrollVipRight] = useState(true)
+  const [canScrollVipRight, setCanScrollVipRight] = useState(false)
   const [currentTime, setCurrentTime] = useState<string>('')
   const [showAllGames, setShowAllGames] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const [selectedVendor, setSelectedVendor] = useState<string>('')
   const [showSports, setShowSports] = useState(false)
   const [showVipRewards, setShowVipRewards] = useState(false)
   const [sportsActiveTab, setSportsActiveTab] = useState('Events')
@@ -5295,24 +5385,23 @@ function NavTestPageContent() {
   const [viewMode, setViewMode] = useState<'list' | 'card' | 'pack'>('card')
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false)
   const [selectedGame, setSelectedGame] = useState<{ title: string; image: string; provider?: string; features?: string[] } | null>(null)
-  const [marqueePaused, setMarqueePaused] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<'betonline' | 'wildcasino' | 'superslots'>('betonline')
   const bannerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const subNavScrollRef = useRef<HTMLDivElement>(null)
   const [isContentUnderNav, setIsContentUnderNav] = useState(false)
   const { state: sidebarState, open: sidebarOpen, openMobile, setOpenMobile, toggleSidebar } = useSidebar()
+  const [showQuickLinksMenu, setShowQuickLinksMenu] = useState(false)
+  const [otherDropdownOpen, setOtherDropdownOpen] = useState(false)
 
   // Debug: Log drawer state changes
   useEffect(() => {
     console.log('depositDrawerOpen state changed to:', depositDrawerOpen)
   }, [depositDrawerOpen])
 
-  // Prevent Drawer from closing immediately after opening
   const handleDepositDrawerOpenChange = React.useCallback((open: boolean) => {
-    console.log('Deposit Drawer onOpenChange called with:', open, 'Current state:', depositDrawerOpen)
+    setDepositDrawerOpen(open)
     if (!open) {
-      console.trace('Deposit Drawer closed by:')
       // Reset confirmation state when drawer closes
       setShowDepositConfirmation(false)
       setDepositStep('started')
@@ -5326,9 +5415,7 @@ function NavTestPageContent() {
         setVipDrawerOpen(false)
       }
     }
-    // Always update the state
-    setDepositDrawerOpen(open)
-  }, [depositDrawerOpen, isMobile])
+  }, [isMobile])
 
   const handleBoostClaimed = React.useCallback((amount: number) => {
     // Balance will be updated and animated when drawer closes
@@ -5501,7 +5588,6 @@ function NavTestPageContent() {
   }
 
   const sidebarMenuItems = [
-    { icon: IconDice, label: 'Casino Lobby', active: true },
     { icon: IconHeart, label: 'My Favorites' },
     { icon: IconFlame, label: 'Popular Games' },
     { icon: IconDeviceGamepad2, label: 'Slots' },
@@ -5589,7 +5675,7 @@ function NavTestPageContent() {
       {/* Header - Sticky at top, always visible - Always grey in both themes */}
       <motion.header 
         className={cn(
-          "bg-[#2d2d2d] dark:bg-[#2d2d2d] border-b border-white/10 h-16 flex items-center justify-between z-[101] fixed left-0 right-0",
+          "bg-[#2D2E2C] dark:bg-[#2D2E2C] border-b border-white/10 h-16 flex items-center justify-between z-[101] fixed left-0 right-0",
           isMobile ? "px-3" : "px-6",
           isMobile && quickLinksOpen && "border-t-0"
         )}
@@ -5767,6 +5853,8 @@ function NavTestPageContent() {
                           setActiveSubNav('Live')
                           setShowAllGames(false)
                           setSelectedCategory('')
+                          setSelectedVendor('')
+                          setSelectedVendor('')
                           setTimeout(() => {
                             setIsPageTransitioning(false)
                           }, 200)
@@ -5997,44 +6085,48 @@ function NavTestPageContent() {
         <Drawer open={depositDrawerOpen} onOpenChange={handleDepositDrawerOpenChange} direction={isMobile ? "bottom" : "right"} shouldScaleBackground={false}>
           <DrawerContent 
                 className={cn(
-                  "bg-white text-gray-900 flex flex-col",
+                  "bg-white text-gray-900 flex flex-col relative",
                   isMobile 
-                    ? "w-full border-t border-gray-200 rounded-t-[10px] !mt-0 !top-[10vh] !h-[90vh] !max-h-[90vh] overflow-hidden"
+                    ? "w-full border-t border-gray-200 rounded-t-[10px] !mt-0 !mb-0 !bottom-0 !h-[90vh] !max-h-[90vh]"
                     : "w-full sm:max-w-md border-l border-gray-200 overflow-hidden"
                 )}
                 style={isMobile ? {
-                  maxHeight: '90vh',
                   height: '90vh',
-                  top: '10vh',
-                  bottom: 'auto',
+                  maxHeight: '90vh',
+                  top: 'auto',
+                  bottom: 0,
                   marginTop: 0,
-                } : undefined}
+                  marginBottom: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                } : {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflow: 'hidden'
+                }}
               >
-            {/* Drag handle indicator - shows users they can swipe to close (mobile only) */}
-            {isMobile && (
-              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mt-3 mb-2 flex-shrink-0" />
-            )}
+                {isMobile && <DrawerHandle />}
             
-            <DrawerHeader className={cn("relative flex-shrink-0", isMobile ? "px-4 pt-2 pb-3" : "px-4 pt-4 pb-3")}>
-              <div className="flex items-center justify-between gap-4">
-                {!showDepositConfirmation && (
-                  <DrawerTitle className="text-gray-900 text-lg font-semibold flex-1">Quick Deposit</DrawerTitle>
-                )}
-                <DrawerClose asChild>
-                  <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
-                    <IconX className="h-4 w-4 text-gray-600" />
-                  </button>
-                </DrawerClose>
+                {!isMobile && (
+              <DrawerHeader className="relative flex-shrink-0 px-4 pt-4 pb-2">
+                <div className="flex items-center justify-end">
+                  <DrawerClose asChild>
+                    <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
+                      <IconX className="h-4 w-4 text-gray-600" />
+                    </button>
+                  </DrawerClose>
               </div>
             </DrawerHeader>
-            <div className={cn("w-full overflow-y-auto flex-1 min-h-0", isMobile ? "px-4 pb-4" : "p-4")} style={{ WebkitOverflowScrolling: 'touch' }}>
+            )}
+            <div className={cn("w-full overflow-y-auto flex-1 min-h-0", isMobile ? "px-4 pt-4 pb-6" : "px-4 pt-4 pb-4")} style={{ WebkitOverflowScrolling: 'touch', overflowY: 'auto', flex: '1 1 auto', minHeight: 0, paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 20px)' : undefined }}>
               {!showDepositConfirmation ? (
               <>
               <Card className="bg-white border border-gray-200 shadow-sm">
-                <CardContent className="p-4">
+                <CardContent className={cn(isMobile ? "p-4" : "p-5")}>
                   {/* Saved Methods Dropdown */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2.5">
+                  <div className={cn(isMobile ? "mb-4" : "mb-5")}>
+                    <div className={cn("flex items-center justify-between", isMobile ? "mb-3" : "mb-3")}>
                       <label className="block text-sm font-semibold text-gray-900">
                         Saved Methods
                       </label>
@@ -6067,48 +6159,112 @@ function NavTestPageContent() {
                     </div>
                   </div>
 
-                  <Separator className="bg-gray-200 my-4" />
+                  <Separator className={cn("bg-gray-200", isMobile ? "my-4" : "my-5")} />
 
                   {/* Deposit Amount */}
                   <div>
-                    <UsageBasedPricing
-                      className="w-full"
-                      min={25}
-                      max={10000}
-                      snapTo={25}
-                      currency={currentBrand.symbol}
-                      basePrice={0}
-                      includedCredits={0}
-                      value={depositAmount}
-                      onChange={setDepositAmount}
-                      onChangeEnd={(v) => {
-                        console.log("Deposit amount committed:", v);
-                        setDepositAmount(v);
-                      }}
-                      title=""
-                      subtitle=""
-                    />
+                    {!useManualAmount ? (
+                      <>
+                        <UsageBasedPricing
+                          className="w-full"
+                          min={25}
+                          max={10000}
+                          snapTo={25}
+                          currency={currentBrand.symbol}
+                          basePrice={0}
+                          includedCredits={0}
+                          value={depositAmount}
+                          onChange={setDepositAmount}
+                          onChangeEnd={(v) => {
+                            console.log("Deposit amount committed:", v);
+                            setDepositAmount(v);
+                          }}
+                          title=""
+                          subtitle=""
+                        />
+                        <div className="flex items-center justify-end mt-3">
+                          <button
+                            onClick={() => setUseManualAmount(true)}
+                            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                          >
+                            + Add Manual Amount
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className={cn("space-y-3", isMobile && "space-y-2")}>
+                        <div>
+                          <label className={cn("block font-semibold text-gray-900 mb-2", isMobile ? "text-xs" : "text-sm")}>
+                            Deposit Amount
+                          </label>
+                          <Input
+                            type="number"
+                            min={25}
+                            max={10000}
+                            step={0.01}
+                            value={depositAmount}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value) || 0;
+                              if (value >= 25 && value <= 10000) {
+                                setDepositAmount(value);
+                              } else if (value > 10000) {
+                                setDepositAmount(10000);
+                              } else if (value < 25 && e.target.value !== '') {
+                                setDepositAmount(25);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const value = parseFloat(e.target.value) || 25;
+                              if (value < 25) {
+                                setDepositAmount(25);
+                              } else if (value > 10000) {
+                                setDepositAmount(10000);
+                              } else {
+                                setDepositAmount(value);
+                              }
+                            }}
+                            className={cn(
+                              "w-full bg-white border-2 border-gray-200 rounded-lg text-gray-900 font-medium focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-gray-400 hover:border-gray-300 transition-all",
+                              isMobile ? "px-3 py-2.5 text-sm" : "px-4 py-3 text-base"
+                            )}
+                            placeholder="Enter amount (25 - 10,000)"
+                          />
+                          <p className={cn("text-gray-500 mt-1.5", isMobile ? "text-[10px]" : "text-xs")}>
+                            Min. {currentBrand.symbol}25 / Max. {currentBrand.symbol}10,000
+                          </p>
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <button
+                            onClick={() => setUseManualAmount(false)}
+                            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                          >
+                            Use Slider
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <Separator className="bg-gray-200 my-6" />
+                  <Separator className={cn("bg-gray-200", isMobile ? "my-6" : "my-8")} />
 
                   {/* Deposit Summary */}
                   <div>
-                    <div className="space-y-1.5 p-3 bg-gray-50 rounded-lg">
-                      <div className="flex justify-between text-sm">
+                    <div className={cn("bg-gray-50 rounded-lg", isMobile ? "space-y-2 p-3" : "space-y-2 p-4")}>
+                      <div className={cn("flex justify-between", isMobile ? "text-xs" : "text-sm")}>
                         <span className="text-gray-600">Deposit Amount:</span>
                         <span className="text-gray-900 font-medium">{currentBrand.symbol}{depositAmount.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
+                      <div className={cn("flex justify-between", isMobile ? "text-xs" : "text-sm")}>
                         <span className="text-gray-600">Fee (9.75%):</span>
                         <span className="text-gray-900 font-medium">{currentBrand.symbol}{(depositAmount * 0.0975).toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-base pt-1.5 border-t border-gray-200">
+                      <div className={cn("flex justify-between pt-1.5 border-t border-gray-200", isMobile ? "text-sm" : "text-base")}>
                         <span className="text-gray-900 font-semibold">Total Amount:</span>
                         <span className="text-gray-900 font-bold">{currentBrand.symbol}{(depositAmount + depositAmount * 0.0975).toFixed(2)}</span>
                       </div>
                     </div>
                     <Button
+                      type="button"
                       onClick={() => {
                         console.log("Deposit: Proceed with amount:", depositAmount);
                         // Show loading state
@@ -6144,7 +6300,8 @@ function NavTestPageContent() {
                         }, 1000)
                       }}
                       disabled={depositAmount < 25 || depositAmount > 10000 || isDepositLoading}
-                      className="w-full h-11 mt-3 bg-[#8BC34A] text-white hover:bg-[#7CB342] disabled:bg-gray-300 disabled:text-gray-500 rounded-md font-semibold transition-colors"
+                      className={cn("w-full bg-[#8BC34A] text-white hover:bg-[#7CB342] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed rounded-md font-semibold transition-colors cursor-pointer", isMobile ? "h-11 mt-4 text-sm" : "h-12 mt-4")}
+                      style={{ pointerEvents: 'auto', zIndex: 10 }}
                     >
                       {isDepositLoading ? (
                         <div className="flex items-center justify-center gap-2">
@@ -6160,23 +6317,23 @@ function NavTestPageContent() {
               </Card>
 
               {/* Trust Section */}
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <div className="flex flex-col items-center gap-2.5">
+              <div className={cn("border-t border-gray-200", isMobile ? "mt-4 pt-4" : "mt-5 pt-5 pb-4")} style={isMobile ? { paddingBottom: '0px', marginBottom: 0 } : undefined}>
+                <div className={cn("flex flex-col items-center", isMobile ? "gap-2" : "gap-2.5")}>
                   {/* Security Badges */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-gray-600">
-                      <IconShield className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-xs font-medium">SSL Encrypted</span>
+                  <div className={cn("flex items-center", isMobile ? "gap-2" : "gap-3")}>
+                    <div className={cn("flex items-center text-gray-600", isMobile ? "gap-1" : "gap-1.5")}>
+                      <IconShield className={cn("text-green-600", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
+                      <span className={cn("font-medium", isMobile ? "text-[10px]" : "text-xs")}>SSL Encrypted</span>
                     </div>
-                    <div className="w-px h-3.5 bg-gray-300" />
-                    <div className="flex items-center gap-1.5 text-gray-600">
-                      <IconLock className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-xs font-medium">Secure Payment</span>
+                    <div className={cn("bg-gray-300", isMobile ? "w-px h-2.5" : "w-px h-3.5")} />
+                    <div className={cn("flex items-center text-gray-600", isMobile ? "gap-1" : "gap-1.5")}>
+                      <IconLock className={cn("text-blue-600", isMobile ? "w-3 h-3" : "w-3.5 h-3.5")} />
+                      <span className={cn("font-medium", isMobile ? "text-[10px]" : "text-xs")}>Secure Payment</span>
                     </div>
                   </div>
 
                   {/* Trust Statement */}
-                  <p className="text-xs text-gray-500 text-center max-w-sm leading-tight">
+                  <p className={cn("text-gray-500 text-center max-w-sm leading-tight", isMobile ? "text-[10px]" : "text-xs")}>
                     Your payment information is secure and encrypted. We never store your full card details.
                   </p>
                 </div>
@@ -6389,9 +6546,272 @@ function NavTestPageContent() {
                 <SidebarGroup>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {sidebarMenuItems.map((item, index) => {
+                      {/* Casino Title with Animated Quick Links Menu - Mobile only */}
+                      {isMobile && (
+                        <AnimatePresence mode="wait">
+                          {!showQuickLinksMenu ? (
+                            <motion.div
+                              key="casino-menu"
+                              initial={{ opacity: 1, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: -30, scale: 0.95 }}
+                              transition={{ 
+                                duration: 0.3,
+                                ease: [0.4, 0, 0.2, 1]
+                              }}
+                            >
+                              <SidebarMenuItem>
+                                <div className="px-3 py-3 border-b border-white/10 mb-2">
+                                  <button 
+                                    type="button"
+                                    className="w-full flex items-center justify-between text-white hover:text-white/80 transition-colors cursor-pointer"
+                                    style={{ fontSize: '1.25rem', fontWeight: 700 }}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setShowQuickLinksMenu(true)
+                                    }}
+                                  >
+                                    <span>Casino</span>
+                                    <IconChevronRight className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </SidebarMenuItem>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="quick-links-menu"
+                              initial={{ opacity: 0, x: 30, scale: 0.95 }}
+                              animate={{ opacity: 1, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: 30, scale: 0.95 }}
+                              transition={{ 
+                                duration: 0.3,
+                                ease: [0.4, 0, 0.2, 1]
+                              }}
+                            >
+                              <SidebarMenuItem>
+                                <div className="px-3 py-3 border-b border-white/10 mb-2">
+                                  <button 
+                                    type="button"
+                                    className="w-full flex items-center justify-start gap-2 text-white hover:text-white/80 transition-colors cursor-pointer mb-3"
+                                    style={{ fontSize: '1.25rem', fontWeight: 700 }}
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setShowQuickLinksMenu(false)
+                                    }}
+                                  >
+                                    <IconChevronLeft className="h-5 w-5" />
+                                    <span>Back</span>
+                                  </button>
+                                  <div className="space-y-1">
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        setShowSports(false)
+                                        setShowVipRewards(false)
+                                        setQuickLinksOpen(false)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                                      }}
+                                    >
+                                      Home
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        setIsPageTransitioning(true)
+                                        setTimeout(() => {
+                                          setShowSports(true)
+                                          setShowVipRewards(false)
+                                          setQuickLinksOpen(false)
+                                          setTimeout(() => {
+                                            setIsPageTransitioning(false)
+                                          }, 200)
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }, 150)
+                                      }}
+                                    >
+                                      Sports
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        window.location.href = '/live-betting'
+                                        setQuickLinksOpen(false)
+                                      }}
+                                    >
+                                      Live Betting
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        setIsPageTransitioning(true)
+                                        setTimeout(() => {
+                                          setShowSports(false)
+                                          setShowVipRewards(false)
+                                          setActiveSubNav('For You')
+                                          setQuickLinksOpen(false)
+                                          setTimeout(() => {
+                                            setIsPageTransitioning(false)
+                                          }, 200)
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }, 150)
+                                      }}
+                                    >
+                                      Casino
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        setIsPageTransitioning(true)
+                                        setTimeout(() => {
+                                          setShowSports(false)
+                                          setShowVipRewards(false)
+                                          setActiveSubNav('Live')
+                                          setShowAllGames(false)
+                                          setSelectedCategory('')
+                                          setSelectedVendor('')
+                                          setQuickLinksOpen(false)
+                                          setTimeout(() => {
+                                            setIsPageTransitioning(false)
+                                          }, 200)
+                                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                                        }, 150)
+                                      }}
+                                    >
+                                      Live Casino
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        window.location.href = '/poker'
+                                        setQuickLinksOpen(false)
+                                      }}
+                                    >
+                                      Poker
+                                    </button>
+                                    <button
+                                      className="w-full flex items-center justify-start px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowQuickLinksMenu(false)
+                                        setOpenMobile(false)
+                                        setShowVipRewards(true)
+                                        setShowSports(false)
+                                        setQuickLinksOpen(false)
+                                      }}
+                                    >
+                                      VIP Rewards
+                                    </button>
+                                    <div style={{ position: 'relative', zIndex: 10006 }}>
+                                      <DropdownMenu open={otherDropdownOpen} onOpenChange={setOtherDropdownOpen} modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="w-full flex items-center justify-between px-3 py-2.5 text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors text-sm cursor-pointer"
+                                            style={{ pointerEvents: 'auto' }}
+                                            onClick={(e) => {
+                                              e.preventDefault()
+                                              e.stopPropagation()
+                                              setOtherDropdownOpen(!otherDropdownOpen)
+                                            }}
+                                          >
+                                            <span>Other</span>
+                                            <IconChevronDown className="h-4 w-4" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent 
+                                          align="start" 
+                                          className="bg-[#2D2E2C] border-white/10 text-white min-w-[160px]"
+                                          side="right"
+                                          sideOffset={8}
+                                          alignOffset={-8}
+                                          style={{ zIndex: 10007 }}
+                                          onCloseAutoFocus={(e) => e.preventDefault()}
+                                        >
+                                          <DropdownMenuItem
+                                            className="text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+                                            onSelect={(e) => {
+                                              e.preventDefault()
+                                              setOtherDropdownOpen(false)
+                                              setShowQuickLinksMenu(false)
+                                              setOpenMobile(false)
+                                              setQuickLinksOpen(false)
+                                            }}
+                                          >
+                                            Option 1
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+                                            onSelect={(e) => {
+                                              e.preventDefault()
+                                              setOtherDropdownOpen(false)
+                                              setShowQuickLinksMenu(false)
+                                              setOpenMobile(false)
+                                              setQuickLinksOpen(false)
+                                            }}
+                                          >
+                                            Option 2
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="text-white/70 hover:text-white hover:bg-white/5 cursor-pointer"
+                                            onSelect={(e) => {
+                                              e.preventDefault()
+                                              setOtherDropdownOpen(false)
+                                              setShowQuickLinksMenu(false)
+                                              setOpenMobile(false)
+                                              setQuickLinksOpen(false)
+                                            }}
+                                          >
+                                            Option 3
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </div>
+                                </div>
+                              </SidebarMenuItem>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      )}
+                      
+                      {!showQuickLinksMenu && sidebarMenuItems.map((item, index) => {
                         const Icon = item.icon
                         const showSeparatorAbove = item.label === 'Loyalty Hub'
+                        // Determine if this menu item is active based on selectedCategory
+                        const isActive = selectedCategory === item.label || 
+                             (item.label === 'Slots' && selectedCategory === 'Slots') ||
+                             (item.label === 'Blackjack' && (selectedCategory === 'Blackjack' || selectedCategory === 'BlackJack')) ||
+                             (item.label === 'Video Poker' && selectedCategory === 'Video Poker') ||
+                             (item.label === 'Specialty Games' && selectedCategory === 'Specialty') ||
+                             (item.label === 'Table Games' && selectedCategory === 'Table Games') ||
+                             (item.label === 'My Favorites' && selectedCategory === 'Favorites') ||
+                             (item.label === 'Popular Games' && selectedCategory === 'Popular')
                         return (
                           <React.Fragment key={index}>
                             {showSeparatorAbove && (
@@ -6401,42 +6821,62 @@ function NavTestPageContent() {
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <SidebarMenuButton
-                                    isActive={item.active}
+                                    isActive={isActive}
+                                    style={isActive ? { backgroundColor: brandPrimary } : undefined}
+                                    className={cn(
+                                      "w-full justify-start rounded-small h-auto py-2.5 px-3 text-sm font-medium cursor-pointer",
+                                      "data-[active=true]:text-white data-[active=true]:font-medium",
+                                      "data-[active=false]:text-white/70 hover:text-white hover:bg-white/5",
+                                      isActive && '[&[data-active=true]]:!bg-transparent [&[data-active=true]]:bg-[var(--brand-primary)]'
+                                    )}
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
                                       console.log('Sidebar menu clicked:', item.label)
+                                      
+                                      // Close sidebar when selecting an item
+                                      if (isMobile) {
+                                        setOpenMobile(false)
+                                      } else {
+                                        if (sidebarOpen) {
+                                          toggleSidebar()
+                                        }
+                                      }
+                                      
                                       // Add navigation logic here
-                                      if (item.label === 'Casino Lobby') {
-                                        setActiveSubNav('For You')
-                                        setShowAllGames(false)
-                                        setSelectedCategory('')
-                                        setShowSports(false)
-                                      } else if (item.label === 'My Favorites') {
+                                      if (item.label === 'My Favorites') {
                                         setActiveSubNav('For You')
                                         setSelectedCategory('Favorites')
+                                        setSelectedVendor('')
                                         setShowAllGames(true)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                         setShowSports(false)
                                       } else if (item.label === 'Popular Games') {
                                         setActiveSubNav('For You')
                                         setSelectedCategory('Popular')
+                                        setSelectedVendor('')
                                         setShowAllGames(true)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                         setShowSports(false)
                                       } else if (item.label === 'Slots') {
                                         setActiveSubNav('Slots')
                                         setSelectedCategory('Slots')
+                                        setSelectedVendor('')
                                         setShowAllGames(true)
                                         setShowSports(false)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                       } else if (item.label === 'Blackjack') {
-                                        setActiveSubNav('For You')
                                         setSelectedCategory('BlackJack')
+                                        setSelectedVendor('')
                                         setShowAllGames(true)
                                         setShowSports(false)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                       } else if (item.label === 'Video Poker') {
-                                        setActiveSubNav('For You')
                                         setSelectedCategory('Video Poker')
+                                        setSelectedVendor('')
                                         setShowAllGames(true)
                                         setShowSports(false)
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                       } else if (item.label === 'Specialty Games') {
                                         setActiveSubNav('For You')
                                         setSelectedCategory('Specialty')
@@ -6451,6 +6891,7 @@ function NavTestPageContent() {
                                         setActiveSubNav('Live')
                                         setShowAllGames(false)
                                         setSelectedCategory('')
+                          setSelectedVendor('')
                                         setShowSports(false)
                                       } else if (item.label === 'Tournaments') {
                                         setActiveSubNav('For You')
@@ -6469,12 +6910,6 @@ function NavTestPageContent() {
                                         setShowSports(false)
                                       }
                                     }}
-                                    className={cn(
-                                      "w-full justify-start rounded-small h-auto py-2.5 px-3 text-sm font-medium cursor-pointer",
-                                      "data-[active=true]:text-white data-[active=true]:font-medium",
-                                      "data-[active=false]:text-white/70 hover:text-white hover:bg-white/5"
-                                    )}
-                                    style={item.active ? { backgroundColor: brandPrimary } : undefined}
                                   >
                                     <Icon strokeWidth={1.5} className="w-5 h-5" />
                                     <span>{item.label}</span>
@@ -6603,20 +7038,29 @@ function NavTestPageContent() {
                     )}
                     
                     {/* Text Tabs - Full Width */}
-                    <AnimateTabs value={activeSubNav} onValueChange={(value) => { 
+                    <AnimateTabs value={(() => {
+                      // Don't highlight any tab if viewing vendor or category not in sub nav menu
+                      const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                      if (selectedVendor) return ''
+                      if (selectedCategory && !subNavItems.includes(selectedCategory)) return ''
+                      return activeSubNav
+                    })()} onValueChange={(value) => { 
                       setActiveSubNav(value)
                       if (value === 'For You' || value === 'Live') {
                         setShowAllGames(false)
                         setSelectedCategory('')
+                        setSelectedVendor('')
                       } else {
                         setSelectedCategory(value)
+                        setSelectedVendor('')
                         setShowAllGames(true)
                         setActiveSubNav(value)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
                       }
                       
                       // Scroll the clicked tab into view on mobile
                       if (isMobile && subNavScrollRef.current) {
-                        const tabIndex = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].indexOf(value)
+                        const tabIndex = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].indexOf(value)
                         if (tabIndex !== -1) {
                           const tabs = subNavScrollRef.current.querySelectorAll('[data-tab-item]')
                           const targetTab = tabs[tabIndex] as HTMLElement
@@ -6645,7 +7089,7 @@ function NavTestPageContent() {
                         paddingRight: 0
                       } : {}}
                       >
-                        {['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab, index) => (
+                        {['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].map((tab, index) => (
                           <TabsTab 
                             key={tab}
                             value={tab}
@@ -6653,10 +7097,16 @@ function NavTestPageContent() {
                             className={cn(
                               "relative z-10 text-white/70 dark:text-white/70 text-gray-900 dark:text-white/70 hover:text-white dark:hover:text-white hover:text-black dark:hover:text-white hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl px-4 py-1 h-9 text-xs font-medium transition-colors duration-300 ease-in-out data-[state=active]:text-white dark:data-[state=active]:text-white focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 active:bg-transparent active:outline-none flex items-center gap-1.5 flex-shrink-0",
                               isMobile && index === 0 && "scroll-snap-start",
-                              isMobile && index === ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].length - 1 && "scroll-snap-end mr-12"
+                              isMobile && index === ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New'].length - 1 && "scroll-snap-end mr-12"
                             )}
                           >
-                            {activeSubNav === tab && (
+                            {(() => {
+                              // Don't highlight if viewing vendor or category not in sub nav menu
+                              const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                              if (selectedVendor) return false
+                              if (selectedCategory && !subNavItems.includes(selectedCategory)) return false
+                              return activeSubNav === tab
+                            })() && (
                               <motion.div
                                 layoutId="activeTab"
                                 className="absolute inset-0 rounded-2xl -z-10"
@@ -6875,7 +7325,7 @@ function NavTestPageContent() {
                   transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                 >
               <>
-            {/* Banner Carousel - Static, below tabs, only show on "For You" */}
+            {/* Banner Carousel - Static, below tabs, only show on "For You" page */}
             {activeSubNav === 'For You' && !showAllGames && (
               <div 
                 ref={bannerRef} 
@@ -6893,6 +7343,12 @@ function NavTestPageContent() {
                 }}
               >
                   <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                    {!isMobile && (
+                      <>
+                        <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                        <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                      </>
+                    )}
                     <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                       {/* VIP Rewards Card */}
                       <CarouselItem className={cn(
@@ -7002,41 +7458,329 @@ function NavTestPageContent() {
               >
                   <AnimatePresence mode="wait" initial={false}>
                     {showAllGames ? (
-                      <motion.div
-                        key={`all-games-${selectedCategory || activeSubNav}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15, ease: "easeOut" }}
-                        className="px-6"
-                      >
+                      <div className="">
+                        {/* Banner Carousel - Show on all casino pages, above title */}
+                        <div 
+                          className={cn(
+                            "pl-0 pr-0 relative z-0 overflow-visible",
+                            isMobile ? "pt-0 pb-8" : "pt-0 pb-10"
+                          )}
+                          style={isMobile ? { 
+                            marginTop: '0px',
+                            paddingTop: '3px'
+                          } : {
+                            marginTop: '-36px',
+                            paddingTop: 0
+                          }}
+                        >
+                          <Carousel className="w-full relative overflow-visible" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                            {!isMobile && (
+                              <>
+                                <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                              </>
+                            )}
+                            <CarouselContent className="ml-0 -mr-2 md:-mr-4">
+                              {/* VIP Rewards Card */}
+                              <CarouselItem className={cn(
+                                "pr-0 basis-auto flex-shrink-0",
+                                isMobile ? "pl-3" : "pl-6"
+                              )}>
+                                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
+                                  <CardContent className="p-4">
+                                    <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
+                                    <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
+                                    <VIPProgressBar value={45} />
+                                  </CardContent>
+                                </Card>
+                              </CarouselItem>
+                              
+                              {/* Daily Races Card */}
+                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
+                                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
+                                      <div className="text-right">
+                                        <DailyRacesTimer />
+                                      </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
+                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">3rd</div>
+                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Position</div>
+                                      </div>
+                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
+                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$80.000</div>
+                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Wagered</div>
+                                      </div>
+                                      <div className="bg-white/5 dark:bg-white/5 bg-gray-50 dark:bg-white/5 rounded-small p-2.5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 transition-colors duration-300">
+                                        <div className="text-gray-800 dark:text-white font-semibold mb-0.5 transition-colors duration-300">$160.000</div>
+                                        <div className="text-gray-600 dark:text-white/50 text-[10px] transition-colors duration-300">Current Prize</div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              </CarouselItem>
+                              
+                              {/* Weekly Game Banner */}
+                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
+                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
+                                  <Image
+                                    src="/banners/weekly.png"
+                                    alt="Weekly Game Banner"
+                                    width={320}
+                                    height={140}
+                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
+                                    priority
+                                    unoptimized
+                                    quality={100}
+                                    style={{ imageRendering: 'crisp-edges' }}
+                                  />
+                                </Card>
+                              </CarouselItem>
+                              
+                              {/* Originals Banner */}
+                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
+                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
+                                  <Image
+                                    src="/banners/orginals.png"
+                                    alt="Originals Banner"
+                                    width={320}
+                                    height={140}
+                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
+                                    priority
+                                    unoptimized
+                                    quality={100}
+                                    style={{ imageRendering: 'crisp-edges' }}
+                                  />
+                                </Card>
+                              </CarouselItem>
+                              
+                              {/* Free Spins Banner */}
+                              <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
+                                <Card className="border-0 relative overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" style={{ width: '320px', height: '140px' }}>
+                                  <Image
+                                    src="/banners/freespins.png"
+                                    alt="Free Spins Banner"
+                                    width={320}
+                                    height={140}
+                                    className="object-contain dark:brightness-100 brightness-75 dark:contrast-100 contrast-110"
+                                    priority
+                                    unoptimized
+                                    quality={100}
+                                    style={{ imageRendering: 'crisp-edges' }}
+                                  />
+                                </Card>
+                              </CarouselItem>
+                            </CarouselContent>
+                          </Carousel>
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-8 px-6">
+                          <div className="flex items-center gap-3">
+                            {/* Back button - show when viewing vendor or category not in sub nav menu */}
+                            {(() => {
+                              const subNavItems = ['For You', 'Bonus Buys', 'Megaways', 'Originals', 'Slots', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
+                              const isVendorPage = !!selectedVendor
+                              const isCategoryNotInMenu = selectedCategory && !subNavItems.includes(selectedCategory)
+                              const showBackButton = isVendorPage || isCategoryNotInMenu
+                              
+                              return showBackButton ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedVendor('')
+                                    setSelectedCategory('')
+                                    setShowAllGames(false)
+                                    setActiveSubNav('For You')
+                                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                                  }}
+                                  className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 transition-colors duration-300 text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white"
+                                  aria-label="Go back"
+                                >
+                                  <IconChevronLeft className="w-5 h-5" />
+                                </button>
+                              ) : null
+                            })()}
+                            
                         <motion.h2 
-                          className="text-2xl font-bold text-black dark:text-white mb-6 transition-colors duration-300"
+                              className="text-2xl font-bold text-black dark:text-white transition-colors duration-300"
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, ease: "easeOut" }}
                         >
-                          {selectedCategory || activeSubNav}
+                          {selectedVendor || selectedCategory || activeSubNav}
                         </motion.h2>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                          {Array.from({ length: 200 }).map((_, index) => {
-                            // Calculate column index for staggered left-to-right animation
-                            // Use a reasonable max columns for delay calculation
-                            const maxCols = 6
-                            const columnIndex = index % maxCols
+                            
+                            {/* Show selected filter */}
+                            {(selectedVendor || selectedCategory || activeSubNav) !== 'For You' && (selectedVendor || selectedCategory || activeSubNav) !== 'Live' && gameSortFilter !== 'popular' && (
+                              <span className="text-sm text-white/60 dark:text-white/60 px-3 py-1 rounded-lg bg-white/5 dark:bg-white/5 border border-white/10 dark:border-white/10">
+                                {gameSortFilter === 'hot' ? 'Hot' : 
+                                 gameSortFilter === 'latest' ? 'Latest' : 
+                                 gameSortFilter === 'oldest' ? 'Oldest' : 
+                                 gameSortFilter === 'a-z' ? 'A-Z' : 
+                                 gameSortFilter === 'z-a' ? 'Z-A' : ''}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Filter Icon - Only show on sub pages (not For You or Live) */}
+                          {(selectedVendor || selectedCategory || activeSubNav) !== 'For You' && (selectedVendor || selectedCategory || activeSubNav) !== 'Live' && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="bg-white/5 dark:bg-white/5 bg-gray-200/60 dark:bg-white/5 hover:bg-white/10 dark:hover:bg-white/10 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white"
+                                >
+                                  <IconFilter className="w-4 h-4" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48 bg-[#2d2d2d] border-white/10 text-white">
+                                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('popular')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'popular' && "bg-white/10"
+                                  )}
+                                >
+                                  Popular
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('hot')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'hot' && "bg-white/10"
+                                  )}
+                                >
+                                  Hot
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('latest')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'latest' && "bg-white/10"
+                                  )}
+                                >
+                                  Latest
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('oldest')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'oldest' && "bg-white/10"
+                                  )}
+                                >
+                                  Oldest
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('a-z')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'a-z' && "bg-white/10"
+                                  )}
+                                >
+                                  A-Z
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => setGameSortFilter('z-a')}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    gameSortFilter === 'z-a' && "bg-white/10"
+                                  )}
+                                >
+                                  Z-A
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                        
+                        
+                        {(() => {
+                          // Generate game data with sortable properties - memoized to prevent regeneration on scroll
+                          const gameNames = ['Gold Nugget Rush', 'Mega Fortune', 'Starburst', 'Book of Dead', 'Gonzo\'s Quest', 'Dead or Alive', 'Immortal Romance', 'Thunderstruck', 'Avalon', 'Blood Suckers', 'Mega Moolah', 'Bonanza', 'Razor Shark', 'Sweet Bonanza', 'Gates of Olympus', 'Big Bass Bonanza', 'The Dog House', 'Wolf Gold', 'Fire Strike', 'Chilli Heat']
+                          const totalGames = 200
+                          
+                          // Seeded random function for consistent values
+                          const seededRandom = (seed: number) => {
+                            const x = Math.sin(seed) * 10000
+                            return x - Math.floor(x)
+                          }
+                          
+                          // Create game data array with stable random values based on index
+                          const games = Array.from({ length: totalGames }).map((_, index) => {
+                            const name = gameNames[index % gameNames.length]
                             const categoryKey = selectedCategory || activeSubNav
+                            const seed = index * 1000 + categoryKey.length // Stable seed based on index and category
+                            return {
+                              index,
+                              name,
+                              popularity: Math.floor(seededRandom(seed) * 1000) + (index < 10 ? 500 : 0), // First 10 are more popular
+                              hotScore: Math.floor(seededRandom(seed + 1) * 100) + (index < 5 ? 50 : 0), // First 5 are hotter
+                              dateAdded: new Date(2024, 0, 1 + (index % 365)), // Spread over a year
+                              nameLower: name.toLowerCase()
+                            }
+                          })
+                          
+                          // Sort based on selected filter
+                          let sortedGames = [...games]
+                          switch (gameSortFilter) {
+                            case 'popular':
+                              sortedGames.sort((a, b) => b.popularity - a.popularity)
+                              break
+                            case 'hot':
+                              sortedGames.sort((a, b) => b.hotScore - a.hotScore)
+                              break
+                            case 'latest':
+                              sortedGames.sort((a, b) => b.dateAdded.getTime() - a.dateAdded.getTime())
+                              break
+                            case 'oldest':
+                              sortedGames.sort((a, b) => a.dateAdded.getTime() - b.dateAdded.getTime())
+                              break
+                            case 'a-z':
+                              sortedGames.sort((a, b) => a.nameLower.localeCompare(b.nameLower))
+                              break
+                            case 'z-a':
+                              sortedGames.sort((a, b) => b.nameLower.localeCompare(a.nameLower))
+                              break
+                          }
+                          
+                          const categoryKey = selectedCategory || activeSubNav
+                          const gameTiles = sortedGames.map((game, displayIndex) => {
+                            const maxCols = 6
+                            const columnIndex = displayIndex % maxCols
+                            // Use stable key that doesn't change during scroll
+                            const stableKey = `${categoryKey}-${game.index}`
                             return (
                               <LazyGameTile 
-                                key={`${categoryKey}-${index}`} 
-                                index={index} 
+                                key={stableKey} 
+                                index={game.index} 
                                 columnIndex={columnIndex}
-                                rowIndex={Math.floor(index / maxCols)}
+                                rowIndex={Math.floor(displayIndex / maxCols)}
                                 onTileClick={setSelectedGame}
+                                isMobile={isMobile}
                               />
                             )
-                          })}
+                          })
+
+                          // On mobile, use memoized static div to prevent re-renders during scroll
+                          if (isMobile) {
+                            return (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-6" style={{ willChange: 'auto' }}>
+                                {gameTiles}
                         </div>
-                      </motion.div>
+                            )
+                          }
+                          
+                          return (
+                            <div 
+                              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-6"
+                            >
+                              {gameTiles}
+                            </div>
+                          )
+                        })()}
+                      </div>
                     ) : activeSubNav === 'Live' ? (
                       <motion.div
                         key="live"
@@ -7065,8 +7809,10 @@ function NavTestPageContent() {
                               style={{ flex: '0 0 auto', flexShrink: 0, visibility: 'visible', opacity: 1, display: 'inline-flex', whiteSpace: 'nowrap' }}
                               onClick={() => {
                                 setSelectedCategory('Blackjack')
+                                setSelectedVendor('')
                                 setShowAllGames(true)
                                 setActiveSubNav('Live')
+                                window.scrollTo({ top: 0, behavior: 'smooth' })
                               }}
                             >
                               ALL GAMES
@@ -7074,6 +7820,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 7 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -7154,6 +7906,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 8 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -7357,6 +8115,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 8 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -7444,6 +8208,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -7509,6 +8279,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {originalsTileImages.map((imageSrc, index) => {
                                   const gameNames = ['Plinko', 'Blackjack', 'Dice', 'Diamonds', 'Mines', 'Keno', 'Limbo', 'Wheel', 'Hilo', 'Video Poker']
@@ -7569,8 +8345,10 @@ function NavTestPageContent() {
                                 style={{ visibility: 'visible', opacity: 1, display: 'inline-flex', flexShrink: 0, whiteSpace: 'nowrap' }}
                                 onClick={() => {
                                   setSelectedCategory('Slots')
+                                  setSelectedVendor('')
                                   setShowAllGames(true)
                                   setActiveSubNav('For You')
+                                  window.scrollTo({ top: 0, behavior: 'smooth' })
                                 }}
                               >
                                 ALL GAMES
@@ -7579,6 +8357,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   const imageSrc = squareTileImages[index % squareTileImages.length]
@@ -7715,33 +8499,24 @@ function NavTestPageContent() {
                           </RainBackground>
                         </div>
 
-                        {/* Vendor Marquee */}
+                        {/* Vendors Carousel */}
                         <div 
                           className={cn(
-                            "relative w-full overflow-hidden mb-8",
-                            isMobile ? "mx-3" : ""
+                            "relative w-full mb-8 overflow-visible",
+                            isMobile ? "px-3" : "px-6"
                           )}
-                          onMouseEnter={() => setMarqueePaused(true)}
-                          onMouseLeave={() => setMarqueePaused(false)}
+                          style={{ overflow: 'visible' }}
                         >
-                          <div className="relative bg-white/5 border-y border-white/10 py-4">
-                            <motion.div
-                              className="flex items-center gap-8 whitespace-nowrap"
-                              animate={{
-                                x: marqueePaused ? undefined : [0, -1000],
-                              }}
-                              transition={{
-                                x: {
-                                  repeat: Infinity,
-                                  repeatType: "loop",
-                                  duration: 30,
-                                  ease: "linear",
-                                },
-                              }}
-                            >
-                              {/* Duplicate the list for seamless loop */}
-                              {[...Array(2)].map((_, loopIndex) => (
-                                <React.Fragment key={loopIndex}>
+                          <h2 className="text-xl font-bold text-black dark:text-white mb-4">Vendors</h2>
+                          <div className="overflow-visible" style={{ overflow: 'visible' }}>
+                            <Carousel className="w-full relative" opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }} style={{ overflow: 'visible' }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
+                              <CarouselContent className="ml-0 -mr-2 md:-mr-4" style={{ overflow: 'visible' }}>
                                   {[
                                     'Dragon Gaming',
                                     'BetSoft',
@@ -7774,20 +8549,28 @@ function NavTestPageContent() {
                                     'VIG',
                                     'Wingo',
                                   ].map((vendor, index) => (
+                                  <CarouselItem key={vendor} className={cn(
+                                    "pr-2 basis-auto flex-shrink-0",
+                                    isMobile ? "pl-0" : "pl-0"
+                                  )}>
                                     <button
-                                      key={`${loopIndex}-${index}`}
-                                      className="text-white/70 hover:text-white text-sm font-medium px-4 transition-colors cursor-pointer"
+                                      className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-4 py-3.5 text-sm font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden"
                                       onClick={() => {
-                                        // Handle vendor click - could filter games by vendor
-                                        console.log('Clicked vendor:', vendor)
+                                        setSelectedVendor(vendor)
+                                        setSelectedCategory('')
+                                        setShowAllGames(true)
+                                        // Don't change activeSubNav when vendor is selected - keep current or set to empty to avoid highlighting
+                                        window.scrollTo({ top: 0, behavior: 'smooth' })
                                       }}
                                     >
-                                      {vendor}
+                                      <span className="relative z-10">{vendor}</span>
+                                      {/* Sweep effect */}
+                                      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                                     </button>
+                                  </CarouselItem>
                                   ))}
-                                </React.Fragment>
-                              ))}
-                            </motion.div>
+                              </CarouselContent>
+                            </Carousel>
                           </div>
                         </div>
                         
@@ -7815,6 +8598,12 @@ function NavTestPageContent() {
                           </div>
                           <div className="relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
                             <Carousel className="w-full relative" style={{ overflow: 'visible', position: 'relative', width: '100%', maxWidth: '100%', minWidth: 0 }} opts={{ dragFree: true, containScroll: 'trimSnaps', duration: 15 }}>
+                              {!isMobile && (
+                                <>
+                                  <CarouselPrevious className="!left-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                  <CarouselNext className="!right-2 !-translate-x-0 h-8 w-8 rounded-full bg-[#1a1a1a]/90 backdrop-blur-sm border border-white/20 hover:bg-[#1a1a1a] hover:border-white/30 text-white z-20" />
+                                </>
+                              )}
                               <CarouselContent className="ml-0 -mr-2 md:-mr-4">
                                 {Array.from({ length: 10 }).map((_, index) => {
                                   // Only first tile is rectangle, rest are squares
@@ -8059,14 +8848,20 @@ function NavTestPageContent() {
               }
             }
           }}
-          direction="right"
+          direction={isMobile ? "bottom" : "right"}
           shouldScaleBackground={false}
         >
           <DrawerContent 
-            className="w-full sm:max-w-md bg-white border-l border-gray-200 text-gray-900 overflow-hidden"
+            className={cn(
+              "w-full sm:max-w-md bg-white text-gray-900 flex flex-col",
+              isMobile 
+                ? "border-t border-gray-200 rounded-t-[10px]"
+                : "border-l border-gray-200"
+            )}
           >
-            <DrawerHeader className="relative px-4 pt-4 pb-3 flex-shrink-0">
-              <div className="flex items-center justify-between gap-4">
+            {isMobile && <DrawerHandle />}
+            <DrawerHeader className={cn("flex-shrink-0", isMobile ? "px-4 pt-4 pb-3" : "px-4 pt-4 pb-3")}>
+              <div className="flex items-center justify-between gap-3">
                 {accountDrawerView === 'notifications' ? (
                   <div className="flex items-center gap-3 flex-1">
                     <Button 
@@ -8083,13 +8878,13 @@ function NavTestPageContent() {
                     <Avatar className="h-10 w-10 border border-gray-200">
                       <AvatarFallback className="bg-gray-100 text-gray-600 flex items-center justify-center text-sm font-semibold">
                         ch
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                      <div className="text-sm font-medium text-gray-900">ch</div>
-                      <div className="text-xs text-gray-500">b1767721</div>
-                </div>
-              </div>
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <div className="text-sm font-medium text-gray-900 text-left">ch</div>
+                      <div className="text-xs text-gray-500 text-left">b1767721</div>
+                    </div>
+                  </div>
                 )}
                 <div className="flex items-center gap-2">
                   {accountDrawerView === 'notifications' ? null : (
@@ -8104,21 +8899,23 @@ function NavTestPageContent() {
                       <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 border-2 border-white" />
                     </button>
                   )}
-                  <DrawerClose asChild>
-                    <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
-                      <IconX className="h-4 w-4 text-gray-600" />
-                    </button>
-                  </DrawerClose>
+                  {!isMobile && (
+                    <DrawerClose asChild>
+                      <button className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0">
+                        <IconX className="h-4 w-4 text-gray-600" />
+                      </button>
+                    </DrawerClose>
+                  )}
                 </div>
               </div>
             </DrawerHeader>
             
-            <div className="px-4 pt-6 pb-8 overflow-y-auto flex-1 min-h-0">
+            <div className={cn("flex-1 overflow-y-auto", isMobile ? "px-4 pt-4 pb-4" : "px-4 pt-6 pb-4")}>
               {accountDrawerView === 'account' ? (
                 <>
                   {/* Balance Information */}
                   <div className="mb-4">
-                    <div className="space-y-3">
+                    <div className="bg-gray-50 rounded-lg px-3 py-3 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Available Balance</span>
                         <span className="text-sm font-semibold text-gray-900">
@@ -8133,6 +8930,31 @@ function NavTestPageContent() {
                     </div>
               </div>
               
+                  <Separator className="bg-gray-200 mb-3" />
+                  
+                  {/* Deposit and Withdraw */}
+                  <div className="space-y-0.5 w-full mb-3">
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-10 px-3"
+                      onClick={() => {
+                        setAccountDrawerOpen(false)
+                        setDepositDrawerOpen(true)
+                      }}
+                    >
+                      <IconCreditCard className="w-5 h-5 mr-3 text-gray-700" />
+                      <span className="flex-1 text-left text-gray-900">Deposit</span>
+                    </Button>
+                    
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-10 px-3"
+                    >
+                      <IconArrowRight className="w-5 h-5 mr-3 text-gray-700 rotate-180" />
+                      <span className="flex-1 text-left text-gray-900">Withdraw</span>
+                    </Button>
+                  </div>
+                  
                   <Separator className="bg-gray-200 mb-6" />
                   
                   {/* Navigation List */}
@@ -8194,45 +9016,8 @@ function NavTestPageContent() {
                       <span className="flex-1 text-left text-gray-900">VIP Rewards</span>
                 </Button>
               </div>
-              
-                  <Separator className="bg-gray-200 my-4" />
-              
-                  {/* Deposit and Withdraw */}
-                  <div className="space-y-1 w-full">
-              <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        console.log('Deposit button clicked in account drawer, isMobile:', isMobile)
-                        if (isMobile) {
-                          // Close account drawer first, then open deposit drawer
-                          console.log('Closing account drawer, will open deposit drawer')
-                          setAccountDrawerOpen(false)
-                          setTimeout(() => {
-                            console.log('Opening deposit drawer')
-                            setDepositDrawerOpen(true)
-                          }, 300) // Increased delay to ensure account drawer closes first
-                        } else {
-                          setDepositDrawerOpen(true)
-                        }
-                      }}
-                    >
-                      <IconCreditCard className="w-5 h-5 mr-3 text-gray-700" />
-                      <span className="flex-1 text-left text-gray-900">Deposit</span>
-                    </Button>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="w-full justify-start text-gray-900 hover:bg-gray-100 hover:text-gray-900 h-12 px-3"
-                    >
-                      <IconArrowRight className="w-5 h-5 mr-3 text-gray-700 rotate-180" />
-                      <span className="flex-1 text-left text-gray-900">Withdraw</span>
-              </Button>
-            </div>
                   
-                  <Separator className="bg-gray-200 my-4" />
+                  <Separator className={cn("bg-gray-200", isMobile ? "my-4" : "my-5")} />
                   
                   {/* Logout Button */}
                   <Button 
@@ -8312,19 +9097,40 @@ function NavTestPageContent() {
         >
           <DrawerContent 
             className={cn(
-              "bg-[#1a1a1a] text-white flex flex-col",
+              "bg-[#1a1a1a] text-white flex flex-col relative",
               isMobile 
-                ? "w-full border-t border-white/10 rounded-t-[10px] !mt-0 !top-[10vh] !h-[90vh] !max-h-[90vh] overflow-hidden"
+                ? "w-full border-t border-white/10 rounded-t-[10px] !mt-0 !mb-0 !bottom-0 !h-[90vh] !max-h-[90vh] overflow-hidden"
                 : "w-full sm:max-w-md border-l border-white/10 overflow-hidden"
             )}
             style={isMobile ? {
-              maxHeight: '90vh',
               height: '90vh',
-              top: '10vh',
-              bottom: 'auto',
+              maxHeight: '90vh',
+              top: 'auto',
+              bottom: 0,
               marginTop: 0,
-            } : undefined}
+              marginBottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            } : {
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
           >
+            {isMobile && <DrawerHandle variant="dark" />}
+            
+            {/* Close button for desktop only */}
+            {!isMobile && (
+              <div className="relative px-4 pt-2 pb-2 flex-shrink-0 flex items-center justify-end z-50">
+                <DrawerClose asChild>
+                  <button className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors flex-shrink-0">
+                    <IconX className="h-4 w-4 text-white/70" />
+                  </button>
+                </DrawerClose>
+              </div>
+            )}
+            
             <VipDrawerContent 
               vipActiveTab={vipActiveTab}
               setVipActiveTab={setVipActiveTab}
@@ -8388,6 +9194,7 @@ function NavTestPageContent() {
                           setActiveSubNav('For You')
                           setShowAllGames(false)
                           setSelectedCategory('')
+                          setSelectedVendor('')
                           setSelectedGame(null)
                           // Force focus back to main content
                           setTimeout(() => {
@@ -8791,7 +9598,8 @@ function NavTestPageContent() {
 
         {/* Advanced Search Side Drawer */}
         <Drawer open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen} direction="right" shouldScaleBackground={false}>
-          <DrawerContent className="w-full sm:max-w-md bg-[#2d2d2d] border-l border-white/10 text-white z-[210]">
+          <DrawerContent className="w-full sm:max-w-md bg-[#2d2d2d] border-l border-white/10 text-white z-[210] relative">
+            {isMobile && <DrawerHandle variant="dark" />}
             <DrawerHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -8899,7 +9707,9 @@ function NavTestPageContent() {
           onFavoriteClick={() => {
             setActiveSubNav('For You')
             setSelectedCategory('Favorites')
+            setSelectedVendor('')
             setShowAllGames(true)
+            window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
           isSearchActive={searchOverlayOpen}
         />

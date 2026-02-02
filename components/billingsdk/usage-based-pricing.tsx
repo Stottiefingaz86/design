@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export type UsageBasedPricingProps = {
   className?: string;
@@ -66,6 +67,7 @@ export function UsageBasedPricing({
   title = "Pay as you use pricing",
   subtitle = "Start with a flat monthly rate that includes 4,000 credits.",
 }: UsageBasedPricingProps) {
+  const isMobile = useIsMobile()
   const isControlled = typeof valueProp === "number";
   const [uncontrolled, setUncontrolled] = useState(
     clamp(defaultValue, min, max),
@@ -148,6 +150,20 @@ export function UsageBasedPricing({
     return clamp(stepped, min, max);
   };
 
+  // Get snap value based on current value range
+  const getSnapValue = (val: number) => {
+    // For deposit slider: 25-500 uses snapTo of 25, 500-10000 uses snapTo of 100
+    if (min === 25 && max === 10000) {
+      if (val <= 500) {
+        return 25; // First range: 25-500, snap to 25
+      } else {
+        return 100; // Second range: 500-10000, snap to 100
+      }
+    }
+    // Default behavior for other sliders
+    return snapTo && snapTo > 0 ? snapTo : 100;
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -197,10 +213,18 @@ export function UsageBasedPricing({
         animFromPctRef.current +
         (animToPctRef.current - animFromPctRef.current) * k;
       setPosPct(currPct);
-      // live update the value with 100/snapTo increments during animation
+      // live update the value with dynamic snap increments during animation
       const liveValue = min + (currPct / 100) * (max - min);
-      const moveSnap = snapTo && snapTo > 0 ? snapTo : 100;
+      const moveSnap = getSnapValue(liveValue);
       let next = Math.round(liveValue / moveSnap) * moveSnap;
+      // Ensure we don't cross the 500 boundary incorrectly
+      if (min === 25 && max === 10000) {
+        if (liveValue > 500 && next < 500) {
+          next = 500;
+        } else if (liveValue < 500 && next > 500) {
+          next = 500;
+        }
+      }
       next = clamp(next, min, max);
       commitValue(next, false);
       if (p < 1) {
@@ -224,18 +248,35 @@ export function UsageBasedPricing({
     const raw = min + t * (max - min);
     // update transient visual percent immediately
     setPosPct(t * 100);
-    // During move: update visuals and value in live increments (default 100 or snapTo)
+    // During move: update visuals and value in live increments with dynamic snap
     if (!isEnd) {
-      const moveSnap = snapTo && snapTo > 0 ? snapTo : 100;
+      const moveSnap = getSnapValue(raw);
       let next = Math.round(raw / moveSnap) * moveSnap;
+      // Ensure we don't cross the 500 boundary incorrectly
+      if (min === 25 && max === 10000) {
+        if (next < 500 && raw > 500) {
+          next = 500;
+        } else if (next > 500 && raw < 500) {
+          next = 500;
+        }
+      }
       next = clamp(next, min, max);
       commitValue(next, false);
       return;
     }
-    // On end: snap to snapTo (if provided) or to step (>1) else to 100
+    // On end: snap with dynamic snap value
     let next = raw;
-    if (snapTo && snapTo > 0) {
-      next = Math.round(raw / snapTo) * snapTo;
+    const endSnap = getSnapValue(raw);
+    if (endSnap > 0) {
+      next = Math.round(raw / endSnap) * endSnap;
+      // Ensure we snap to the correct side of 500 boundary
+      if (min === 25 && max === 10000) {
+        if (next < 500 && raw > 500) {
+          next = 500;
+        } else if (next > 500 && raw < 500) {
+          next = 500;
+        }
+      }
     } else if (step && step > 1) {
       next = quantize(raw);
     } else {
@@ -251,7 +292,7 @@ export function UsageBasedPricing({
   // Keyboard Accessibility
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     let delta = 0;
-    const baseStep = snapTo && snapTo > 0 ? snapTo : 100;
+    const baseStep = getSnapValue(value);
     switch (e.key) {
       case "ArrowLeft":
       case "ArrowDown":
@@ -280,12 +321,12 @@ export function UsageBasedPricing({
 
   return (
     <Card className={cn("mx-auto w-full max-w-3xl min-w-lg bg-gray-50 border-gray-200", className)}>
-      <CardContent className="p-4">
+      <CardContent className={cn(isMobile ? "p-3" : "p-4")}>
         <div className="flex flex-col items-center">
-          <div className="flex flex-col items-center mb-6">
-            <p className="text-sm text-gray-600 font-medium mb-2">Deposit Amount</p>
+          <div className={cn("flex flex-col items-center", isMobile ? "mb-3" : "mb-6")}>
+            <p className={cn("text-gray-600 font-medium", isMobile ? "text-xs mb-1" : "text-sm mb-2")}>Deposit Amount</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-5xl font-bold tabular-nums text-gray-900">
+              <span className={cn("font-bold tabular-nums text-gray-900", isMobile ? "text-3xl" : "text-5xl")}>
                 {currency}
                 {valueText}
               </span>
@@ -295,7 +336,7 @@ export function UsageBasedPricing({
           <div className="w-full">
             <div
               ref={trackRef}
-              className="relative h-16 select-none mb-1"
+              className={cn("relative select-none", isMobile ? "h-8 mb-0.5" : "h-16 mb-1")}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
@@ -311,12 +352,17 @@ export function UsageBasedPricing({
               const x = clamp(e.clientX - rect.left, 0, rect.width);
               const t = x / rect.width;
               const raw = min + t * (max - min);
-              const baseSnap = snapTo && snapTo > 0 ? snapTo : 100;
-              const target = clamp(
-                Math.round(raw / baseSnap) * baseSnap,
-                min,
-                max,
-              );
+              const baseSnap = getSnapValue(raw);
+              let target = Math.round(raw / baseSnap) * baseSnap;
+              // Ensure we snap to the correct side of 500 boundary
+              if (min === 25 && max === 10000) {
+                if (target < 500 && raw > 500) {
+                  target = 500;
+                } else if (target > 500 && raw < 500) {
+                  target = 500;
+                }
+              }
+              target = clamp(target, min, max);
               animateTo(target);
             }}
           >
@@ -325,8 +371,8 @@ export function UsageBasedPricing({
               {Array.from({ length: tickCount }).map((_, i) => {
                 const left = (i / (tickCount - 1)) * 100;
                 const distFloat = Math.abs(currentTickIndexFloat - i);
-                const base = 10;
-                const peak = 12;
+                const base = isMobile ? 6 : 10;
+                const peak = isMobile ? 8 : 12;
                 const spread = 2;
                 const factor = Math.max(0, 1 - distFloat / spread);
                 const height = base + peak * factor;
@@ -357,7 +403,7 @@ export function UsageBasedPricing({
               className="absolute top-full -mt-1 -translate-x-1/2 z-10"
               style={{ left: `${pct}%` }}
             >
-              <div className="bg-gray-900 text-white rounded-md px-3 py-1.5 text-sm font-medium shadow-sm whitespace-nowrap">
+              <div className={cn("bg-gray-900 text-white rounded-md shadow-sm whitespace-nowrap font-medium", isMobile ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm")}>
                 {formatNumber(value)}
               </div>
               <div
@@ -373,7 +419,7 @@ export function UsageBasedPricing({
             </div>
           </div>
 
-            <div className="text-gray-600 flex justify-between px-1 text-xs mt-8">
+            <div className={cn("text-gray-600 flex justify-between px-1", isMobile ? "text-[10px] mt-2" : "text-xs mt-8")}>
               <span>{startLabel}</span>
               <span>{endLabel}</span>
             </div>
