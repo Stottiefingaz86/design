@@ -5386,6 +5386,7 @@ function NavTestPageContent() {
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'card' | 'pack'>('card')
+  const [favoritedGames, setFavoritedGames] = useState<Set<number>>(new Set())
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false)
   const [selectedGame, setSelectedGame] = useState<{ title: string; image: string; provider?: string; features?: string[] } | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<'betonline' | 'wildcasino' | 'superslots'>('betonline')
@@ -6846,6 +6847,7 @@ function NavTestPageContent() {
                                       // On desktop, keep sidebar state as is (open stays open, closed stays closed)
                                       
                                       // Add navigation logic here
+                                      setActiveIconTab('search') // Reset icon tab when navigating to other pages
                                       if (item.label === 'My Favorites') {
                                         setActiveSubNav('For You')
                                         setSelectedCategory('Favorites')
@@ -7027,15 +7029,27 @@ function NavTestPageContent() {
                             <IconSearch className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => setActiveIconTab('favorite')}
+                            onClick={() => {
+                              setActiveIconTab('favorite')
+                              setShowAllGames(true)
+                              setSelectedCategory('Favorites')
+                              setSelectedVendor('')
+                              setActiveSubNav('')
+                              window.scrollTo({ top: 0, behavior: 'smooth' })
+                            }}
                             className={cn(
                               "bg-transparent rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out",
                               activeIconTab === 'favorite'
-                                ? "text-black dark:text-white bg-gray-200 dark:bg-white/10"
+                                ? "text-pink-500 dark:text-pink-500 bg-gray-200 dark:bg-white/10"
                                 : "text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5"
                             )}
                           >
-                            <IconHeart className="w-3.5 h-3.5" />
+                            <IconHeart 
+                              className={cn(
+                                "w-3.5 h-3.5 transition-colors",
+                                activeIconTab === 'favorite' && "fill-pink-500 text-pink-500"
+                              )}
+                            />
                           </button>
                         </div>
                       </div>
@@ -7050,6 +7064,7 @@ function NavTestPageContent() {
                       return activeSubNav
                     })()} onValueChange={(value) => { 
                       setActiveSubNav(value)
+                      setActiveIconTab('search') // Reset icon tab when navigating to other pages
                       if (value === 'For You' || value === 'Live') {
                         setShowAllGames(false)
                         setSelectedCategory('')
@@ -7474,12 +7489,13 @@ function NavTestPageContent() {
                       <div className="">
                         <div className="flex items-center justify-between mb-6 px-6">
                           <div className="flex items-center gap-3">
-                            {/* Back button - show when viewing vendor or category not in sub nav menu */}
+                            {/* Back button - show when viewing vendor, category not in sub nav menu, or favorites page */}
                             {(() => {
                               const subNavItems = ['For You', 'Slots', 'Bonus Buys', 'Megaways', 'Originals', 'Blackjack', 'Live', 'Jackpots', 'Early', 'Staff Picks', 'Exclusive', 'New']
                               const isVendorPage = !!selectedVendor
                               const isCategoryNotInMenu = selectedCategory && !subNavItems.includes(selectedCategory)
-                              const showBackButton = isVendorPage || isCategoryNotInMenu
+                              const isFavoritesPage = activeIconTab === 'favorite' || selectedCategory === 'Favorites'
+                              const showBackButton = isVendorPage || isCategoryNotInMenu || isFavoritesPage
                               
                               return showBackButton ? (
                                 <button
@@ -7488,6 +7504,7 @@ function NavTestPageContent() {
                                     setSelectedCategory('')
                                     setShowAllGames(false)
                                     setActiveSubNav('For You')
+                                    setActiveIconTab('search')
                                     window.scrollTo({ top: 0, behavior: 'smooth' })
                                   }}
                                   className="flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white/5 dark:hover:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/5 transition-colors duration-300 text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white"
@@ -7504,7 +7521,7 @@ function NavTestPageContent() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, ease: "easeOut" }}
                         >
-                          {selectedVendor || selectedCategory || activeSubNav}
+                          {activeIconTab === 'favorite' || selectedCategory === 'Favorites' ? 'Favorites' : (selectedVendor || selectedCategory || activeSubNav)}
                         </motion.h2>
                             
                             {/* Show selected filter */}
@@ -7630,6 +7647,7 @@ function NavTestPageContent() {
                                           setSelectedCategory('')
                                           setShowAllGames(true)
                                           setActiveSubNav('')
+                                          setActiveIconTab('search') // Reset icon tab when selecting vendor
                                           setGameSortFilter('popular')
                                           window.scrollTo({ top: 0, behavior: 'smooth' })
                                         }}
@@ -7706,6 +7724,7 @@ function NavTestPageContent() {
                                           setSelectedCategory('')
                                           setShowAllGames(true)
                                           setActiveSubNav('')
+                                          setActiveIconTab('search') // Reset icon tab when selecting vendor
                                           window.scrollTo({ top: 0, behavior: 'smooth' })
                                         }}
                                       >
@@ -8541,6 +8560,7 @@ function NavTestPageContent() {
                                           setSelectedCategory('')
                                           setShowAllGames(true)
                                           setActiveSubNav('')
+                                          setActiveIconTab('search') // Reset icon tab when selecting vendor
                                           window.scrollTo({ top: 0, behavior: 'smooth' })
                                         }}
                                       >
@@ -9490,11 +9510,6 @@ function NavTestPageContent() {
                                 </>
                               )}
                               
-                              {/* Heart Icon */}
-                              <button className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full transition-colors z-10">
-                                <IconHeart className="w-4 h-4 text-white" fill="currentColor" />
-                              </button>
-                              
                               {/* Game Title Overlay - Only for card and pack views */}
                               {viewMode !== 'list' && (
                                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3">
@@ -9561,20 +9576,28 @@ function NavTestPageContent() {
                                     </div>
                                   </div>
 
-                                  <button className="flex items-center justify-center p-1.5 hover:bg-white/10 rounded-full transition-colors shrink-0 ml-2">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setFavoritedGames(prev => {
+                                        const newSet = new Set(prev)
+                                        if (newSet.has(index)) {
+                                          newSet.delete(index)
+                                        } else {
+                                          newSet.add(index)
+                                        }
+                                        return newSet
+                                      })
+                                    }}
+                                    className="flex items-center justify-center p-1.5 hover:bg-white/10 rounded-full transition-colors shrink-0 ml-2"
+                                  >
                                     <IconHeart 
-                                      className="w-4 h-4 text-white/70 transition-colors" 
-                                      style={{ 
-                                        '--hover-color': brandPrimary,
-                                      } as React.CSSProperties}
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.color = brandPrimary
-                                        e.currentTarget.style.fill = brandPrimary
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
-                                        e.currentTarget.style.fill = 'none'
-                                      }}
+                                      className={cn(
+                                        "w-4 h-4 transition-colors",
+                                        favoritedGames.has(index) 
+                                          ? "text-pink-500 fill-pink-500" 
+                                          : "text-white/70"
+                                      )}
                                     />
                                   </button>
                                 </motion.div>
