@@ -1146,11 +1146,8 @@ div[class*="rounded-full"][class*="mx-auto"][class*="h-1.5"][class*="bg-white"] 
 }
 
 /* Override sidebar active state to use brand primary color */
-[data-sidebar="menu-button"][data-active="true"] {
+[data-sidebar="menu-button"][data-active="true"],
+button[data-active="true"][class*="SidebarMenuButton"],
+[data-active="true"][class*="SidebarMenuButton"] {
   background-color: var(--brand-primary, #ee3536) !important;
-}
-
-/* Force red background for active sidebar items - inline style takes precedence */
-[data-sidebar="menu-button"][data-active="true"] {
-  background-color: var(--brand-primary) !important;
 }

@@ -6806,7 +6806,8 @@ function NavTestPageContent() {
                       {!showQuickLinksMenu && sidebarMenuItems.map((item, index) => {
                         const Icon = item.icon
                         const showSeparatorAbove = item.label === 'Loyalty Hub'
-                        // Determine if this menu item is active based on selectedCategory
+                        // Determine if this menu item is active based on selectedCategory only
+                        // Note: activeSubNav is for sub nav tabs, not side menu highlighting
                         const isActive = selectedCategory === item.label || 
                              (item.label === 'Slots' && selectedCategory === 'Slots') ||
                              (item.label === 'Blackjack' && (selectedCategory === 'Blackjack' || selectedCategory === 'BlackJack')) ||
@@ -6814,7 +6815,8 @@ function NavTestPageContent() {
                              (item.label === 'Specialty Games' && selectedCategory === 'Specialty') ||
                              (item.label === 'Table Games' && selectedCategory === 'Table Games') ||
                              (item.label === 'My Favorites' && selectedCategory === 'Favorites') ||
-                             (item.label === 'Popular Games' && selectedCategory === 'Popular')
+                             (item.label === 'Popular Games' && selectedCategory === 'Popular') ||
+                             (item.label === 'Live Casino' && activeSubNav === 'Live' && !selectedCategory)
                         return (
                           <React.Fragment key={index}>
                             {showSeparatorAbove && (
@@ -6830,21 +6832,18 @@ function NavTestPageContent() {
                                       "w-full justify-start rounded-small h-auto py-2.5 px-3 text-sm font-medium cursor-pointer",
                                       "data-[active=true]:text-white data-[active=true]:font-medium",
                                       "data-[active=false]:text-white/70 hover:text-white hover:bg-white/5",
-                                      isActive && '[&[data-active=true]]:!bg-transparent [&[data-active=true]]:bg-[var(--brand-primary)]'
+                                      isActive && '[&[data-active=true]]:!bg-[var(--brand-primary)]'
                                     )}
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
                                       console.log('Sidebar menu clicked:', item.label)
                                       
-                                      // Close sidebar when selecting an item
+                                      // Close sidebar when selecting an item - ONLY on mobile
                                       if (isMobile) {
                                         setOpenMobile(false)
-                                      } else {
-                                        if (sidebarOpen) {
-                                          toggleSidebar()
-                                        }
                                       }
+                                      // On desktop, keep sidebar state as is (open stays open, closed stays closed)
                                       
                                       // Add navigation logic here
                                       if (item.label === 'My Favorites') {
@@ -6869,12 +6868,14 @@ function NavTestPageContent() {
                                         setShowSports(false)
                                         window.scrollTo({ top: 0, behavior: 'smooth' })
                                       } else if (item.label === 'Blackjack') {
+                                        setActiveSubNav('Blackjack')
                                         setSelectedCategory('BlackJack')
                                         setSelectedVendor('')
                                         setShowAllGames(true)
                                         setShowSports(false)
                                         window.scrollTo({ top: 0, behavior: 'smooth' })
                                       } else if (item.label === 'Video Poker') {
+                                        setActiveSubNav('') // Clear activeSubNav when selecting items not in sub nav
                                         setSelectedCategory('Video Poker')
                                         setSelectedVendor('')
                                         setShowAllGames(true)
