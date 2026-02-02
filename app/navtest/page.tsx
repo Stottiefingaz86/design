@@ -1238,7 +1238,7 @@ const statusFilterFn: FilterFn<BonusItem> = (row, columnId, filterValue: string[
 };
 
 // Promos Page Component
-function PromosPage({ brandPrimary }: { brandPrimary: string }) {
+function PromosPage({ brandPrimary, setVipDrawerOpen, setShowVipRewards, setVipActiveTab }: { brandPrimary: string; setVipDrawerOpen?: (open: boolean) => void; setShowVipRewards?: (show: boolean) => void; setVipActiveTab?: (tab: string) => void }) {
   const [activeTab, setActiveTab] = useState('Deposit Bonus')
 
   const promoData = [
@@ -1261,19 +1261,40 @@ function PromosPage({ brandPrimary }: { brandPrimary: string }) {
             <CarouselContent className="ml-6 -mr-2 md:-mr-4">
               {/* VIP Rewards Card */}
               <CarouselItem className="pl-0 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                  <CardContent className="p-4">
+                <Card 
+                  className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300 cursor-pointer overflow-hidden" 
+                  style={{ width: '200px', height: '140px' }}
+                  onClick={() => {
+                    if (setVipDrawerOpen) {
+                      setVipDrawerOpen(true)
+                    }
+                  }}
+                >
+                  <CardContent className="p-4 relative z-10">
                     <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
                     <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
                     <VIPProgressBar value={45} />
                   </CardContent>
+                  {/* Sweep effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                 </Card>
               </CarouselItem>
               
               {/* Daily Races Card */}
               <CarouselItem className="pl-3 pr-3 basis-auto flex-shrink-0">
-                <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                  <CardContent className="p-4">
+                <Card 
+                  className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300 cursor-pointer overflow-hidden" 
+                  style={{ width: '300px', height: '140px' }}
+                  onClick={() => {
+                    if (setShowVipRewards) {
+                      setShowVipRewards(true)
+                    }
+                    if (setVipActiveTab) {
+                      setVipActiveTab('Cash Races')
+                    }
+                  }}
+                >
+                  <CardContent className="p-4 relative z-10">
                     <div className="flex items-start justify-between mb-4">
                       <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
                       <div className="text-right">
@@ -1295,6 +1316,8 @@ function PromosPage({ brandPrimary }: { brandPrimary: string }) {
                       </div>
                     </div>
                   </CardContent>
+                  {/* Sweep effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                 </Card>
               </CarouselItem>
               
@@ -1571,6 +1594,8 @@ function MyBonusPage({ brandPrimary }: { brandPrimary: string }) {
                       </div>
                     </div>
                   </CardContent>
+                  {/* Sweep effect */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                 </Card>
               </CarouselItem>
               
@@ -2005,7 +2030,12 @@ function VIPRewardsPage({ brandPrimary, setVipDrawerOpen, setVipActiveTab, setSh
       {vipActiveSidebarItem === 'My Bonus' ? (
         <MyBonusPage brandPrimary={brandPrimary} />
       ) : vipActiveSidebarItem === 'Promos' ? (
-        <PromosPage brandPrimary={brandPrimary} />
+        <PromosPage 
+          brandPrimary={brandPrimary} 
+          setVipDrawerOpen={setVipDrawerOpen}
+          setShowVipRewards={setShowVipRewards}
+          setVipActiveTab={setVipActiveTab}
+        />
       ) : (
         <SidebarInset className="bg-[#1a1a1a] text-white overflow-y-auto">
         {/* Hero Image */}
@@ -7017,14 +7047,14 @@ function NavTestPageContent() {
                     {/* Icon Tabs - Left Side (Desktop Only) */}
                     {!isMobile && (
                       <div className="flex-shrink-0">
-                        <div className="bg-white/5 dark:bg-white/5 bg-gray-200/60 dark:bg-white/5 p-0.5 h-auto gap-0.5 rounded-3xl border-0 flex items-center transition-colors duration-300">
+                        <div className="bg-white/5 dark:bg-white/5 bg-gray-100/80 dark:bg-white/5 p-0.5 h-auto gap-0.5 rounded-3xl border-0 flex items-center transition-colors duration-300">
                           <button
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
                               setSearchOverlayOpen(true)
                             }}
-                            className="bg-transparent text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out"
+                            className="bg-transparent text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200/80 dark:hover:bg-white/5 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out"
                           >
                             <IconSearch className="w-3.5 h-3.5" />
                           </button>
@@ -7040,8 +7070,8 @@ function NavTestPageContent() {
                             className={cn(
                               "bg-transparent rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 ease-in-out",
                               activeIconTab === 'favorite'
-                                ? "text-pink-500 dark:text-pink-500 bg-gray-200 dark:bg-white/10"
-                                : "text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/5"
+                                ? "text-pink-500 dark:text-pink-500 bg-gray-200/80 dark:bg-white/10"
+                                : "text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white hover:bg-gray-200/80 dark:hover:bg-white/5"
                             )}
                           >
                             <IconHeart 
@@ -7374,19 +7404,34 @@ function NavTestPageContent() {
                         "pr-0 basis-auto flex-shrink-0",
                         isMobile ? "pl-3" : "pl-6"
                       )}>
-                        <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '200px', height: '140px' }}>
-                          <CardContent className="p-4">
+                        <Card 
+                          className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300 cursor-pointer overflow-hidden" 
+                          style={{ width: '200px', height: '140px' }}
+                          onClick={() => {
+                            setVipDrawerOpen(true)
+                          }}
+                        >
+                          <CardContent className="p-4 relative z-10">
                             <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-4 transition-colors duration-300">VIP Rewards</CardTitle>
                             <div className="text-xs text-gray-600 dark:text-white/50 mb-2 transition-colors duration-300">Gold To Platinum I</div>
                             <VIPProgressBar value={45} />
                           </CardContent>
+                          {/* Sweep effect */}
+                          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                         </Card>
                       </CarouselItem>
                       
                       {/* Daily Races Card */}
                       <CarouselItem className="pl-2 md:pl-4 basis-auto flex-shrink-0">
-                        <Card className="bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300" style={{ width: '300px', height: '140px' }}>
-                          <CardContent className="p-4">
+                        <Card 
+                          className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 flex-shrink-0 transition-colors duration-300 cursor-pointer overflow-hidden" 
+                          style={{ width: '300px', height: '140px' }}
+                          onClick={() => {
+                            setShowVipRewards(true)
+                            setVipActiveTab('Cash Races')
+                          }}
+                        >
+                          <CardContent className="p-4 relative z-10">
                             <div className="flex items-start justify-between mb-4">
                               <CardTitle className="text-sm text-white/70 dark:text-white/70 text-gray-800 dark:text-white/70 mb-0 transition-colors duration-300">Daily Races</CardTitle>
                               <div className="text-right">
@@ -7408,6 +7453,8 @@ function NavTestPageContent() {
                               </div>
                             </div>
                           </CardContent>
+                          {/* Sweep effect */}
+                          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
                         </Card>
                       </CarouselItem>
                       
@@ -7541,7 +7588,7 @@ function NavTestPageContent() {
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
-                                  className="bg-white/5 dark:bg-white/5 bg-gray-200/60 dark:bg-white/5 hover:bg-white/10 dark:hover:bg-white/10 rounded-2xl p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white"
+                                  className="bg-gray-200 dark:bg-white/5 hover:bg-gray-300 dark:hover:bg-white/10 rounded-full p-1.5 h-9 w-9 flex items-center justify-center transition-all duration-300 text-gray-800 dark:text-white/70 hover:text-black dark:hover:text-white"
                                 >
                                   <IconFilter className="w-4 h-4" />
                                 </button>
@@ -7718,7 +7765,7 @@ function NavTestPageContent() {
                                       index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
                                     )}>
                                       <button
-                                        className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
+                                        className="group relative bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-gray-200/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
                                         onClick={() => {
                                           setSelectedVendor(vendor)
                                           setSelectedCategory('')
@@ -7729,7 +7776,7 @@ function NavTestPageContent() {
                                         }}
                                       >
                                         {/* Placeholder/Skeleton Icon */}
-                                        <Skeleton className="w-5 h-5 rounded-full bg-white/10 dark:bg-white/10 flex-shrink-0" />
+                                        <Skeleton className="w-5 h-5 rounded-full bg-gray-400 dark:bg-white/10 flex-shrink-0" />
                                         <span className="relative z-10">{vendor}</span>
                                         {/* Sweep effect */}
                                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
@@ -8554,7 +8601,7 @@ function NavTestPageContent() {
                                       index === 0 ? (isMobile ? "pl-3" : "pl-6") : "pl-2 md:pl-4"
                                     )}>
                                       <button
-                                        className="group relative bg-white/5 dark:bg-white/5 bg-gray-100 dark:bg-white/5 border border-white/10 dark:border-white/10 border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-white/10 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
+                                        className="group relative bg-gray-100/80 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2.5 text-xs font-medium text-gray-800 dark:text-white/70 hover:bg-gray-200/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white transition-all duration-300 whitespace-nowrap overflow-hidden flex items-center gap-2"
                                         onClick={() => {
                                           setSelectedVendor(vendor)
                                           setSelectedCategory('')
@@ -8565,7 +8612,7 @@ function NavTestPageContent() {
                                         }}
                                       >
                                         {/* Placeholder/Skeleton Icon */}
-                                        <Skeleton className="w-5 h-5 rounded-full bg-white/10 dark:bg-white/10 flex-shrink-0" />
+                                        <Skeleton className="w-5 h-5 rounded-full bg-gray-400 dark:bg-white/10 flex-shrink-0" />
                                         <span className="relative z-10">{vendor}</span>
                                         {/* Sweep effect */}
                                         <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out z-0" />
