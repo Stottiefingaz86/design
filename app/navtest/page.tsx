@@ -111,7 +111,8 @@ import {
   IconClock,
   IconCoins,
   IconDownload,
-  IconExternalLink
+  IconExternalLink,
+  IconMaximize
 } from '@tabler/icons-react'
 import { colorTokenMap } from '@/lib/agent/designSystem'
 import { Button } from '@/components/ui/button'
@@ -5419,7 +5420,70 @@ function NavTestPageContent() {
   const [favoritedGames, setFavoritedGames] = useState<Set<number>>(new Set())
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false)
   const [selectedGame, setSelectedGame] = useState<{ title: string; image: string; provider?: string; features?: string[] } | null>(null)
+  const [gameLauncherMenuOpen, setGameLauncherMenuOpen] = useState(false)
+  const [similarGamesDrawerOpen, setSimilarGamesDrawerOpen] = useState(false)
+  const [gameImageLoaded, setGameImageLoaded] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const gameLauncherMenuRef = useRef<HTMLDivElement>(null)
+  const gameImageRef = useRef<HTMLDivElement>(null)
+  
+  // Helper function to hash game title to a number for favoritedGames Set
+  const hashGameTitle = (title: string): number => {
+    let hash = 0
+    for (let i = 0; i < title.length; i++) {
+      const char = title.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32bit integer
+    }
+    return Math.abs(hash)
+  }
   const [selectedBrand, setSelectedBrand] = useState<'betonline' | 'wildcasino' | 'superslots'>('betonline')
+  
+  // Close menu when game launcher closes and reset image loaded state
+  useEffect(() => {
+    if (!selectedGame) {
+      setGameLauncherMenuOpen(false)
+      setGameImageLoaded(false)
+      setIsFullscreen(false)
+    } else {
+      // Reset image loaded state when new game is selected
+      setGameImageLoaded(false)
+      setIsFullscreen(false)
+    }
+  }, [selectedGame])
+  
+  // Handle fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!(document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).msFullscreenElement))
+    }
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('msfullscreenchange', handleFullscreenChange)
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('msfullscreenchange', handleFullscreenChange)
+    }
+  }, [])
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (gameLauncherMenuRef.current && !gameLauncherMenuRef.current.contains(event.target as Node)) {
+        setGameLauncherMenuOpen(false)
+      }
+    }
+    
+    if (gameLauncherMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [gameLauncherMenuOpen])
   const bannerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const subNavScrollRef = useRef<HTMLDivElement>(null)
@@ -9681,72 +9745,310 @@ function NavTestPageContent() {
               transition={{ duration: 0.2 }}
               className="fixed inset-0 z-[200] bg-[#1a1a1a]"
             >
-              {/* Top Bar */}
+              {/* Rounded Glass Top Bar */}
               <motion.div
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -20, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed top-0 left-0 right-0 h-14 bg-[#2d2d2d] border-b border-white/10 flex items-center px-6 z-10"
+                className={cn(
+                  "fixed top-4 left-4 right-4 z-50 rounded-2xl backdrop-blur-xl border border-white/10",
+                  isMobile ? "h-10" : "h-12"
+                )}
+                style={{
+                  backgroundColor: 'rgba(26, 26, 26, 0.6)',
+                }}
               >
-                {/* Left Icons */}
-                <div className="flex items-center gap-2">
-                  <button className="p-1.5 hover:bg-white/10 rounded-small transition-colors">
-                    <Heart className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
-                  </button>
-                  <button className="p-1.5 hover:bg-white/10 rounded-small transition-colors">
-                    <IconCurrencyDollar className="w-4 h-4 text-white/70 hover:text-yellow-400 transition-colors" />
-                  </button>
-                  <button className="p-1.5 hover:bg-white/10 rounded-small transition-colors">
-                    <IconPlay className="w-4 h-4 text-white/70 hover:text-white transition-colors" />
-                  </button>
+                <div className="flex items-center justify-between h-full px-3 relative">
+                  {/* Hamburger Menu - Left */}
+                  <div className="relative" ref={gameLauncherMenuRef}>
+                    <button
+                      onClick={() => setGameLauncherMenuOpen(!gameLauncherMenuOpen)}
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      {/* Custom Staggered Hamburger Icon */}
+                      <svg
+                        className="w-4 h-4 text-white"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="4" y1="7" x2="20" y2="7" />
+                        <line x1="6" y1="12" x2="20" y2="12" />
+                        <line x1="4" y1="17" x2="18" y2="17" />
+                      </svg>
+                    </button>
+                    
+                    {/* Dropdown Menu */}
+                    <AnimatePresence>
+                      {gameLauncherMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute top-full left-0 mt-2 w-56 bg-[#2d2d2d]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                        >
+                          <div className="py-2">
+                            <button
+                              onClick={() => {
+                                setDepositDrawerOpen(true)
+                                setGameLauncherMenuOpen(false)
+                              }}
+                              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors text-sm"
+                            >
+                              Quick Deposit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSimilarGamesDrawerOpen(true)
+                                setGameLauncherMenuOpen(false)
+                              }}
+                              className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors text-sm"
+                            >
+                              More Games Like This
+                            </button>
+                          </div>
+                          
+                          {/* VIP Progress Bar */}
+                          <div className="px-4 py-3 border-t border-white/10 bg-white/5">
+                            <div className="text-xs text-white/70 mb-2">Gold To Platinum I</div>
+                            <VIPProgressBar value={45} />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Game Name - Center (absolutely positioned) */}
+                  <h2 className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-white max-w-[50%] truncate px-2">
+                    {selectedGame.title}
+                  </h2>
+
+                  {/* Right Icons - Fullscreen (desktop only), Favorite and Close */}
+                  <div className="flex items-center gap-1">
+                    {!isMobile && (
+                      <button 
+                        onClick={() => {
+                          if (!gameImageRef.current) return
+                          
+                          if (!isFullscreen) {
+                            if (gameImageRef.current.requestFullscreen) {
+                              gameImageRef.current.requestFullscreen()
+                            } else if ((gameImageRef.current as any).webkitRequestFullscreen) {
+                              (gameImageRef.current as any).webkitRequestFullscreen()
+                            } else if ((gameImageRef.current as any).msRequestFullscreen) {
+                              (gameImageRef.current as any).msRequestFullscreen()
+                            }
+                            setIsFullscreen(true)
+                          } else {
+                            if (document.exitFullscreen) {
+                              document.exitFullscreen()
+                            } else if ((document as any).webkitExitFullscreen) {
+                              (document as any).webkitExitFullscreen()
+                            } else if ((document as any).msExitFullscreen) {
+                              (document as any).msExitFullscreen()
+                            }
+                            setIsFullscreen(false)
+                          }
+                        }}
+                        className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                      >
+                        <IconMaximize className="w-4 h-4 text-white/70 hover:text-white" />
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => {
+                        // Toggle favorite
+                        const gameId = hashGameTitle(selectedGame.title)
+                        const newFavorited = new Set(favoritedGames)
+                        if (newFavorited.has(gameId)) {
+                          newFavorited.delete(gameId)
+                        } else {
+                          newFavorited.add(gameId)
+                        }
+                        setFavoritedGames(newFavorited)
+                      }}
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <IconHeart 
+                        className={cn(
+                          "w-4 h-4 transition-colors",
+                          favoritedGames.has(hashGameTitle(selectedGame.title))
+                            ? "text-pink-500 fill-pink-500"
+                            : "text-white/70"
+                        )}
+                      />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedGame(null)
+                        setGameLauncherMenuOpen(false)
+                        setIsFullscreen(false)
+                      }}
+                      className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                    >
+                      <IconX className="w-4 h-4 text-white/70 hover:text-white" />
+                    </button>
+                  </div>
                 </div>
-
-                {/* Game Name - Center (absolutely positioned) */}
-                <h2 className="absolute left-1/2 -translate-x-1/2 text-base font-semibold text-white">
-                  {selectedGame.title}
-                </h2>
-
-                {/* Close Button - Right */}
-                <button
-                  onClick={() => setSelectedGame(null)}
-                  className="ml-auto p-1.5 hover:bg-white/10 rounded-small transition-colors"
-                >
-                  <IconX className="w-4 h-4 text-white/70 hover:text-white" />
-                </button>
               </motion.div>
 
-              {/* Content Area - Loading */}
-              <div className="pt-14 h-full flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full"
-                  />
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-white/70 text-sm"
-                  >
-                    Loading game...
-                  </motion.p>
-                  {selectedGame.provider && (
-                    <motion.p
+              {/* Content Area - Loading then Game Image (Desktop only) */}
+              <div className={cn("h-full flex items-center justify-center", isMobile ? "pt-20" : "pt-24")} style={{ zIndex: 1 }}>
+                <AnimatePresence mode="wait">
+                  {!gameImageLoaded ? (
+                    <motion.div
+                      key="loader"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4 }}
-                      className="text-white/50 text-xs"
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col items-center gap-4"
                     >
-                      {selectedGame.provider}
-                    </motion.p>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full"
+                      />
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-white/70 text-sm"
+                      >
+                        Loading game...
+                      </motion.p>
+                      {selectedGame.provider && (
+                        <motion.p
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.4 }}
+                          className="text-white/50 text-xs"
+                        >
+                          {selectedGame.provider}
+                        </motion.p>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="game-image"
+                      ref={gameImageRef}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className={cn(
+                        "fixed rounded-2xl overflow-hidden",
+                        isFullscreen ? "inset-0 rounded-none" : "top-4 left-4 right-4"
+                      )}
+                      style={isFullscreen ? {} : { 
+                        top: isMobile ? '68px' : '80px',
+                        height: isMobile ? 'calc(100vh - 100px)' : 'calc(100vh - 100px)',
+                        maxHeight: isMobile ? 'calc(100vh - 100px)' : 'calc(100vh - 100px)'
+                      }}
+                    >
+                      {selectedGame.image && (
+                        <Image
+                          src="/games/square/hookedOnFishing.png"
+                          alt={selectedGame.title}
+                          fill
+                          className="object-cover"
+                          sizes="100vw"
+                          priority
+                        />
+                      )}
+                    </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
+                
+                {/* Preload image */}
+                {selectedGame.image && !gameImageLoaded && (
+                  <div className="absolute inset-0 opacity-0 pointer-events-none">
+                    <img
+                      src="/games/square/hookedOnFishing.png"
+                      alt=""
+                      onLoad={() => {
+                        setTimeout(() => {
+                          setGameImageLoaded(true)
+                        }, 500)
+                      }}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Similar Games Drawer */}
+        <Drawer open={similarGamesDrawerOpen} onOpenChange={setSimilarGamesDrawerOpen} direction={isMobile ? "bottom" : "right"} shouldScaleBackground={false}>
+          <DrawerContent className={cn(
+            "bg-[#1a1a1a] text-white flex flex-col relative",
+            isMobile 
+              ? "w-full border-t border-white/10 rounded-t-[10px] !mt-0 !mb-0 !bottom-0 !h-[90vh] !max-h-[90vh] overflow-hidden"
+              : "w-full sm:max-w-2xl border-l border-white/10 overflow-hidden"
+          )}>
+            {isMobile && <DrawerHandle variant="dark" />}
+            <DrawerHeader className="pb-4 sticky top-0 z-50 backdrop-blur-xl border-b border-white/10" style={{ backgroundColor: 'rgba(26, 26, 26, 0.8)' }}>
+              <div className="flex items-center justify-between">
+                <div className="pt-2">
+                  <DrawerTitle className="text-white text-xl font-bold">More Games Like This</DrawerTitle>
+                  <DrawerDescription className="text-white/70 text-sm mt-1">
+                    Similar games you might enjoy
+                  </DrawerDescription>
+                </div>
+                <DrawerClose asChild>
+                  <button className="rounded-full bg-white/10 hover:bg-white/20 p-2 transition-colors">
+                    <IconX className="h-4 w-4 text-white" />
+                  </button>
+                </DrawerClose>
+              </div>
+            </DrawerHeader>
+            <div className="flex-1 overflow-y-auto px-4 pb-6 -mt-4 pt-4">
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {Array.from({ length: 30 }).map((_, index) => {
+                  const gameNames = ['Gold Nugget Rush', 'Mega Fortune', 'Starburst', 'Book of Dead', 'Gonzo\'s Quest', 'Dead or Alive', 'Immortal Romance', 'Thunderstruck', 'Avalon', 'Blood Suckers', 'Mega Moolah', 'Bonanza', 'Razor Shark', 'Sweet Bonanza', 'Gates of Olympus', 'Big Bass Bonanza', 'The Dog House', 'Wolf Gold', 'Fire Strike', 'Chilli Heat', 'Gold Nugget Rush', 'Mega Fortune', 'Starburst', 'Book of Dead', 'Gonzo\'s Quest', 'Dead or Alive', 'Immortal Romance', 'Thunderstruck', 'Avalon', 'Blood Suckers']
+                  const providers = ['NetEnt', 'Pragmatic Play', 'Microgaming', 'BetSoft', 'Evolution Gaming']
+                  const imageSrc = squareTileImages[index % squareTileImages.length]
+                  const gameName = gameNames[index % gameNames.length]
+                  const provider = providers[index % providers.length]
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="w-full aspect-square rounded-small bg-white/5 hover:bg-white/10 cursor-pointer transition-all duration-300 relative overflow-hidden group"
+                      onClick={() => {
+                        setSelectedGame({
+                          title: gameName,
+                          image: imageSrc,
+                          provider: provider,
+                          features: ['High RTP', 'Free Spins Feature', 'Bonus Rounds Available']
+                        })
+                        setSimilarGamesDrawerOpen(false)
+                      }}
+                    >
+                      {imageSrc && (
+                        <Image
+                          src={imageSrc}
+                          alt={gameName}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          sizes="(max-width: 640px) 50vw, 50vw"
+                        />
+                      )}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 tile-shimmer" />
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
 
         {/* Advanced Search Side Drawer */}
         <Drawer open={advancedSearchOpen} onOpenChange={setAdvancedSearchOpen} direction="right" shouldScaleBackground={false}>
