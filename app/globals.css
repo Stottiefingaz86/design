@@ -1150,4 +1150,18 @@ div[class*="rounded-full"][class*="mx-auto"][class*="h-1.5"][class*="bg-white"] 
 button[data-active="true"][class*="SidebarMenuButton"],
 [data-active="true"][class*="SidebarMenuButton"] {
   background-color: var(--brand-primary, #ee3536) !important;
+  transition: background-color 0.2s ease-in-out !important;
+}
+
+/* Ensure smooth transition from default to active state - prevent black flash */
+[data-sidebar="menu-button"] {
+  transition: background-color 0.2s ease-in-out !important;
+  background-color: transparent !important;
+}
+
+/* Prevent black flash on hover/active before transition */
+[data-sidebar="menu-button"]:hover:not([data-active="true"]),
+[data-sidebar="menu-button"]:active:not([data-active="true"]) {
+  transition: background-color 0.2s ease-in-out !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
